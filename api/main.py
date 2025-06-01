@@ -1,14 +1,13 @@
 import logging
 import sys
-import strawberry
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from strawberry.fastapi import GraphQLRouter
 
 from app.configuration import settings
-from app.database import sessionmanager
+from app.database import get_db_session, sessionmanager
 from app.auth.github_oauth import router as auth_router
+from app.graphql.schema import graphql_app
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -29,25 +28,9 @@ async def lifespan(app: FastAPI):
         await sessionmanager.close()
 
 
-@strawberry.type
-class Query:
-    @strawberry.field
-    def hello(self) -> str:
-        return "Hello World"
-
-
-app = FastAPI(lifespan=lifespan, title=settings.project_name, docs_url="/api/docs")
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-schema = strawberry.Schema(Query)
-graphql_app = GraphQLRouter(schema)
 origins = ["http://localhost:5173"]
 
+app = FastAPI(lifespan=lifespan, title=settings.project_name)
 app.include_router(auth_router)
 app.include_router(graphql_app, prefix="/graphql")
 app.add_middleware(
@@ -57,5 +40,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-print(app.routes)

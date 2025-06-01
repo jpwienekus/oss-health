@@ -3,11 +3,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User as UserDBModel
 
 
-async def get_user(db_session: AsyncSession, github_id: int):
+async def get_user_by_github_id(db_session: AsyncSession, github_id: int):
     return (
         await db_session.scalars(
             select(UserDBModel).where(UserDBModel.github_id == github_id)
         )
+    ).first()
+
+
+async def get_user(db_session: AsyncSession, user_id: int):
+    return (
+        await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
     ).first()
 
 

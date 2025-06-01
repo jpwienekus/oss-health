@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Add the parent directory of env.py to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from configuration import settings
-from models import Base
+from app.configuration import settings
+from app.models import Base
 
 from alembic import context
 
