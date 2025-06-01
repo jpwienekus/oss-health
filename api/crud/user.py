@@ -8,5 +8,8 @@ async def get_user(db_session: AsyncSession, github_id: int):
 
 
 async def add_user(db_session: AsyncSession, github_id: int, github_username: str):
-    db_session.add(UserDBModel(github_id=github_id, github_username=github_username))
+    user = UserDBModel(github_id=github_id, github_username=github_username)
+    db_session.add(user)
     await db_session.commit()
+
+    return user

@@ -23,11 +23,9 @@ export function useGitHubPopupLogin() {
       }
 
       const { type, code } = event.data
-      console.log(333, type, code)
 
       if (type === "github-oauth-code" && code) {
         const verifier = localStorage.getItem("pkce_verifier")
-        // const response = await fetch(`${url}/auth/github/callback?code=${code}&code_verifier=${verifier}`)
         const response = await fetch(`${url}/auth/github/token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

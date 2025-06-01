@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 import httpx
+from auth.jwt_utils import create_token_pair
 from configuration import settings
 from dependencies.core import DBSessionDep
 from crud.user import get_user, add_user
@@ -56,10 +57,15 @@ async def github_token_exchange(payload: dict, db_session: DBSessionDep):
         github_user = user_response.json()
         id = github_user.get("id")
         username = github_user.get("login")
-        print(id, username)
 
-    if id:
-        user = await get_user(db_session, id)
+    if not id:
+        raise HTTPException(status_code=404, detail="Invalid user")
 
-        if not user:
-            await add_user(db_session, id, username)
+    user = await get_user(db_session, id)
+
+    if not user:
+        user = await add_user(db_session, id, username)
+
+    jwt_token = create_token_pair(user.id)
+
+    return { "access_token": jwt_token}
