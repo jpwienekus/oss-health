@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # Add the parent directory of env.py to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from configuration import settings
+from models import Base
 
 from alembic import context
 
@@ -18,7 +19,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def get_url():

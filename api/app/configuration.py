@@ -1,13 +1,4 @@
-# import os
-# from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
-
-# load_dotenv()
-
-# GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
-# GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-# SECRET_KEY = os.getenv("SECRET_KEY")
-# ALGORITHM = "HS256"
 
 
 class Settings(BaseSettings):
@@ -20,6 +11,10 @@ class Settings(BaseSettings):
     project_name: str = "My FastAPI project"
     oauth_token_secret: str = "my_dev_secret"
     log_level: str = "DEBUG"
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    secret_key: str = ""
+    algorithm: str = "HS256"
 
 
 settings = Settings()  # type: ignore

@@ -5,3 +5,4 @@ alembic==1.16.1
 sqlalchemy==2.0.41
 asyncpg==0.30.0
 greenlet==3.2.2
+python-jose[cryptography]==3.5.0
