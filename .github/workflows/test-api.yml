@@ -26,7 +26,7 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run Black
-        run: black --check .
+        run: black --verbose --check .
 
       - name: Run Pytest
         run: pytest
