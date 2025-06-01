@@ -1,6 +1,6 @@
-from models import User as UserDBModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models import User as UserDBModel
 
 
 async def get_user(db_session: AsyncSession, github_id: int):

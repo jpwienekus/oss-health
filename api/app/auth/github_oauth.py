@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 import httpx
-from auth.jwt_utils import create_token_pair
-from configuration import settings
-from dependencies.core import DBSessionDep
-from crud.user import get_user, add_user
+from app.auth.jwt_utils import create_token_pair
+from app.crud.user import get_user, add_user
+from app.dependencies.core import DBSessionDep
+from app.configuration import settings
 
 router = APIRouter()
 

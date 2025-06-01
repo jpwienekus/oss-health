@@ -1,14 +1,14 @@
 import logging
 import sys
 import strawberry
-from configuration import settings
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from database import sessionmanager
 from strawberry.fastapi import GraphQLRouter
-from auth.github_oauth import router as auth_router
+
+from app.configuration import settings
+from app.database import sessionmanager
+from app.auth.github_oauth import router as auth_router
 
 logging.basicConfig(
     stream=sys.stdout,

@@ -1,7 +1,7 @@
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-from configuration import settings
 from fastapi import HTTPException
+from app.configuration import settings
 
 def create_token_pair(user_id):
     return jwt.encode({
