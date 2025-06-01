@@ -3,11 +3,17 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 from app.configuration import settings
 
+
 def create_token_pair(user_id):
-    return jwt.encode({
-        "sub": str(user_id),
-        "exp": datetime.now() + timedelta(minutes=15),
-    }, settings.secret_key, settings.algorithm)
+    return jwt.encode(
+        {
+            "sub": str(user_id),
+            "exp": datetime.now() + timedelta(minutes=15),
+        },
+        settings.secret_key,
+        settings.algorithm,
+    )
+
 
 def decode_token(token: str):
     try:

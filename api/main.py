@@ -35,6 +35,7 @@ class Query:
     def hello(self) -> str:
         return "Hello World"
 
+
 app = FastAPI(lifespan=lifespan, title=settings.project_name, docs_url="/api/docs")
 
 

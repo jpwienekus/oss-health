@@ -13,6 +13,7 @@ def test_create_and_decode_token():
     # Should return the original user_id
     assert decode_token(token) == user_id
 
+
 def test_invalid_token_raises():
     # An obviously invalid token
     with pytest.raises(HTTPException) as exc_info:
@@ -20,6 +21,7 @@ def test_invalid_token_raises():
 
     assert exc_info.value.status_code == 401
     assert "Invalid token" in str(exc_info.value.detail)
+
 
 def test_tampered_token_raises():
     user_id = "user123"

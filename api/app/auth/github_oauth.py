@@ -8,6 +8,7 @@ from app.configuration import settings
 
 router = APIRouter()
 
+
 @router.get("/auth/github/login")
 async def login(code_challenge: str):
     return RedirectResponse(
@@ -29,6 +30,7 @@ async def callback_html(code: str):
         window.close()
     </script>
     """
+
 
 @router.post("/auth/github/token")
 async def github_token_exchange(payload: dict, db_session: DBSessionDep):
@@ -68,4 +70,4 @@ async def github_token_exchange(payload: dict, db_session: DBSessionDep):
 
     jwt_token = create_token_pair(user.id)
 
-    return { "access_token": jwt_token}
+    return {"access_token": jwt_token}
