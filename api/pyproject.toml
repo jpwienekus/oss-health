@@ -1,5 +1,4 @@
 [tool.black]
-line-length = 120
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -11,7 +10,6 @@ known_first_party = "app"
 
 # This is to make isort compatible with Black. See
 # https://black.readthedocs.io/en/stable/the_black_code_style.html#how-black-wraps-lines.
-line_length=120
 multi_line_output=3
 include_trailing_comma = true
 force_grid_wrap=0

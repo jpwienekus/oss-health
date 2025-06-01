@@ -4,7 +4,11 @@ from app.models import User as UserDBModel
 
 
 async def get_user(db_session: AsyncSession, github_id: int):
-    return (await db_session.scalars(select(UserDBModel).where(UserDBModel.github_id == github_id))).first()
+    return (
+        await db_session.scalars(
+            select(UserDBModel).where(UserDBModel.github_id == github_id)
+        )
+    ).first()
 
 
 async def add_user(db_session: AsyncSession, github_id: int, github_username: str):

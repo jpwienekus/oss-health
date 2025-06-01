@@ -17,7 +17,9 @@ def create_token_pair(user_id):
 
 def decode_token(token: str):
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
         return payload["sub"]
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
