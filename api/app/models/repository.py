@@ -13,3 +13,6 @@ class Repository(Base):
     description: Mapped[str] = mapped_column(nullable=True)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    url: Mapped[str] = mapped_column(nullable=True)
+    open_issues: Mapped[int] = mapped_column(nullable=True)
+    score: Mapped[int] = mapped_column(nullable=True)

@@ -10,7 +10,9 @@ async def get_repository(
 ) -> Sequence[RepositoryDBModel]:
     return (
         await db_session.scalars(
-            select(RepositoryDBModel).where(RepositoryDBModel.user_id == user_id)
+            select(RepositoryDBModel)
+            .where(RepositoryDBModel.user_id == user_id)
+            .order_by(RepositoryDBModel.updated_at.desc())
         )
     ).all()
 
@@ -35,8 +37,10 @@ async def upsert_user_repositories(
             existing.name = repo.get("name", existing.name)
             existing.description = repo.get("description", existing.description)
             existing.updated_at = updated_at
+            existing.url = repo.get("url", existing.url)
+            existing.open_issues = repo.get("open_issues", existing.open_issues)
+            existing.score = 0
         else:
-            print(repo)
             date = repo.get("updated_at")
             updated_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ") if date else None
             new_repo = RepositoryDBModel(
@@ -45,6 +49,9 @@ async def upsert_user_repositories(
                 description=repo.get("description"),
                 updated_at=updated_at,
                 user_id=user_id,
+                url=repo.get("url"),
+                open_issues=repo.get("open_issues"),
+                score=0,
             )
             db_session.add(new_repo)
 
