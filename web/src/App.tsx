@@ -1,19 +1,17 @@
 import './App.css'
-import { Button } from './components/ui/button'
-import { useGitHubPopupLogin } from './auth/useGitHubPopupLogin'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Layout } from './components/layout/Layout'
+import { Repositories } from './pages/Repositories'
 
 function App() {
-  const { jwt, login } = useGitHubPopupLogin()
   return (
-    <div className='flex min-h-svh flex-col items-center justify-center'>
-      {!false ? (
-        <Button onClick={login}>Click Me</Button>
-      ) : (
-        <>
-          <h1>You're logged in</h1>
-        </>
-      )}
-    </div>
+    <BrowserRouter basename="/">
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Repositories />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 

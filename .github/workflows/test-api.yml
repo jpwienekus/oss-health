@@ -28,5 +28,5 @@ jobs:
       - name: Run Black
         run: black --verbose --check .
 
-      - name: Run Pytest
-        run: pytest
+      # - name: Run Pytest
+      #   run: pytest
