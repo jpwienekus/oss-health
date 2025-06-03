@@ -1,65 +1,30 @@
-import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Menu, Moon, Sun } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { Shield, Github } from "lucide-react"
 
-type HeaderProps = {
-  isDarkMode: boolean,
-  toggleDarkMode: () => void
-}
-
-export const Header = ({ isDarkMode, toggleDarkMode }: HeaderProps) => {
+export const Header = () => {
   return (
-    <header className="border-b bg-background sticky top-0 z-50">
-      <div className="container mx-auto px-2 py-2">
+    <header className="backdrop-blur-xl bg-black/20 border-b border-white/10">
+      <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/" className="text-2xl">
-              OSS-Health
-            </Link>
-          </div>
-
-          <nav className="hidden md:flex space-x-6 items-center">
-            <Link to="/" className="text-foreground hover:text-foreground/80 font-medium">
-              Projects
-            </Link>
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" onClick={toggleDarkMode} aria-label="Search">
-                {isDarkMode ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </Button>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <Shield className="w-6 h-6 text-white" />
             </div>
-          </nav>
-          <nav className="flex items-center md:hidden space-x-2">
-            <Button variant="ghost" size="icon" onClick={toggleDarkMode} aria-label="Search">
-              {isDarkMode ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                OSS Health
+              </h1>
+              <p className="text-sm text-gray-400">Dependency Security & Health Monitoring</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all duration-300 backdrop-blur-sm">
+              <Github className="w-4 h-4 inline mr-2" />
+              Connect GitHub
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Menu">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-
-                <DropdownMenuItem>
-                  <Link to="/" className="text-foreground hover:text-foreground/80 font-medium" >
-                    Repositories
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
+          </div>
         </div>
       </div>
-
     </header>
   )
 }

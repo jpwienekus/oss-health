@@ -1,47 +1,20 @@
-import { useEffect, useState } from "react"
-import { Header } from "./Header"
 import { Outlet } from "react-router-dom"
+import { Header } from "./Header"
 
 export const Layout = () => {
-  const THEME_KEY = 'theme'
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false
-    }
-
-    const savedTheme = localStorage.getItem(THEME_KEY)
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-
-    return savedTheme === 'dark' || (!savedTheme && prefersDark)
-  })
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-  }
-
-  useEffect(() => {
-    const root = window.document.documentElement
-
-    if (isDarkMode) {
-      root.classList.add('dark')
-      localStorage.setItem(THEME_KEY, 'dark')
-    } else {
-      root.classList.remove('dark')
-      localStorage.setItem(THEME_KEY, 'light')
-    }
-  }, [isDarkMode])
-
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-
-      <main className="container mx-auto px-4 py-8 flex-grow">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="col-span-12">
-            <Outlet />
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+      <div className="relative z-10">
+        <Header />
+        <div className="max-w-7xl mx-auto px-6 py-8">
+           <Outlet />
         </div>
-      </main>
+      </div>
     </div>
   )
 }
