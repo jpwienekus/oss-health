@@ -18,8 +18,12 @@ async def get_user(db_session: AsyncSession, user_id: int):
     ).first()
 
 
-async def add_user(db_session: AsyncSession, github_id: int, github_username: str):
-    user = UserDBModel(github_id=github_id, github_username=github_username)
+async def add_user(
+    db_session: AsyncSession, github_id: int, github_username: str, access_token: str
+):
+    user = UserDBModel(
+        github_id=github_id, github_username=github_username, access_token=access_token
+    )
     db_session.add(user)
     await db_session.commit()
 
@@ -27,23 +31,44 @@ async def add_user(db_session: AsyncSession, github_id: int, github_username: st
 
 
 async def get_sync_time(db_session: AsyncSession, user_id: int):
-    existing = (
+    user = (
         await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
     ).first()
 
-    if existing:
-        return existing.synced_at
+    if user:
+        return user.synced_at
+
+    return None
+
+
+async def get_access_token(db_session: AsyncSession, user_id: int):
+    user = (
+        await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
+    ).first()
+
+    if user:
+        return user.access_token
 
     return None
 
 
 async def update_sync_time(db_session: AsyncSession, user_id: int):
-    existing = (
+    user = (
         await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
     ).first()
 
-    if existing:
+    if user:
         now = datetime.now()
-        existing.synced_at = now
+        user.synced_at = now
         await db_session.commit()
         return now
+
+
+async def update_access_token(db_session: AsyncSession, user_id, access_token: str):
+    user = (
+        await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
+    ).first()
+
+    if user:
+        user.access_token = access_token
+        await db_session.commit()

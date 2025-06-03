@@ -5,23 +5,15 @@ import strawberry
 from strawberry.types import Info
 from app.auth.jwt_utils import decode_token
 from app.crud.repository import get_repository, upsert_user_repositories
-from app.crud.user import get_sync_time, get_user, update_sync_time
+from app.crud.user import get_access_token, get_sync_time, update_sync_time
 from app.models import Repository as RepositoryDBModel
-from app.configuration import settings
 
 
 def get_user_id(info: Info) -> int:
     token = (
         info.context["request"].headers.get("Authorization", "").replace("Bearer ", "")
     )
-    return int(decode_token(token)["sub"])
-
-
-def get_access_token(info: Info) -> str:
-    token = (
-        info.context["request"].headers.get("Authorization", "").replace("Bearer ", "")
-    )
-    return decode_token(token)["access_token"]
+    return decode_token(token)
 
 
 @strawberry.type
@@ -72,7 +64,7 @@ class Mutation:
         db = info.context["db"]
 
         async with httpx.AsyncClient() as client:
-            access_token = get_access_token(info)
+            access_token = get_access_token(db, user_id)
 
             gh_response = await client.get(
                 "https://api.github.com/user/repos?per_page=100&type=public&sort=updated",

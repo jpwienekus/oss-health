@@ -66,8 +66,8 @@ async def github_token_exchange(payload: dict, db_session: DBSessionDep):
     user = await get_user_by_github_id(db_session, github_id)
 
     if not user:
-        user = await add_user(db_session, github_id, username)
+        user = await add_user(db_session, github_id, username, access_token)
 
-    jwt_token = create_token_pair(user.id, access_token)
+    jwt_token = create_token_pair(user.id)
 
     return {"access_token": jwt_token}
