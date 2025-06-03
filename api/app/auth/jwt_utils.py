@@ -4,11 +4,10 @@ from fastapi import HTTPException
 from app.configuration import settings
 
 
-def create_token_pair(user_id: int, access_token: str):
+def create_token_pair(user_id: int):
     return jwt.encode(
         {
             "sub": str(user_id),
-            "access_token": access_token,
             "exp": datetime.now() + timedelta(minutes=15),
         },
         settings.secret_key,
@@ -21,6 +20,6 @@ def decode_token(token: str):
         payload = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
-        return payload
+        return int(payload["sub"])
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")

@@ -1,8 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { generateCodeChallenge, generateCodeVerifier } from "./pkce";
+import { jwtDecode } from "jwt-decode"
+
+interface JwtPayload {
+  exp: number
+  sub: string
+}
 
 export function useGitHubPopupLogin() {
   const [jwt, setJwt] = useState<string | null>(localStorage.getItem("jwt"))
+
+  useEffect(() => {
+    if (!jwt) {
+      return
+    }
+
+    const { exp } = jwtDecode<JwtPayload>(jwt)
+    const expiryTime = exp * 1000
+    const now = Date.now()
+    const timeout = expiryTime - now
+
+    if (timeout <= 0) {
+      logout()
+      return
+    }
+
+    const timer = setTimeout(() => {
+      logout()
+    }, timeout)
+
+    return () => clearTimeout(timer)
+  }, [jwt])
+
+  const logout = () => {
+    localStorage.removeItem("jwt")
+    setJwt(null)
+  }
 
   const login = async () => {
     const codeVerifier = generateCodeVerifier()
@@ -17,7 +50,7 @@ export function useGitHubPopupLogin() {
       }
     }, 500)
 
-    window.addEventListener("message", async (event) => {
+    const messageHandler = async (event: MessageEvent) => {
       if (process.env.NODE_ENV !== 'development' && event.origin !== window.location.origin) {
         return
       }
@@ -29,13 +62,15 @@ export function useGitHubPopupLogin() {
         const response = await fetch(`${url}/auth/github/token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({code, code_verifier: verifier})
+          body: JSON.stringify({ code, code_verifier: verifier })
         })
         const data = await response.json()
         setJwt(data.access_token)
         localStorage.setItem("jwt", data.access_token)
       }
-    })
+    }
+
+    window.addEventListener("message", messageHandler, { once: true })
   }
 
   return { jwt, login }
