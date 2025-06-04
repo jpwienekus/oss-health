@@ -1,17 +1,45 @@
-import { useGitHubPopupLogin } from "@/auth/useGitHubPopupLogin"
-// import { RequestGithubLogin } from "@/components/repositories/RequestGithubLogin"
 import { getClient } from "@/graphql/client"
-// import { SYNC_REPOS } from "@/graphql/mutations"
+import { SYNC_REPOS } from "@/graphql/mutations"
 import { GET_REPOS } from "@/graphql/queries"
 import type { Repository } from "@/types"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Clock, Database, Download, Github, Star } from "lucide-react"
+import { Activity, Calendar, Eye, GitFork, Github, RefreshCcw, Star } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { useAuth } from "@/auth/AuthContext"
 
 export const Repositories = () => {
-  const { jwt } = useGitHubPopupLogin()
+  const { jwt } = useAuth()
   const [data, setData] = useState<Repository[]>([])
-  const [syncDate, setSyncDate] = useState<Date | undefined>(undefined)
+  const [syncDate, setSyncDate] = useState<string | null>(null)
+  const [isSyncing, setIsSyncing] = useState<boolean>(false)
+
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<"health" | "stars" | "updated" | "name">("health")
+
+  const filteredAndSortedRepositories = data
+    .filter(repo =>
+      repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      repo.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a: Repository, b: Repository) => {
+      switch (sortBy) {
+        case "health":
+          return b.healthScore - a.healthScore
+        case "stars":
+          return b.stars - a.stars
+        case "updated":
+          return (new Date(b.updatedAt)).getTime() - (new Date(a.updatedAt)).getTime()
+        case "name":
+          return a.name.localeCompare(b.name)
+        default:
+          return 0
+      }
+
+    })
 
   const fetchRepositories = async () => {
     if (!jwt) {
@@ -20,47 +48,48 @@ export const Repositories = () => {
 
     const client = getClient(jwt)
     const response = await client.request<{ repositories: { repositories: Repository[], syncDate: string } }>(GET_REPOS)
+
     setData(response.repositories.repositories)
-    setSyncDate(response.repositories.syncDate ? new Date(response.repositories.syncDate) : undefined)
+    setSyncDate(response.repositories.syncDate ? response.repositories.syncDate : null)
 
   }
 
-  // const syncRepositories = async () => {
-  //   if (!jwt) {
-  //     return
-  //   }
-  //
-  //   const client = getClient(jwt)
-  //   const response = await client.request<{ syncRepositories: { repositories: Repository[], syncDate: string } }>(SYNC_REPOS)
-  //   setData(response.syncRepositories.repositories)
-  //   setSyncDate(response.syncRepositories.syncDate ? new Date(response.syncRepositories.syncDate) : undefined)
-  // }
+  const syncRepositories = async () => {
+    if (!jwt) {
+      return
+    }
+
+    setIsSyncing(true)
+    const client = getClient(jwt)
+    const response = await client.request<{ syncRepositories: { repositories: Repository[], syncDate: string } }>(SYNC_REPOS)
+    setData(response.syncRepositories.repositories)
+    setSyncDate(response.syncRepositories.syncDate)
+    setIsSyncing(false)
+  }
 
   useEffect(() => {
     fetchRepositories()
   }, []);
+  useEffect(() => {
+    fetchRepositories()
+  }, [jwt]);
 
-  const getScoreColor = (score: number) => {
+  const getHealthScoreBadge = (score: number) => {
     if (score >= 80) {
-      return 'text-green-400'
+      return 'bg-green-100 text-green-800'
     }
     if (score >= 60) {
-      return 'text-yellow-400'
+      return 'bg-yellow-100 text-yellow-800'
     }
-    return 'text-red-400'
+    return 'bg-red-100 text-red-800'
   }
 
-  const getScoreBg = (score: number) => {
-    if (score >= 80) {
-      return 'bg-green-500/20 border-green-500/30'
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) {
+      return '-'
     }
-    if (score >= 60) {
-      return 'bg-yellow-500/20 border-yellow-500/30'
-    }
-    return 'bg-red-500/20 border-red-500/30'
-  }
 
-  const formatDate = (date: Date | undefined) => {
+    const date = new Date(dateString)
     if (!date) {
       return '-'
     }
@@ -71,88 +100,161 @@ export const Repositories = () => {
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
-      hour12: false,
+      hour12: false
     })
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div>
+      {jwt}
+      {data.length}
+      {data.length > 0 && (
         <div>
-          <h2 className="text-3xl font-bold text-white">Health Reports</h2>
-          <p className="text-gray-400">Monitor your project dependencies</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
-            <Download className="w-4 h-4 inline mr-2" />
-            Export HTML
-          </Button>
-          <Button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
-            <Download className="w-4 h-4 inline mr-2" />
-            Export MD
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid gap-6">
-        {data.map((repository, i) => (
-          <div key={i} className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all duration-300">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-2">{repository.name}</h3>
-                <p className="text-gray-400">Scanned on {formatDate(new Date())}</p>
-              </div>
-              <div className={`px-4 py-2 rounded-xl border ${getScoreBg(2)}`}>
-                <span className={`text-2xl font-bold ${getScoreColor(2)}`}>2</span>
-                <span className="text-gray-400 text-sm ml-1">/100</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md-6">
-              <div className="text-center">
-                <div className="w-12  h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Database className="w-6 h-6 text-blue-400" />
-                </div>
-                <div className="text-2xl font-bold text-white">33</div>
-                <div className="text-sm text-gray-400">Dependencies</div>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12  h-12 bg-red-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <AlertTriangle className="w-6 h-6 text-red-400" />
-                </div>
-                <div className="text-2xl font-bold text-white">3</div>
-                <div className="text-sm text-gray-400">Vulnerabilities</div>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12  h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Star className="w-6 h-6 text-yellow-400" />
-                </div>
-                <div className="text-2xl font-bold text-white">3</div>
-                <div className="text-sm text-gray-400">Stars</div>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12  h-12 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Clock className="w-6 h-6 text-green-400" />
-                </div>
-                <div className="text-2xl font-bold text-white">3</div>
-                <div className="text-sm text-gray-400">Last Commit</div>
-              </div>
-            </div>
-
-            <div className="flex space-x-4 mt-3">
-              <Button className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300">
-                View Detailed Report
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Repositories</h2>
+            <p className="text-gray-600">Monitor dependency health and security across all your projects</p>
+            <p className="text-gray-600">Last synced: {formatDate(syncDate)}
+              <Button size="icon" variant="ghost" onClick={syncRepositories}>
+                <RefreshCcw className={`h-1 w-1 ${isSyncing ? 'animate-spin' : ''}`} />
               </Button>
-              <Button className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounder-lg transition-all duration-300">
-                <Github className="w-4 h-4" />
-              </Button>
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex-1">
+              <Input placeholder="Search repositories..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full" />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={sortBy === "health" ? "default" : "outline"}
+                onClick={() => setSortBy("health")}
+                size="sm"
+              >Health Score</Button>
+              <Button
+                variant={sortBy === "stars" ? "default" : "outline"}
+                onClick={() => setSortBy("stars")}
+                size="sm"
+              >Stars</Button>
+              <Button
+                variant={sortBy === "updated" ? "default" : "outline"}
+                onClick={() => setSortBy("updated")}
+                size="sm"
+              >Updated</Button>
+              <Button
+                variant={sortBy === "name" ? "default" : "outline"}
+                onClick={() => setSortBy("name")}
+                size="sm"
+              >Name</Button>
             </div>
           </div>
-        ))}
-      </div>
+
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredAndSortedRepositories.map((repository, index) => (
+              <Card key={index} className="hover:shadow-lg transition shadow">
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <span>{repository.name}</span>
+                        {
+                          repository.private && (
+                            <Badge variant="secondary" className="text-xs">Private</Badge>
+                          )
+                        }
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        {repository.description ?? '-'}
+                      </CardDescription>
+                    </div>
+                    <Badge className={getHealthScoreBadge(repository.healthScore)}>
+                      {repository.healthScore}
+                    </Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-4 h-4" />
+                        Maintenance
+                      </span>
+                      <span className="font-medium">{repository.maintenanceScore}</span>
+                    </div>
+                    <Progress value={repository.maintenanceScore} className="h2" />
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-4 h-4" />
+                        Community
+                      </span>
+                      <span className="font-medium">{repository.communityScore}</span>
+                    </div>
+                    <Progress value={repository.communityScore} className="h2" />
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-4 h-4" />
+                        Release Cadence
+                      </span>
+                      <span className="font-medium">{repository.releaseCadenceScore}</span>
+                    </div>
+                    <Progress value={repository.releaseCadenceScore} className="h2" />
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 pt-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4" />
+                      <span>{repository.stars}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <GitFork className="h-4 w-4" />
+                      <span>{repository.forks}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      <span>{repository.watchers}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatDate(repository.updatedAt)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <Badge className="">{333} vulnerabilities</Badge>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="" target="_blank" rel="noopener noreferrer">
+                        View on GitHub
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {filteredAndSortedRepositories.length === 0 && (
+            <div className="text-center py-12">
+              <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No repositories found</h3>
+              <p className="text-gray-500">Try adjusting your search terms</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {data.length === 0 && (
+        <div className="text-center py-12">
+          <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No repositories found</h3>
+          <p className="text-gray-500">Log in with your GitHub account to view your repositories</p>
+        </div>
+      )}
+
     </div>
   )
 }

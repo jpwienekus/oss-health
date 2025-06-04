@@ -41,6 +41,7 @@ async def upsert_user_repositories(
             existing.open_issues = repo.get("open_issues", existing.open_issues)
             existing.score = 0
         else:
+            print(repo)
             date = repo.get("updated_at")
             updated_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ") if date else None
             new_repo = RepositoryDBModel(

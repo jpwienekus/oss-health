@@ -1,30 +1,56 @@
+import { useGitHubPopupLogin } from "@/auth/useGitHubPopupLogin"
 import { Button } from "@/components/ui/button"
+import { getClient } from "@/graphql/client"
+import { GET_USERNAME } from "@/graphql/queries"
 import { Shield, Github } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export const Header = () => {
+  const { jwt, login } = useGitHubPopupLogin()
+  const [username, setUsername] = useState<string>('')
+
+  const fetchUsername = async () => {
+    if (jwt) {
+      const client = getClient(jwt)
+      const response = await client.request<{ username: string }>(GET_USERNAME)
+      setUsername(response.username)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsername()
+  }, [])
+
+
   return (
-    <header className="backdrop-blur-xl bg-black/20 border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+    <header className="bg-white shadow-sm border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
+            <Shield className="h-8 w-8 text-gray-900" />
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                OSS Health
-              </h1>
-              <p className="text-sm text-gray-400">Dependency Security & Health Monitoring</p>
+              <h1 className="text-2xl font-bold text-gray-900">OSS Health</h1>
+              <p className="text-sm text-gray-500">Dependency Security & Health Monitoring</p>
             </div>
           </div>
+
           <div className="flex items-center space-x-4">
-            <Button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all duration-300 backdrop-blur-sm">
-              <Github className="w-4 h-4 inline mr-2" />
-              Connect GitHub
-            </Button>
+            {jwt ? (
+              <span>
+                <Github className="w-4 h-4 inline mr-2" />
+                {username}
+              </span>
+            ) : (
+              <Button onClick={login} className="px-4 py-2">
+                <Github className="w-4 h-4 inline mr-2" />
+                Log in with GitHub
+              </Button>
+            )
+            }
           </div>
         </div>
       </div>
+
     </header>
   )
 }
