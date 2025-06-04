@@ -1,4 +1,4 @@
-import { useGitHubPopupLogin } from "@/auth/useGitHubPopupLogin"
+import { useAuth } from "@/auth/AuthContext"
 import { Button } from "@/components/ui/button"
 import { getClient } from "@/graphql/client"
 import { GET_USERNAME } from "@/graphql/queries"
@@ -6,20 +6,21 @@ import { Shield, Github } from "lucide-react"
 import { useEffect, useState } from "react"
 
 export const Header = () => {
-  const { jwt, login } = useGitHubPopupLogin()
+  const { jwt, loginWithGitHub } = useAuth()
   const [username, setUsername] = useState<string>('')
 
-  const fetchUsername = async () => {
-    if (jwt) {
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      if (!jwt) {
+        return
+      }
       const client = getClient(jwt)
       const response = await client.request<{ username: string }>(GET_USERNAME)
       setUsername(response.username)
     }
-  }
-
-  useEffect(() => {
     fetchUsername()
-  }, [])
+  }, [jwt])
 
 
   return (
@@ -41,7 +42,7 @@ export const Header = () => {
                 {username}
               </span>
             ) : (
-              <Button onClick={login} className="px-4 py-2">
+              <Button onClick={loginWithGitHub} className="px-4 py-2">
                 <Github className="w-4 h-4 inline mr-2" />
                 Log in with GitHub
               </Button>

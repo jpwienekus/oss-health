@@ -41,19 +41,6 @@ export const Repositories = () => {
 
     })
 
-  const fetchRepositories = async () => {
-    if (!jwt) {
-      return
-    }
-
-    const client = getClient(jwt)
-    const response = await client.request<{ repositories: { repositories: Repository[], syncDate: string } }>(GET_REPOS)
-
-    setData(response.repositories.repositories)
-    setSyncDate(response.repositories.syncDate ? response.repositories.syncDate : null)
-
-  }
-
   const syncRepositories = async () => {
     if (!jwt) {
       return
@@ -68,9 +55,18 @@ export const Repositories = () => {
   }
 
   useEffect(() => {
-    fetchRepositories()
-  }, []);
-  useEffect(() => {
+    const fetchRepositories = async () => {
+      if (!jwt) {
+        return
+      }
+
+      const client = getClient(jwt)
+      const response = await client.request<{ repositories: { repositories: Repository[], syncDate: string } }>(GET_REPOS)
+
+      setData(response.repositories.repositories)
+      setSyncDate(response.repositories.syncDate ? response.repositories.syncDate : null)
+
+    }
     fetchRepositories()
   }, [jwt]);
 
@@ -106,8 +102,6 @@ export const Repositories = () => {
 
   return (
     <div>
-      {jwt}
-      {data.length}
       {data.length > 0 && (
         <div>
           <div className="mb-6">

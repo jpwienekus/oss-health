@@ -1,15 +1,73 @@
-import { createContext, useContext, type ReactNode } from 'react'
-import { useGitHubPopupLogin } from './useGitHubPopupLogin'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { generateCodeChallenge, generateCodeVerifier } from './pkce'
 
-const AuthContext = createContext<ReturnType<typeof useGitHubPopupLogin> | null>(null)
+const AuthContext = createContext<{
+  jwt: string | null
+  loginWithGitHub: () => void
+}>({ jwt: null, loginWithGitHub: () => { } })
 
 type AuthProviderProps = {
   children: ReactNode
 }
 
+const BACKEND_URL = "http://localhost:8000"
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const auth = useGitHubPopupLogin()
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
+  const [jwt, setJwt] = useState<string | null>(null)
+
+  useEffect(() => {
+    const token = localStorage.getItem("jwt")
+    if (token) {
+      setJwt(token)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handler = async (event: MessageEvent) => {
+      if (process.env.NODE_ENV !== 'development' && event.origin !== window.location.origin) {
+        return
+      }
+
+      const { type, code } = event.data
+
+      if (type === "github-oauth-code" && code) {
+        const verifier = localStorage.getItem("pkce_verifier")
+        const res = await fetch(`${BACKEND_URL}/auth/github/token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, code_verifier: verifier }),
+        })
+        const data = await res.json()
+        localStorage.setItem("jwt", data.access_token)
+        setJwt(data.access_token)
+      }
+    }
+
+    window.addEventListener("message", handler)
+    return () => window.removeEventListener("message", handler)
+  }, [])
+
+
+  // GitHub login popup logic
+  const loginWithGitHub = async () => {
+    const verifier = generateCodeVerifier()
+    const challenge = await generateCodeChallenge(verifier)
+    localStorage.setItem("pkce_verifier", verifier)
+
+    // const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=read:user&response_type=code&redirect_uri=${encodeURIComponent(
+    //   window.location.origin + "/oauth-callback"
+    // )}&code_challenge_method=S256&code_challenge=${challenge}`
+    const authUrl = `${BACKEND_URL}/auth/github/login?code_challenge=${challenge}`
+
+    window.open(authUrl, "_blank", "popup,width=500,height=600")
+  }
+
+  // const auth = useGitHubPopupLogin()
+  return (
+    <AuthContext.Provider value={{ jwt, loginWithGitHub }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {
