@@ -50,8 +50,7 @@ class Query:
         user_id = get_user_id(info)
         db = info.context["db"]
         user = await get_user(db, user_id)
-        return user.github_username if user is not None else ''
-
+        return user.github_username if user is not None else ""
 
     @strawberry.field
     async def repositories(self, info: Info) -> RepositoriesResponse:
@@ -73,7 +72,7 @@ class Mutation:
 
         async with httpx.AsyncClient() as client:
             access_token = await get_access_token(db, user_id)
-            print('^' * 100)
+            print("^" * 100)
             print(access_token)
 
             gh_response = await client.get(

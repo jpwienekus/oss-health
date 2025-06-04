@@ -66,7 +66,9 @@ async def update_sync_time(db_session: AsyncSession, user_id: int):
 
 async def update_access_token(db_session: AsyncSession, github_id, access_token: str):
     user = (
-        await db_session.scalars(select(UserDBModel).where(UserDBModel.github_id == github_id))
+        await db_session.scalars(
+            select(UserDBModel).where(UserDBModel.github_id == github_id)
+        )
     ).first()
 
     if user:
