@@ -1,14 +1,13 @@
-import { useAuth } from "@/auth/AuthContext"
-import { Button } from "@/components/ui/button"
-import { getClient } from "@/graphql/client"
-import { GET_USERNAME } from "@/graphql/queries"
-import { Shield, Github } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useAuth } from '@/auth/AuthContext'
+import { Button } from '@/components/ui/button'
+import { getClient } from '@/graphql/client'
+import { GET_USERNAME } from '@/graphql/queries'
+import { Shield, Github } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export const Header = () => {
   const { jwt, loginWithGitHub } = useAuth()
   const [username, setUsername] = useState<string>('')
-
 
   useEffect(() => {
     const fetchUsername = async () => {
@@ -22,7 +21,6 @@ export const Header = () => {
     fetchUsername()
   }, [jwt])
 
-
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,7 +29,9 @@ export const Header = () => {
             <Shield className="h-8 w-8 text-gray-900" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">OSS Health</h1>
-              <p className="text-sm text-gray-500">Dependency Security & Health Monitoring</p>
+              <p className="text-sm text-gray-500">
+                Dependency Security & Health Monitoring
+              </p>
             </div>
           </div>
 
@@ -46,12 +46,10 @@ export const Header = () => {
                 <Github className="w-4 h-4 inline mr-2" />
                 Log in with GitHub
               </Button>
-            )
-            }
+            )}
           </div>
         </div>
       </div>
-
     </header>
   )
 }

@@ -1,15 +1,29 @@
-import { getClient } from "@/graphql/client"
-import { SYNC_REPOS } from "@/graphql/mutations"
-import { GET_REPOS } from "@/graphql/queries"
-import type { Repository } from "@/types"
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Activity, Calendar, Eye, GitFork, Github, RefreshCcw, Star } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { useAuth } from "@/auth/AuthContext"
+import { getClient } from '@/graphql/client'
+import { SYNC_REPOS } from '@/graphql/mutations'
+import { GET_REPOS } from '@/graphql/queries'
+import type { Repository } from '@/types'
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Activity,
+  Calendar,
+  Eye,
+  GitFork,
+  Github,
+  RefreshCcw,
+  Star,
+} from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { useAuth } from '@/auth/AuthContext'
 
 export const Repositories = () => {
   const { jwt } = useAuth()
@@ -18,27 +32,31 @@ export const Repositories = () => {
   const [isSyncing, setIsSyncing] = useState<boolean>(false)
 
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState<"health" | "stars" | "updated" | "name">("health")
+  const [sortBy, setSortBy] = useState<'health' | 'stars' | 'updated' | 'name'>(
+    'health',
+  )
 
   const filteredAndSortedRepositories = data
-    .filter(repo =>
-      repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repo.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    .filter(
+      (repo) =>
+        repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
     .sort((a: Repository, b: Repository) => {
       switch (sortBy) {
-        case "health":
+        case 'health':
           return b.healthScore - a.healthScore
-        case "stars":
+        case 'stars':
           return b.stars - a.stars
-        case "updated":
-          return (new Date(b.updatedAt)).getTime() - (new Date(a.updatedAt)).getTime()
-        case "name":
+        case 'updated':
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          )
+        case 'name':
           return a.name.localeCompare(b.name)
         default:
           return 0
       }
-
     })
 
   const syncRepositories = async () => {
@@ -48,7 +66,9 @@ export const Repositories = () => {
 
     setIsSyncing(true)
     const client = getClient(jwt)
-    const response = await client.request<{ syncRepositories: { repositories: Repository[], syncDate: string } }>(SYNC_REPOS)
+    const response = await client.request<{
+      syncRepositories: { repositories: Repository[]; syncDate: string }
+    }>(SYNC_REPOS)
     setData(response.syncRepositories.repositories)
     setSyncDate(response.syncRepositories.syncDate)
     setIsSyncing(false)
@@ -61,14 +81,17 @@ export const Repositories = () => {
       }
 
       const client = getClient(jwt)
-      const response = await client.request<{ repositories: { repositories: Repository[], syncDate: string } }>(GET_REPOS)
+      const response = await client.request<{
+        repositories: { repositories: Repository[]; syncDate: string }
+      }>(GET_REPOS)
 
       setData(response.repositories.repositories)
-      setSyncDate(response.repositories.syncDate ? response.repositories.syncDate : null)
-
+      setSyncDate(
+        response.repositories.syncDate ? response.repositories.syncDate : null,
+      )
     }
     fetchRepositories()
-  }, [jwt]);
+  }, [jwt])
 
   const getHealthScoreBadge = (score: number) => {
     if (score >= 80) {
@@ -96,7 +119,7 @@ export const Repositories = () => {
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
-      hour12: false
+      hour12: false,
     })
   }
 
@@ -105,46 +128,62 @@ export const Repositories = () => {
       {data.length > 0 && (
         <div>
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Repositories</h2>
-            <p className="text-gray-600">Monitor dependency health and security across all your projects</p>
-            <p className="text-gray-600">Last synced: {formatDate(syncDate)}
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Your Repositories
+            </h2>
+            <p className="text-gray-600">
+              Monitor dependency health and security across all your projects
+            </p>
+            <p className="text-gray-600">
+              Last synced: {formatDate(syncDate)}
               <Button size="icon" variant="ghost" onClick={syncRepositories}>
-                <RefreshCcw className={`h-1 w-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                <RefreshCcw
+                  className={`h-1 w-1 ${isSyncing ? 'animate-spin' : ''}`}
+                />
               </Button>
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1">
-              <Input placeholder="Search repositories..."
+              <Input
+                placeholder="Search repositories..."
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full" />
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
             </div>
             <div className="flex gap-2">
               <Button
-                variant={sortBy === "health" ? "default" : "outline"}
-                onClick={() => setSortBy("health")}
+                variant={sortBy === 'health' ? 'default' : 'outline'}
+                onClick={() => setSortBy('health')}
                 size="sm"
-              >Health Score</Button>
+              >
+                Health Score
+              </Button>
               <Button
-                variant={sortBy === "stars" ? "default" : "outline"}
-                onClick={() => setSortBy("stars")}
+                variant={sortBy === 'stars' ? 'default' : 'outline'}
+                onClick={() => setSortBy('stars')}
                 size="sm"
-              >Stars</Button>
+              >
+                Stars
+              </Button>
               <Button
-                variant={sortBy === "updated" ? "default" : "outline"}
-                onClick={() => setSortBy("updated")}
+                variant={sortBy === 'updated' ? 'default' : 'outline'}
+                onClick={() => setSortBy('updated')}
                 size="sm"
-              >Updated</Button>
+              >
+                Updated
+              </Button>
               <Button
-                variant={sortBy === "name" ? "default" : "outline"}
-                onClick={() => setSortBy("name")}
+                variant={sortBy === 'name' ? 'default' : 'outline'}
+                onClick={() => setSortBy('name')}
                 size="sm"
-              >Name</Button>
+              >
+                Name
+              </Button>
             </div>
           </div>
-
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredAndSortedRepositories.map((repository, index) => (
@@ -154,17 +193,19 @@ export const Repositories = () => {
                     <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <span>{repository.name}</span>
-                        {
-                          repository.private && (
-                            <Badge variant="secondary" className="text-xs">Private</Badge>
-                          )
-                        }
+                        {repository.private && (
+                          <Badge variant="secondary" className="text-xs">
+                            Private
+                          </Badge>
+                        )}
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {repository.description ?? '-'}
                       </CardDescription>
                     </div>
-                    <Badge className={getHealthScoreBadge(repository.healthScore)}>
+                    <Badge
+                      className={getHealthScoreBadge(repository.healthScore)}
+                    >
                       {repository.healthScore}
                     </Badge>
                   </div>
@@ -177,27 +218,42 @@ export const Repositories = () => {
                         <Activity className="w-4 h-4" />
                         Maintenance
                       </span>
-                      <span className="font-medium">{repository.maintenanceScore}</span>
+                      <span className="font-medium">
+                        {repository.maintenanceScore}
+                      </span>
                     </div>
-                    <Progress value={repository.maintenanceScore} className="h2" />
+                    <Progress
+                      value={repository.maintenanceScore}
+                      className="h2"
+                    />
 
                     <div className="flex justify-between items-center text-sm">
                       <span className="flex items-center gap-1">
                         <Activity className="w-4 h-4" />
                         Community
                       </span>
-                      <span className="font-medium">{repository.communityScore}</span>
+                      <span className="font-medium">
+                        {repository.communityScore}
+                      </span>
                     </div>
-                    <Progress value={repository.communityScore} className="h2" />
+                    <Progress
+                      value={repository.communityScore}
+                      className="h2"
+                    />
 
                     <div className="flex justify-between items-center text-sm">
                       <span className="flex items-center gap-1">
                         <Activity className="w-4 h-4" />
                         Release Cadence
                       </span>
-                      <span className="font-medium">{repository.releaseCadenceScore}</span>
+                      <span className="font-medium">
+                        {repository.releaseCadenceScore}
+                      </span>
                     </div>
-                    <Progress value={repository.releaseCadenceScore} className="h2" />
+                    <Progress
+                      value={repository.releaseCadenceScore}
+                      className="h2"
+                    />
                   </div>
 
                   <div className="flex flex-wrap gap-4 pt-2 text-sm text-gray-600">
@@ -234,7 +290,9 @@ export const Repositories = () => {
           {filteredAndSortedRepositories.length === 0 && (
             <div className="text-center py-12">
               <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No repositories found</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No repositories found
+              </h3>
               <p className="text-gray-500">Try adjusting your search terms</p>
             </div>
           )}
@@ -244,11 +302,14 @@ export const Repositories = () => {
       {data.length === 0 && (
         <div className="text-center py-12">
           <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No repositories found</h3>
-          <p className="text-gray-500">Log in with your GitHub account to view your repositories</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No repositories found
+          </h3>
+          <p className="text-gray-500">
+            Log in with your GitHub account to view your repositories
+          </p>
         </div>
       )}
-
     </div>
   )
 }

@@ -1,7 +1,6 @@
-import { useGitHubPopupLogin } from "@/auth/useGitHubPopupLogin"
-import { Button } from "@/components/ui/button"
-import { IconBrandGithub } from "@tabler/icons-react"
-
+import { useGitHubPopupLogin } from '@/auth/useGitHubPopupLogin'
+import { Button } from '@/components/ui/button'
+import { IconBrandGithub } from '@tabler/icons-react'
 
 export const RequestGithubLogin = () => {
   const { login } = useGitHubPopupLogin()
@@ -15,5 +14,4 @@ export const RequestGithubLogin = () => {
       </Button>
     </>
   )
-
 }
