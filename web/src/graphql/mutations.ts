@@ -1,4 +1,4 @@
-import { gql } from "graphql-request";
+import { gql } from 'graphql-request'
 
 export const SYNC_REPOS = gql`
   mutation SyncRepositories {
@@ -10,7 +10,7 @@ export const SYNC_REPOS = gql`
         url
         openIssues
         score
-      } 
+      }
       syncDate
     }
   }

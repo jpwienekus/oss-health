@@ -1,124 +1,313 @@
-import { useGitHubPopupLogin } from "@/auth/useGitHubPopupLogin"
-import { RequestGithubLogin } from "@/components/repositories/RequestGithubLogin"
-import type { ColumnDef } from "@tanstack/react-table"
-import { getClient } from "@/graphql/client"
-import { SYNC_REPOS } from "@/graphql/mutations"
-import { GET_REPOS } from "@/graphql/queries"
-import type { Repository } from "@/types"
-import { DataTable } from "@/components/repositories/Datatable"
-import { useEffect, useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { IconBrandGithub } from "@tabler/icons-react"
+import { getClient } from '@/graphql/client'
+import { SYNC_REPOS } from '@/graphql/mutations'
+import { GET_REPOS } from '@/graphql/queries'
+import type { Repository } from '@/types'
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Activity,
+  Calendar,
+  Eye,
+  GitFork,
+  Github,
+  RefreshCcw,
+  Star,
+} from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { useAuth } from '@/auth/AuthContext'
 
 export const Repositories = () => {
-  const { jwt } = useGitHubPopupLogin()
+  const { jwt } = useAuth()
   const [data, setData] = useState<Repository[]>([])
-  const [syncDate, setSyncDate] = useState<Date | undefined>(undefined)
-  const columns: ColumnDef<Repository>[] = [
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => <div className="w-[100px]">{row.getValue("name")}</div>,
-    },
-    {
-      accessorKey: "description",
-      header: "Description",
-      cell: ({ row }) => {
-        return (
-          <div className="max-w-[500px] truncate">
-            {row.getValue("description")}
-          </div>
-        )
+  const [syncDate, setSyncDate] = useState<string | null>(null)
+  const [isSyncing, setIsSyncing] = useState<boolean>(false)
+
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'health' | 'stars' | 'updated' | 'name'>(
+    'health',
+  )
+
+  const filteredAndSortedRepositories = data
+    .filter(
+      (repo) =>
+        repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    .sort((a: Repository, b: Repository) => {
+      switch (sortBy) {
+        case 'health':
+          return b.healthScore - a.healthScore
+        case 'stars':
+          return b.stars - a.stars
+        case 'updated':
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          )
+        case 'name':
+          return a.name.localeCompare(b.name)
+        default:
+          return 0
       }
-    },
-    {
-      accessorKey: "score",
-      header: "Score",
-      cell: ({ row }) => {
-        const score: number = row.getValue("score")
-        const variant = score < 7 ? 'red' : (score < 8 ? 'yellow' : 'green')
-
-        return (
-          <div>
-            <Badge variant="secondary" className={`bg-${variant}-500 text-white dark:bg-${variant}-600`}>{score}</Badge>
-          </div>
-        )
-      }
-    },
-    {
-      accessorKey: "openIssues",
-      header: "Open Issues",
-      cell: ({ row }) => {
-        return (
-          <div>
-            {row.getValue("openIssues")}
-          </div>
-        )
-      }
-    },
-    {
-      accessorKey: "updatedAt",
-      header: "Updated At",
-      cell: ({ row }) => {
-        const dateFormatted = new Date(row.getValue('updatedAt')).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        })
-
-        return <div>{dateFormatted}</div>
-      },
-    },
-    {
-      accessorKey: "url",
-      header: "",
-      cell: ({ row }) => {
-        const url: string = row.getValue("url")
-        return <div>
-          <a href={url.replace("api.", "").replace("repos/", "")}
-            target="_blank"
-          >
-            <IconBrandGithub size={15} />
-          </a>
-        </div>
-      },
-    },
-  ]
-
-  const fetchRepositories = async () => {
-    if (!jwt) {
-      return
-    }
-
-    const client = getClient(jwt)
-    const response = await client.request<{ repositories: { repositories: Repository[], syncDate: string } }>(GET_REPOS)
-    setData(response.repositories.repositories)
-    setSyncDate(response.repositories.syncDate ? new Date(response.repositories.syncDate) : undefined)
-
-  }
+    })
 
   const syncRepositories = async () => {
     if (!jwt) {
       return
     }
 
+    setIsSyncing(true)
     const client = getClient(jwt)
-    const response = await client.request<{ syncRepositories: { repositories: Repository[], syncDate: string } }>(SYNC_REPOS)
+    const response = await client.request<{
+      syncRepositories: { repositories: Repository[]; syncDate: string }
+    }>(SYNC_REPOS)
     setData(response.syncRepositories.repositories)
-    setSyncDate(response.syncRepositories.syncDate ? new Date(response.syncRepositories.syncDate) : undefined)
+    setSyncDate(response.syncRepositories.syncDate)
+    setIsSyncing(false)
   }
 
   useEffect(() => {
+    const fetchRepositories = async () => {
+      if (!jwt) {
+        return
+      }
+
+      const client = getClient(jwt)
+      const response = await client.request<{
+        repositories: { repositories: Repository[]; syncDate: string }
+      }>(GET_REPOS)
+
+      setData(response.repositories.repositories)
+      setSyncDate(
+        response.repositories.syncDate ? response.repositories.syncDate : null,
+      )
+    }
     fetchRepositories()
-  }, []);
+  }, [jwt])
+
+  const getHealthScoreBadge = (score: number) => {
+    if (score >= 80) {
+      return 'bg-green-100 text-green-800'
+    }
+    if (score >= 60) {
+      return 'bg-yellow-100 text-yellow-800'
+    }
+    return 'bg-red-100 text-red-800'
+  }
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) {
+      return '-'
+    }
+
+    const date = new Date(dateString)
+    if (!date) {
+      return '-'
+    }
+
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    })
+  }
 
   return (
-    <div className='flex min-h-svh flex-col items-center'>
-      {!jwt ? (
-        <RequestGithubLogin />
-      ) : (
-        <div className="container mx-auto">
-          <DataTable columns={columns} data={data} syncDate={syncDate} sync={syncRepositories} />
+    <div>
+      {data.length > 0 && (
+        <div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Your Repositories
+            </h2>
+            <p className="text-gray-600">
+              Monitor dependency health and security across all your projects
+            </p>
+            <p className="text-gray-600">
+              Last synced: {formatDate(syncDate)}
+              <Button size="icon" variant="ghost" onClick={syncRepositories}>
+                <RefreshCcw
+                  className={`h-1 w-1 ${isSyncing ? 'animate-spin' : ''}`}
+                />
+              </Button>
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex-1">
+              <Input
+                placeholder="Search repositories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={sortBy === 'health' ? 'default' : 'outline'}
+                onClick={() => setSortBy('health')}
+                size="sm"
+              >
+                Health Score
+              </Button>
+              <Button
+                variant={sortBy === 'stars' ? 'default' : 'outline'}
+                onClick={() => setSortBy('stars')}
+                size="sm"
+              >
+                Stars
+              </Button>
+              <Button
+                variant={sortBy === 'updated' ? 'default' : 'outline'}
+                onClick={() => setSortBy('updated')}
+                size="sm"
+              >
+                Updated
+              </Button>
+              <Button
+                variant={sortBy === 'name' ? 'default' : 'outline'}
+                onClick={() => setSortBy('name')}
+                size="sm"
+              >
+                Name
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredAndSortedRepositories.map((repository, index) => (
+              <Card key={index} className="hover:shadow-lg transition shadow">
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <span>{repository.name}</span>
+                        {repository.private && (
+                          <Badge variant="secondary" className="text-xs">
+                            Private
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        {repository.description ?? '-'}
+                      </CardDescription>
+                    </div>
+                    <Badge
+                      className={getHealthScoreBadge(repository.healthScore)}
+                    >
+                      {repository.healthScore}
+                    </Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-4 h-4" />
+                        Maintenance
+                      </span>
+                      <span className="font-medium">
+                        {repository.maintenanceScore}
+                      </span>
+                    </div>
+                    <Progress
+                      value={repository.maintenanceScore}
+                      className="h2"
+                    />
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-4 h-4" />
+                        Community
+                      </span>
+                      <span className="font-medium">
+                        {repository.communityScore}
+                      </span>
+                    </div>
+                    <Progress
+                      value={repository.communityScore}
+                      className="h2"
+                    />
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-4 h-4" />
+                        Release Cadence
+                      </span>
+                      <span className="font-medium">
+                        {repository.releaseCadenceScore}
+                      </span>
+                    </div>
+                    <Progress
+                      value={repository.releaseCadenceScore}
+                      className="h2"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 pt-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4" />
+                      <span>{repository.stars}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <GitFork className="h-4 w-4" />
+                      <span>{repository.forks}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      <span>{repository.watchers}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatDate(repository.updatedAt)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <Badge className="">{333} vulnerabilities</Badge>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="" target="_blank" rel="noopener noreferrer">
+                        View on GitHub
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {filteredAndSortedRepositories.length === 0 && (
+            <div className="text-center py-12">
+              <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No repositories found
+              </h3>
+              <p className="text-gray-500">Try adjusting your search terms</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {data.length === 0 && (
+        <div className="text-center py-12">
+          <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No repositories found
+          </h3>
+          <p className="text-gray-500">
+            Log in with your GitHub account to view your repositories
+          </p>
         </div>
       )}
     </div>

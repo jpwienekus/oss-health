@@ -1,65 +1,55 @@
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Menu, Moon, Sun } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { useAuth } from '@/auth/AuthContext'
+import { Button } from '@/components/ui/button'
+import { getClient } from '@/graphql/client'
+import { GET_USERNAME } from '@/graphql/queries'
+import { Shield, Github } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-type HeaderProps = {
-  isDarkMode: boolean,
-  toggleDarkMode: () => void
-}
+export const Header = () => {
+  const { jwt, loginWithGitHub } = useAuth()
+  const [username, setUsername] = useState<string>('')
 
-export const Header = ({ isDarkMode, toggleDarkMode }: HeaderProps) => {
+  useEffect(() => {
+    const fetchUsername = async () => {
+      if (!jwt) {
+        return
+      }
+      const client = getClient(jwt)
+      const response = await client.request<{ username: string }>(GET_USERNAME)
+      setUsername(response.username)
+    }
+    fetchUsername()
+  }, [jwt])
+
   return (
-    <header className="border-b bg-background sticky top-0 z-50">
-      <div className="container mx-auto px-2 py-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/" className="text-2xl">
-              OSS-Health
-            </Link>
+    <header className="bg-white shadow-sm border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-4">
+          <div className="flex items-center space-x-3">
+            <Shield className="h-8 w-8 text-gray-900" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">OSS Health</h1>
+              <p className="text-sm text-gray-500">
+                Dependency Security & Health Monitoring
+              </p>
+            </div>
           </div>
 
-          <nav className="hidden md:flex space-x-6 items-center">
-            <Link to="/" className="text-foreground hover:text-foreground/80 font-medium">
-              Projects
-            </Link>
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" onClick={toggleDarkMode} aria-label="Search">
-                {isDarkMode ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+          <div className="flex items-center space-x-4">
+            {jwt ? (
+              <span>
+                <Github className="w-4 h-4 inline mr-2" />
+                {username}
+              </span>
+            ) : (
+              <Button onClick={loginWithGitHub} className="px-4 py-2">
+                <Github className="w-4 h-4 inline mr-2" />
+                Log in with GitHub
               </Button>
-            </div>
-          </nav>
-          <nav className="flex items-center md:hidden space-x-2">
-            <Button variant="ghost" size="icon" onClick={toggleDarkMode} aria-label="Search">
-              {isDarkMode ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Menu">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-
-                <DropdownMenuItem>
-                  <Link to="/" className="text-foreground hover:text-foreground/80 font-medium" >
-                    Repositories
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
+            )}
+          </div>
         </div>
       </div>
-
     </header>
   )
 }

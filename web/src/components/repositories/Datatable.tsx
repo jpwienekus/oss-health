@@ -1,10 +1,23 @@
-import { flexRender, getCoreRowModel, getFilteredRowModel, useReactTable, type ColumnDef, type ColumnFiltersState } from "@tanstack/react-table"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "../ui/input"
-import { useState } from "react"
-import { Button } from "../ui/button"
-import { IconRefresh } from "@tabler/icons-react"
-
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+} from '@tanstack/react-table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Input } from '../ui/input'
+import { useState } from 'react'
+import { Button } from '../ui/button'
+import { IconRefresh } from '@tabler/icons-react'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -28,10 +41,13 @@ const formatDate = (date: Date | undefined) => {
   })
 }
 
-export function DataTable<TData, TValue>({ columns, data, syncDate, sync }: DataTableProps<TData, TValue>) {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
-    []
-  )
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+  syncDate,
+  sync,
+}: DataTableProps<TData, TValue>) {
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [loading, setLoading] = useState(false)
   const table = useReactTable({
     data,
@@ -53,10 +69,14 @@ export function DataTable<TData, TValue>({ columns, data, syncDate, sync }: Data
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
-          <div >
+          <div>
             <span className="text-2xl font-bold">Repositories</span>
-            <Button variant="ghost" size="icon" onClick={handleSync} >
-              {loading ? <IconRefresh className="w-4 h-4 animate-spin" /> : <IconRefresh className="w-2 h-2" />}
+            <Button variant="ghost" size="icon" onClick={handleSync}>
+              {loading ? (
+                <IconRefresh className="w-4 h-4 animate-spin" />
+              ) : (
+                <IconRefresh className="w-2 h-2" />
+              )}
             </Button>
             <span className="text-xs text-muted-foreground mb-4">
               Last synced {formatDate(syncDate)}
@@ -66,9 +86,9 @@ export function DataTable<TData, TValue>({ columns, data, syncDate, sync }: Data
         <div className="flex flex-end items-center space-x-2">
           <Input
             placeholder="Filter repositories..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
             onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
+              table.getColumn('name')?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />
@@ -77,12 +97,17 @@ export function DataTable<TData, TValue>({ columns, data, syncDate, sync }: Data
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
+            {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
+                {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   )
                 })}
@@ -91,18 +116,27 @@ export function DataTable<TData, TValue>({ columns, data, syncDate, sync }: Data
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map(cell => (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                >
+                  {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No Results.
                 </TableCell>
               </TableRow>

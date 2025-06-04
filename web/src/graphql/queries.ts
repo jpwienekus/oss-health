@@ -1,4 +1,4 @@
-import { gql } from "graphql-request";
+import { gql } from 'graphql-request'
 
 export const GET_REPOS = gql`
   query {
@@ -13,5 +13,11 @@ export const GET_REPOS = gql`
       }
       syncDate
     }
+  }
+`
+
+export const GET_USERNAME = gql`
+  query {
+    username
   }
 `

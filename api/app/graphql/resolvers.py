@@ -5,7 +5,7 @@ import strawberry
 from strawberry.types import Info
 from app.auth.jwt_utils import decode_token
 from app.crud.repository import get_repository, upsert_user_repositories
-from app.crud.user import get_access_token, get_sync_time, update_sync_time
+from app.crud.user import get_access_token, get_sync_time, get_user, update_sync_time
 from app.models import Repository as RepositoryDBModel
 
 
@@ -46,6 +46,13 @@ class RepositoriesResponse:
 @strawberry.type
 class Query:
     @strawberry.field
+    async def username(self, info: Info) -> str:
+        user_id = get_user_id(info)
+        db = info.context["db"]
+        user = await get_user(db, user_id)
+        return user.github_username if user is not None else ""
+
+    @strawberry.field
     async def repositories(self, info: Info) -> RepositoriesResponse:
         user_id = get_user_id(info)
         db = info.context["db"]
@@ -64,7 +71,9 @@ class Mutation:
         db = info.context["db"]
 
         async with httpx.AsyncClient() as client:
-            access_token = get_access_token(db, user_id)
+            access_token = await get_access_token(db, user_id)
+            print("^" * 100)
+            print(access_token)
 
             gh_response = await client.get(
                 "https://api.github.com/user/repos?per_page=100&type=public&sort=updated",
@@ -72,6 +81,7 @@ class Mutation:
             )
             repo_data = gh_response.json()
 
+        print(repo_data)
         await upsert_user_repositories(db, user_id, repo_data)
         result = await get_repository(db, user_id)
         repositories = [RepositoryType.from_model(repo) for repo in result]

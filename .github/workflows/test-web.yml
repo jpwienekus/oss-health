@@ -1,0 +1,27 @@
+
+
+name: Lint and Test Web
+
+on:
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        cd web/
+        run: pnpm install
+
+      - name: Run ESLint
+        run: pnpm run lint
