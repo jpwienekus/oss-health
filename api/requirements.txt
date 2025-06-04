@@ -1,6 +1,6 @@
 pydantic-settings==2.9.1
 fastapi[standard]==0.115.12
-strawberry-graphql[fastapi]==0.270.6
+strawberry-graphql[fastapi]==0.271.0
 alembic==1.16.1
 sqlalchemy==2.0.41
 asyncpg==0.30.0
