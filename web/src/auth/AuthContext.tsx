@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { generateCodeChallenge, generateCodeVerifier } from './pkce'
+import { jwtDecode } from 'jwt-decode'
 
 const AuthContext = createContext<{
   jwt: string | null
@@ -16,14 +17,36 @@ type AuthProviderProps = {
   children: ReactNode
 }
 
+interface JwtPayload {
+  exp: number
+  sub: string
+}
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const BACKEND_URL = 'http://localhost:8000'
   const [jwt, setJwt] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('jwt')
+
     if (token) {
+      const { exp } = jwtDecode<JwtPayload>(token)
+      const expiryTime = exp * 1000
+      const now = Date.now()
+      const timeout = expiryTime - now
+
+      if (timeout <= 0) {
+        logout()
+        return
+      }
+
       setJwt(token)
+
+      const timer = setTimeout(() => {
+        logout()
+      }, timeout)
+
+      return () => clearTimeout(timer)
     }
   }, [])
 
@@ -67,6 +90,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const authUrl = `${BACKEND_URL}/auth/github/login?code_challenge=${challenge}`
 
     window.open(authUrl, '_blank', 'popup,width=500,height=600')
+  }
+
+  const logout = () => {
+    localStorage.removeItem('jwt')
+    setJwt(null)
   }
 
   // const auth = useGitHubPopupLogin()
