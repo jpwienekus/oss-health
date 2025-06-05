@@ -17,6 +17,33 @@ def get_user_id(info: Info) -> int:
 
 
 @strawberry.type
+class GitHubRepository:
+    name: str
+    description: str | None
+    github_id: int
+    stars: int
+    watchers: int
+    updated_at: datetime | None
+    private: bool
+    forks: int
+
+    @classmethod
+    def from_model(cls, model) -> "GitHubRepository":
+        date = model.get("updated_at")
+        updated_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ") if date else None
+        return cls(
+            name=model.get("name"),
+            description=model.get("description"),
+            github_id=model.get("id"),
+            stars=model.get("stargazers_count"),
+            watchers=model.get("watchers_count"),
+            updated_at=updated_at,
+            private=model.get("private"),
+            forks=model.get("forks_count"),
+        )
+
+
+@strawberry.type
 class RepositoryType:
     name: str
     description: str | None
@@ -62,6 +89,21 @@ class Query:
 
         return RepositoriesResponse(repositories=repositories, sync_date=sync_date)
 
+    @strawberry.field
+    async def get_repos_from_github(self, info: Info) -> List[GitHubRepository]:
+        user_id = get_user_id(info)
+        db = info.context["db"]
+
+        async with httpx.AsyncClient() as client:
+            access_token = await get_access_token(db, user_id)
+            gh_response = await client.get(
+                "https://api.github.com/user/repos?per_page=100&type=public&sort=updated",
+                headers={"authorization": f"token {access_token}"},
+            )
+            repo_data = gh_response.json()
+
+        return [GitHubRepository.from_model(repo) for repo in repo_data]
+
 
 @strawberry.type
 class Mutation:
@@ -72,16 +114,12 @@ class Mutation:
 
         async with httpx.AsyncClient() as client:
             access_token = await get_access_token(db, user_id)
-            print("^" * 100)
-            print(access_token)
-
             gh_response = await client.get(
                 "https://api.github.com/user/repos?per_page=100&type=public&sort=updated",
                 headers={"authorization": f"token {access_token}"},
             )
             repo_data = gh_response.json()
 
-        print(repo_data)
         await upsert_user_repositories(db, user_id, repo_data)
         result = await get_repository(db, user_id)
         repositories = [RepositoryType.from_model(repo) for repo in result]

@@ -1,7 +1,7 @@
 import { getClient } from '@/graphql/client'
 import { SYNC_REPOS } from '@/graphql/mutations'
-import { GET_REPOS } from '@/graphql/queries'
-import type { Repository } from '@/types'
+import { GET_REPOS, GET_REPOS_FROM_GITHUB } from '@/graphql/queries'
+import type { GitHubRepo, Repository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +10,7 @@ import {
   Eye,
   GitFork,
   Github,
+  Import,
   RefreshCcw,
   Star,
 } from 'lucide-react'
@@ -24,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { useAuth } from '@/auth/AuthContext'
+import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
 
 export const Repositories = () => {
   const { jwt } = useAuth()
@@ -123,25 +125,26 @@ export const Repositories = () => {
     })
   }
 
+  const onDialogConfirm = (selectedRepoIds: number[]) => {
+    console.log(33, selectedRepoIds)
+  }
+
   return (
     <div>
       {data.length > 0 && (
         <div>
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Your Repositories
-            </h2>
-            <p className="text-gray-600">
-              Monitor dependency health and security across all your projects
-            </p>
-            <p className="text-gray-600">
-              Last synced: {formatDate(syncDate)}
-              <Button size="icon" variant="ghost" onClick={syncRepositories}>
-                <RefreshCcw
-                  className={`h-1 w-1 ${isSyncing ? 'animate-spin' : ''}`}
-                />
-              </Button>
-            </p>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Repositories
+                </h2>
+                <p className="text-gray-600">
+                  Manage and monitor your imported repositories
+                </p>
+              </div>
+              <ImportReposDialog onConfirm={onDialogConfirm} />
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-8">

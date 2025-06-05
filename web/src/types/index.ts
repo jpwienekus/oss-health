@@ -13,3 +13,15 @@ export interface Repository {
   watchers: number
   private: boolean
 }
+
+export interface GitHubRepo {
+  githubId: number
+  name: string
+  description: string
+  stars: number
+  // TODO: fetch
+  private: boolean
+  forks: number
+  watchers: number
+  updatedAt: string
+}
