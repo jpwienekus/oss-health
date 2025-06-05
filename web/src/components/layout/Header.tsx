@@ -26,9 +26,9 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-3">
-            <Shield className="h-8 w-8 text-gray-900" />
+            <Shield className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">OSS Health</h1>
+              <h1 className="text-2xl font-bold text-gray-900">VulnWatch</h1>
               <p className="text-sm text-gray-500">
                 Dependency Security & Health Monitoring
               </p>
