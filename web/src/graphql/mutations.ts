@@ -15,3 +15,19 @@ export const SYNC_REPOS = gql`
     }
   }
 `
+export const SAVE_SELECTED_REPOSITORIES = gql`
+  mutation SaveSelectedRepositories($selectedGithubRepositoryIds: [Int!]!) {
+    saveSelectedRepositories(
+      selectedGithubRepositoryIds: $selectedGithubRepositoryIds
+    ) {
+      name
+      description
+      githubId
+      stars
+      watchers
+      updatedAt
+      private
+      forks
+    }
+  }
+`

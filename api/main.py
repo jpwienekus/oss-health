@@ -1,11 +1,11 @@
 import logging
 import sys
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuration import settings
-from app.database import get_db_session, sessionmanager
+from app.database import sessionmanager
 from app.auth.github_oauth import router as auth_router
 from app.graphql.schema import graphql_app
 

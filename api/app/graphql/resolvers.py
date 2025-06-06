@@ -1,12 +1,12 @@
 import httpx
-from datetime import datetime
 from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
 import strawberry
 from strawberry.types import Info
 from app.auth.jwt_utils import decode_token
-from app.crud.repository import get_repository, upsert_user_repositories
-from app.crud.user import get_access_token, get_sync_time, get_user, update_sync_time
-from app.models import Repository as RepositoryDBModel
+from app.crud.repository import get_repositories, sync_repository_ids
+from app.crud.user import get_access_token, get_user
+from app.graphql.types import GitHubRepository
 
 
 def get_user_id(info: Info) -> int:
@@ -16,58 +16,18 @@ def get_user_id(info: Info) -> int:
     return decode_token(token)
 
 
-@strawberry.type
-class GitHubRepository:
-    name: str
-    description: str | None
-    github_id: int
-    stars: int
-    watchers: int
-    updated_at: datetime | None
-    private: bool
-    forks: int
-
-    @classmethod
-    def from_model(cls, model) -> "GitHubRepository":
-        date = model.get("updated_at")
-        updated_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ") if date else None
-        return cls(
-            name=model.get("name"),
-            description=model.get("description"),
-            github_id=model.get("id"),
-            stars=model.get("stargazers_count"),
-            watchers=model.get("watchers_count"),
-            updated_at=updated_at,
-            private=model.get("private"),
-            forks=model.get("forks_count"),
+async def get_repository_information_from_github(
+    db: AsyncSession, user_id: int
+) -> List[dict]:
+    async with httpx.AsyncClient() as client:
+        access_token = await get_access_token(db, user_id)
+        gh_response = await client.get(
+            "https://api.github.com/user/repos?per_page=100&type=public&sort=updated",
+            headers={"authorization": f"token {access_token}"},
         )
+        repo_data = gh_response.json()
 
-
-@strawberry.type
-class RepositoryType:
-    name: str
-    description: str | None
-    updated_at: datetime
-    url: str | None
-    open_issues: int | None
-    score: int | None
-
-    @classmethod
-    def from_model(cls, model: RepositoryDBModel) -> "RepositoryType":
-        return cls(
-            name=model.name,
-            description=model.description,
-            updated_at=model.updated_at,
-            url=model.url,
-            open_issues=model.open_issues,
-            score=model.score,
-        )
-
-
-@strawberry.type
-class RepositoriesResponse:
-    repositories: List[RepositoryType]
-    sync_date: datetime | None
+    return repo_data
 
 
 @strawberry.type
@@ -80,49 +40,49 @@ class Query:
         return user.github_username if user is not None else ""
 
     @strawberry.field
-    async def repositories(self, info: Info) -> RepositoriesResponse:
+    async def github_repositories(self, info: Info) -> List[GitHubRepository]:
         user_id = get_user_id(info)
         db = info.context["db"]
-        result = await get_repository(db, user_id)
-        repositories = [RepositoryType.from_model(repo) for repo in result]
-        sync_date = await get_sync_time(db, user_id)
 
-        return RepositoriesResponse(repositories=repositories, sync_date=sync_date)
+        repositories = await get_repository_information_from_github(db, user_id)
+
+        return [GitHubRepository.from_model(repo) for repo in repositories]
 
     @strawberry.field
-    async def get_repos_from_github(self, info: Info) -> List[GitHubRepository]:
+    async def repositories(self, info: Info) -> List[GitHubRepository]:
         user_id = get_user_id(info)
         db = info.context["db"]
 
-        async with httpx.AsyncClient() as client:
-            access_token = await get_access_token(db, user_id)
-            gh_response = await client.get(
-                "https://api.github.com/user/repos?per_page=100&type=public&sort=updated",
-                headers={"authorization": f"token {access_token}"},
-            )
-            repo_data = gh_response.json()
+        repositories = await get_repository_information_from_github(db, user_id)
+        if len(repositories) == 0:
+            return []
 
-        return [GitHubRepository.from_model(repo) for repo in repo_data]
+        tracked_repositories = [
+            repository.github_id for repository in set(await get_repositories(db))
+        ]
+
+        return [
+            GitHubRepository.from_model(repo)
+            for repo in repositories
+            if repo.get("id") in tracked_repositories
+        ]
 
 
 @strawberry.type
 class Mutation:
+
     @strawberry.mutation
-    async def sync_repositories(self, info: Info) -> RepositoriesResponse:
+    async def save_selected_repositories(
+        self, info: Info, selected_github_repository_ids: List[int]
+    ) -> List[GitHubRepository]:
         user_id = get_user_id(info)
         db = info.context["db"]
 
-        async with httpx.AsyncClient() as client:
-            access_token = await get_access_token(db, user_id)
-            gh_response = await client.get(
-                "https://api.github.com/user/repos?per_page=100&type=public&sort=updated",
-                headers={"authorization": f"token {access_token}"},
-            )
-            repo_data = gh_response.json()
+        await sync_repository_ids(db, user_id, selected_github_repository_ids)
+        repositories = await get_repository_information_from_github(db, user_id)
 
-        await upsert_user_repositories(db, user_id, repo_data)
-        result = await get_repository(db, user_id)
-        repositories = [RepositoryType.from_model(repo) for repo in result]
-        sync_date = await update_sync_time(db, user_id)
-
-        return RepositoriesResponse(repositories=repositories, sync_date=sync_date)
+        return [
+            GitHubRepository.from_model(repo)
+            for repo in repositories
+            if repo.get("id") in selected_github_repository_ids
+        ]

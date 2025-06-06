@@ -1,19 +1,7 @@
-import { getClient } from '@/graphql/client'
-import { SYNC_REPOS } from '@/graphql/mutations'
-import { GET_REPOS, GET_REPOS_FROM_GITHUB } from '@/graphql/queries'
-import type { GitHubRepo, Repository } from '@/types'
+import type { GitHubRepository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  Activity,
-  Calendar,
-  Eye,
-  GitFork,
-  Github,
-  Import,
-  RefreshCcw,
-  Star,
-} from 'lucide-react'
+import { Activity, Calendar, Eye, GitFork, Package, Star } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Card,
@@ -23,15 +11,15 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
+import { getClient } from '@/graphql/client'
+import { SAVE_SELECTED_REPOSITORIES } from '@/graphql/mutations'
+import { GET_REPOSITORIES } from '@/graphql/queries'
 
 export const Repositories = () => {
   const { jwt } = useAuth()
-  const [data, setData] = useState<Repository[]>([])
-  const [syncDate, setSyncDate] = useState<string | null>(null)
-  const [isSyncing, setIsSyncing] = useState<boolean>(false)
+  const [data, setData] = useState<GitHubRepository[]>([])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'health' | 'stars' | 'updated' | 'name'>(
@@ -44,10 +32,10 @@ export const Repositories = () => {
         repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
-    .sort((a: Repository, b: Repository) => {
+    .sort((a: GitHubRepository, b: GitHubRepository) => {
       switch (sortBy) {
         case 'health':
-          return b.healthScore - a.healthScore
+          return b.score - a.score
         case 'stars':
           return b.stars - a.stars
         case 'updated':
@@ -61,21 +49,6 @@ export const Repositories = () => {
       }
     })
 
-  const syncRepositories = async () => {
-    if (!jwt) {
-      return
-    }
-
-    setIsSyncing(true)
-    const client = getClient(jwt)
-    const response = await client.request<{
-      syncRepositories: { repositories: Repository[]; syncDate: string }
-    }>(SYNC_REPOS)
-    setData(response.syncRepositories.repositories)
-    setSyncDate(response.syncRepositories.syncDate)
-    setIsSyncing(false)
-  }
-
   useEffect(() => {
     const fetchRepositories = async () => {
       if (!jwt) {
@@ -84,26 +57,13 @@ export const Repositories = () => {
 
       const client = getClient(jwt)
       const response = await client.request<{
-        repositories: { repositories: Repository[]; syncDate: string }
-      }>(GET_REPOS)
+        repositories: GitHubRepository[]
+      }>(GET_REPOSITORIES)
 
-      setData(response.repositories.repositories)
-      setSyncDate(
-        response.repositories.syncDate ? response.repositories.syncDate : null,
-      )
+      setData(response.repositories)
     }
     fetchRepositories()
   }, [jwt])
-
-  const getHealthScoreBadge = (score: number) => {
-    if (score >= 80) {
-      return 'bg-green-100 text-green-800'
-    }
-    if (score >= 60) {
-      return 'bg-yellow-100 text-yellow-800'
-    }
-    return 'bg-red-100 text-red-800'
-  }
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) {
@@ -125,28 +85,64 @@ export const Repositories = () => {
     })
   }
 
-  const onDialogConfirm = (selectedRepoIds: number[]) => {
-    console.log(33, selectedRepoIds)
+  const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
+    if (!jwt) {
+      return
+    }
+
+    const client = getClient(jwt)
+    const response = await client.request<{
+      saveSelectedRepositories: GitHubRepository[]
+    }>(SAVE_SELECTED_REPOSITORIES, {
+      selectedGithubRepositoryIds: selectedRepositoryIds,
+    })
+    console.log(33, response)
   }
 
   return (
     <div>
-      {data.length > 0 && (
-        <div>
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Repositories
-                </h2>
-                <p className="text-gray-600">
-                  Manage and monitor your imported repositories
-                </p>
-              </div>
-              <ImportReposDialog onConfirm={onDialogConfirm} />
-            </div>
-          </div>
+      {!jwt && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No repositories found
+          </h3>
+          <p className="text-gray-500">
+            Log in with your GitHub account to view your repositories
+          </p>
+        </div>
+      )}
 
+      {jwt && (
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Repositories
+              </h2>
+              <p className="text-gray-600">
+                Manage and monitor your imported repositories
+              </p>
+            </div>
+            <ImportReposDialog onConfirm={onDialogConfirm} />
+          </div>
+        </div>
+      )}
+      {jwt && data.length === 0 && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No repositories found
+          </h3>
+          <p className="text-gray-500">
+            Import your GitHub repositories to start monitoring dependency
+            health
+          </p>
+        </div>
+      )}
+
+      {jwt && data.length > 0 && (
+        <div>
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1">
               <Input
@@ -206,11 +202,6 @@ export const Repositories = () => {
                         {repository.description ?? '-'}
                       </CardDescription>
                     </div>
-                    <Badge
-                      className={getHealthScoreBadge(repository.healthScore)}
-                    >
-                      {repository.healthScore}
-                    </Badge>
                   </div>
                 </CardHeader>
 
@@ -221,42 +212,21 @@ export const Repositories = () => {
                         <Activity className="w-4 h-4" />
                         Maintenance
                       </span>
-                      <span className="font-medium">
-                        {repository.maintenanceScore}
-                      </span>
                     </div>
-                    <Progress
-                      value={repository.maintenanceScore}
-                      className="h2"
-                    />
 
                     <div className="flex justify-between items-center text-sm">
                       <span className="flex items-center gap-1">
                         <Activity className="w-4 h-4" />
                         Community
                       </span>
-                      <span className="font-medium">
-                        {repository.communityScore}
-                      </span>
                     </div>
-                    <Progress
-                      value={repository.communityScore}
-                      className="h2"
-                    />
 
                     <div className="flex justify-between items-center text-sm">
                       <span className="flex items-center gap-1">
                         <Activity className="w-4 h-4" />
                         Release Cadence
                       </span>
-                      <span className="font-medium">
-                        {repository.releaseCadenceScore}
-                      </span>
                     </div>
-                    <Progress
-                      value={repository.releaseCadenceScore}
-                      className="h2"
-                    />
                   </div>
 
                   <div className="flex flex-wrap gap-4 pt-2 text-sm text-gray-600">
@@ -290,27 +260,6 @@ export const Repositories = () => {
               </Card>
             ))}
           </div>
-          {filteredAndSortedRepositories.length === 0 && (
-            <div className="text-center py-12">
-              <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No repositories found
-              </h3>
-              <p className="text-gray-500">Try adjusting your search terms</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {data.length === 0 && (
-        <div className="text-center py-12">
-          <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No repositories found
-          </h3>
-          <p className="text-gray-500">
-            Log in with your GitHub account to view your repositories
-          </p>
         </div>
       )}
     </div>
