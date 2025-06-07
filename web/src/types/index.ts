@@ -8,4 +8,6 @@ export interface GitHubRepository {
   watchers: number
   updatedAt: string
   score: number
+  vulnerabilities: number
+  dependencies: number
 }

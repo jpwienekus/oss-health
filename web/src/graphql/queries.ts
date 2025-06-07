@@ -25,6 +25,9 @@ export const GET_REPOSITORIES = gql`
       updatedAt
       private
       forks
+      score
+      vulnerabilities
+      dependencies
     }
   }
 `

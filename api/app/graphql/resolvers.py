@@ -46,7 +46,7 @@ class Query:
 
         repositories = await get_repository_information_from_github(db, user_id)
 
-        return [GitHubRepository.from_model(repo) for repo in repositories]
+        return [GitHubRepository.from_model(repo, 0) for repo in repositories]
 
     @strawberry.field
     async def repositories(self, info: Info) -> List[GitHubRepository]:
@@ -54,17 +54,23 @@ class Query:
         db = info.context["db"]
 
         repositories = await get_repository_information_from_github(db, user_id)
+
         if len(repositories) == 0:
             return []
 
-        tracked_repositories = [
-            repository.github_id for repository in set(await get_repositories(db))
-        ]
+        tracked_repositories = await get_repositories(db)
+        repository_score_map: dict[int, int] = {
+            repository.github_id: repository.score
+            for repository in tracked_repositories
+        }
+        tracked_repository_ids = repository_score_map.keys()
 
         return [
-            GitHubRepository.from_model(repo)
+            GitHubRepository.from_model(
+                repo, score=repository_score_map.get(repo.get("id", 0), 0)
+            )
             for repo in repositories
-            if repo.get("id") in tracked_repositories
+            if repo.get("id") in tracked_repository_ids
         ]
 
 
@@ -81,8 +87,12 @@ class Mutation:
         await sync_repository_ids(db, user_id, selected_github_repository_ids)
         repositories = await get_repository_information_from_github(db, user_id)
 
+        tracked_repositories = [
+            repository.github_id for repository in set(await get_repositories(db))
+        ]
+
         return [
-            GitHubRepository.from_model(repo)
+            GitHubRepository.from_model(repo, 0)
             for repo in repositories
-            if repo.get("id") in selected_github_repository_ids
+            if repo.get("id") in tracked_repositories
         ]

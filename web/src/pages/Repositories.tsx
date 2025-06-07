@@ -1,11 +1,16 @@
 import type { GitHubRepository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Activity, Calendar, Eye, GitFork, Package, Star } from 'lucide-react'
+import {
+  AlertTriangle,
+  CheckCircle,
+  Package,
+  Star,
+  XCircle,
+} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -65,26 +70,6 @@ export const Repositories = () => {
     fetchRepositories()
   }, [jwt])
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) {
-      return '-'
-    }
-
-    const date = new Date(dateString)
-    if (!date) {
-      return '-'
-    }
-
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-    })
-  }
-
   const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
     if (!jwt) {
       return
@@ -96,7 +81,27 @@ export const Repositories = () => {
     }>(SAVE_SELECTED_REPOSITORIES, {
       selectedGithubRepositoryIds: selectedRepositoryIds,
     })
-    console.log(33, response)
+    setData(response.saveSelectedRepositories)
+  }
+
+  const getHealthIcon = (score: number) => {
+    if (score >= 80) {
+      return <CheckCircle className="w-5 h-5 text-green-600" />
+    } else if (score >= 60) {
+      return <AlertTriangle className="w-5 h-5 text-yello-600" />
+    } else {
+      return <XCircle className="w-5 h-5 text-red-600" />
+    }
+  }
+
+  const getHealthColor = (score: number) => {
+    if (score >= 80) {
+      return 'text-green-600'
+    } else if (score >= 60) {
+      return 'text-yellow-600'
+    } else {
+      return 'text-red-600'
+    }
   }
 
   return (
@@ -195,6 +200,12 @@ export const Repositories = () => {
                     <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <span>{repository.name}</span>
+                        {getHealthIcon(repository.score)}
+                        <span
+                          className={`text-sm font-medium ${getHealthColor(repository.score)}`}
+                        >
+                          {repository.score}/100
+                        </span>
                         {repository.private && (
                           <Badge variant="secondary" className="text-xs">
                             Private
@@ -206,60 +217,28 @@ export const Repositories = () => {
                       </CardDescription>
                     </div>
                   </div>
-                </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        <Activity className="w-4 h-4" />
-                        Maintenance
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        <Activity className="w-4 h-4" />
-                        Community
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        <Activity className="w-4 h-4" />
-                        Release Cadence
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-4 pt-2 text-sm text-gray-600">
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-500">
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4" />
+                      <Package size={12} />
+                      <span>{repository.dependencies} dependencies</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      <span
+                        className={
+                          repository.vulnerabilities > 0 ? 'text-red-600' : ''
+                        }
+                      >
+                        {repository.vulnerabilities} vulnerabilities
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star size={12} />
                       <span>{repository.stars}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <GitFork className="h-4 w-4" />
-                      <span>{repository.forks}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4" />
-                      <span>{repository.watchers}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDate(repository.updatedAt)}</span>
-                    </div>
                   </div>
-
-                  <div className="flex justify-between items-center">
-                    <Badge className="">{333} vulnerabilities</Badge>
-                    <Button variant="outline" size="sm" asChild>
-                      <a href="" target="_blank" rel="noopener noreferrer">
-                        View on GitHub
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
+                </CardHeader>
               </Card>
             ))}
           </div>

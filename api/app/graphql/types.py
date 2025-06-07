@@ -12,9 +12,12 @@ class GitHubRepository:
     updated_at: datetime | None
     private: bool
     forks: int
+    score: int
+    vulnerabilities: int
+    dependencies: int
 
     @classmethod
-    def from_model(cls, model) -> "GitHubRepository":
+    def from_model(cls, model, score: int) -> "GitHubRepository":
         date = model.get("updated_at")
         updated_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ") if date else None
         return cls(
@@ -26,4 +29,7 @@ class GitHubRepository:
             updated_at=updated_at,
             private=model.get("private"),
             forks=model.get("forks_count"),
+            score=score,
+            vulnerabilities=0,
+            dependencies=0,
         )
