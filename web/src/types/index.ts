@@ -1,15 +1,13 @@
-export interface Repository {
+export interface GitHubRepository {
+  githubId: number
   name: string
-  description?: string
-  updatedAt: string
-
-  // TODO: implement these on BE
-  healthScore: number
-  maintenanceScore: number
-  communityScore: number
-  releaseCadenceScore: number
+  description: string
   stars: number
+  private: boolean
   forks: number
   watchers: number
-  private: boolean
+  updatedAt: string
+  score: number
+  vulnerabilities: number
+  dependencies: number
 }

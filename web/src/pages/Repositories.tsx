@@ -1,35 +1,30 @@
-import { getClient } from '@/graphql/client'
-import { SYNC_REPOS } from '@/graphql/mutations'
-import { GET_REPOS } from '@/graphql/queries'
-import type { Repository } from '@/types'
+import type { GitHubRepository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
-  Activity,
-  Calendar,
-  Eye,
-  GitFork,
-  Github,
-  RefreshCcw,
+  AlertTriangle,
+  CheckCircle,
+  Package,
   Star,
+  XCircle,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { useAuth } from '@/auth/AuthContext'
+import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
+import { getClient } from '@/graphql/client'
+import { SAVE_SELECTED_REPOSITORIES } from '@/graphql/mutations'
+import { GET_REPOSITORIES } from '@/graphql/queries'
 
 export const Repositories = () => {
   const { jwt } = useAuth()
-  const [data, setData] = useState<Repository[]>([])
-  const [syncDate, setSyncDate] = useState<string | null>(null)
-  const [isSyncing, setIsSyncing] = useState<boolean>(false)
+  const [data, setData] = useState<GitHubRepository[]>([])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'health' | 'stars' | 'updated' | 'name'>(
@@ -42,10 +37,10 @@ export const Repositories = () => {
         repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
-    .sort((a: Repository, b: Repository) => {
+    .sort((a: GitHubRepository, b: GitHubRepository) => {
       switch (sortBy) {
         case 'health':
-          return b.healthScore - a.healthScore
+          return b.score - a.score
         case 'stars':
           return b.stars - a.stars
         case 'updated':
@@ -59,21 +54,6 @@ export const Repositories = () => {
       }
     })
 
-  const syncRepositories = async () => {
-    if (!jwt) {
-      return
-    }
-
-    setIsSyncing(true)
-    const client = getClient(jwt)
-    const response = await client.request<{
-      syncRepositories: { repositories: Repository[]; syncDate: string }
-    }>(SYNC_REPOS)
-    setData(response.syncRepositories.repositories)
-    setSyncDate(response.syncRepositories.syncDate)
-    setIsSyncing(false)
-  }
-
   useEffect(() => {
     const fetchRepositories = async () => {
       if (!jwt) {
@@ -82,68 +62,95 @@ export const Repositories = () => {
 
       const client = getClient(jwt)
       const response = await client.request<{
-        repositories: { repositories: Repository[]; syncDate: string }
-      }>(GET_REPOS)
+        repositories: GitHubRepository[]
+      }>(GET_REPOSITORIES)
 
-      setData(response.repositories.repositories)
-      setSyncDate(
-        response.repositories.syncDate ? response.repositories.syncDate : null,
-      )
+      setData(response.repositories)
     }
     fetchRepositories()
   }, [jwt])
 
-  const getHealthScoreBadge = (score: number) => {
-    if (score >= 80) {
-      return 'bg-green-100 text-green-800'
+  const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
+    if (!jwt) {
+      return
     }
-    if (score >= 60) {
-      return 'bg-yellow-100 text-yellow-800'
-    }
-    return 'bg-red-100 text-red-800'
+
+    const client = getClient(jwt)
+    const response = await client.request<{
+      saveSelectedRepositories: GitHubRepository[]
+    }>(SAVE_SELECTED_REPOSITORIES, {
+      selectedGithubRepositoryIds: selectedRepositoryIds,
+    })
+    setData(response.saveSelectedRepositories)
   }
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) {
-      return '-'
+  const getHealthIcon = (score: number) => {
+    if (score >= 80) {
+      return <CheckCircle className="w-5 h-5 text-green-600" />
+    } else if (score >= 60) {
+      return <AlertTriangle className="w-5 h-5 text-yello-600" />
+    } else {
+      return <XCircle className="w-5 h-5 text-red-600" />
     }
+  }
 
-    const date = new Date(dateString)
-    if (!date) {
-      return '-'
+  const getHealthColor = (score: number) => {
+    if (score >= 80) {
+      return 'text-green-600'
+    } else if (score >= 60) {
+      return 'text-yellow-600'
+    } else {
+      return 'text-red-600'
     }
-
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-    })
   }
 
   return (
     <div>
-      {data.length > 0 && (
-        <div>
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Your Repositories
-            </h2>
-            <p className="text-gray-600">
-              Monitor dependency health and security across all your projects
-            </p>
-            <p className="text-gray-600">
-              Last synced: {formatDate(syncDate)}
-              <Button size="icon" variant="ghost" onClick={syncRepositories}>
-                <RefreshCcw
-                  className={`h-1 w-1 ${isSyncing ? 'animate-spin' : ''}`}
-                />
-              </Button>
-            </p>
-          </div>
+      {!jwt && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No repositories found
+          </h3>
+          <p className="text-gray-500">
+            Log in with your GitHub account to view your repositories
+          </p>
+        </div>
+      )}
 
+      {jwt && (
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Repositories
+              </h2>
+              <p className="text-gray-600">
+                Manage and monitor your imported repositories
+              </p>
+            </div>
+            <ImportReposDialog
+              onConfirm={onDialogConfirm}
+              alreadyTracked={data.map((e) => e.githubId)}
+            />
+          </div>
+        </div>
+      )}
+      {jwt && data.length === 0 && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No repositories found
+          </h3>
+          <p className="text-gray-500">
+            Import your GitHub repositories to start monitoring dependency
+            health
+          </p>
+        </div>
+      )}
+
+      {jwt && data.length > 0 && (
+        <div>
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1">
               <Input
@@ -193,6 +200,12 @@ export const Repositories = () => {
                     <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <span>{repository.name}</span>
+                        {getHealthIcon(repository.score)}
+                        <span
+                          className={`text-sm font-medium ${getHealthColor(repository.score)}`}
+                        >
+                          {repository.score}/100
+                        </span>
                         {repository.private && (
                           <Badge variant="secondary" className="text-xs">
                             Private
@@ -203,111 +216,32 @@ export const Repositories = () => {
                         {repository.description ?? '-'}
                       </CardDescription>
                     </div>
-                    <Badge
-                      className={getHealthScoreBadge(repository.healthScore)}
-                    >
-                      {repository.healthScore}
-                    </Badge>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        <Activity className="w-4 h-4" />
-                        Maintenance
-                      </span>
-                      <span className="font-medium">
-                        {repository.maintenanceScore}
-                      </span>
-                    </div>
-                    <Progress
-                      value={repository.maintenanceScore}
-                      className="h2"
-                    />
-
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        <Activity className="w-4 h-4" />
-                        Community
-                      </span>
-                      <span className="font-medium">
-                        {repository.communityScore}
-                      </span>
-                    </div>
-                    <Progress
-                      value={repository.communityScore}
-                      className="h2"
-                    />
-
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        <Activity className="w-4 h-4" />
-                        Release Cadence
-                      </span>
-                      <span className="font-medium">
-                        {repository.releaseCadenceScore}
-                      </span>
-                    </div>
-                    <Progress
-                      value={repository.releaseCadenceScore}
-                      className="h2"
-                    />
                   </div>
 
-                  <div className="flex flex-wrap gap-4 pt-2 text-sm text-gray-600">
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-500">
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4" />
+                      <Package size={12} />
+                      <span>{repository.dependencies} dependencies</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      <span
+                        className={
+                          repository.vulnerabilities > 0 ? 'text-red-600' : ''
+                        }
+                      >
+                        {repository.vulnerabilities} vulnerabilities
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star size={12} />
                       <span>{repository.stars}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <GitFork className="h-4 w-4" />
-                      <span>{repository.forks}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4" />
-                      <span>{repository.watchers}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDate(repository.updatedAt)}</span>
-                    </div>
                   </div>
-
-                  <div className="flex justify-between items-center">
-                    <Badge className="">{333} vulnerabilities</Badge>
-                    <Button variant="outline" size="sm" asChild>
-                      <a href="" target="_blank" rel="noopener noreferrer">
-                        View on GitHub
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
+                </CardHeader>
               </Card>
             ))}
           </div>
-          {filteredAndSortedRepositories.length === 0 && (
-            <div className="text-center py-12">
-              <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No repositories found
-              </h3>
-              <p className="text-gray-500">Try adjusting your search terms</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {data.length === 0 && (
-        <div className="text-center py-12">
-          <Github className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No repositories found
-          </h3>
-          <p className="text-gray-500">
-            Log in with your GitHub account to view your repositories
-          </p>
         </div>
       )}
     </div>

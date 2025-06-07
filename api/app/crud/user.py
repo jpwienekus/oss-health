@@ -1,4 +1,3 @@
-from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User as UserDBModel
@@ -30,17 +29,6 @@ async def add_user(
     return user
 
 
-async def get_sync_time(db_session: AsyncSession, user_id: int):
-    user = (
-        await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
-    ).first()
-
-    if user:
-        return user.synced_at
-
-    return None
-
-
 async def get_access_token(db_session: AsyncSession, user_id: int):
     user = (
         await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
@@ -50,18 +38,6 @@ async def get_access_token(db_session: AsyncSession, user_id: int):
         return user.access_token
 
     return None
-
-
-async def update_sync_time(db_session: AsyncSession, user_id: int):
-    user = (
-        await db_session.scalars(select(UserDBModel).where(UserDBModel.id == user_id))
-    ).first()
-
-    if user:
-        now = datetime.now()
-        user.synced_at = now
-        await db_session.commit()
-        return now
 
 
 async def update_access_token(db_session: AsyncSession, github_id, access_token: str):
