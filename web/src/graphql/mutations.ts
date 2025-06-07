@@ -13,6 +13,7 @@ export const SAVE_SELECTED_REPOSITORIES = gql`
       updatedAt
       private
       forks
+      score
     }
   }
 `

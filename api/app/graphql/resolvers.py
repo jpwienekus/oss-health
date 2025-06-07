@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import strawberry
 from strawberry.types import Info
 from app.auth.jwt_utils import decode_token
-from app.crud.repository import get_repositories, sync_repository_ids
+from app.crud.repository import add_repository_ids, get_repositories
 from app.crud.user import get_access_token, get_user
 from app.graphql.types import GitHubRepository
+from app.scanners.scanner import get_repository_dependencies
 
 
 def get_user_id(info: Info) -> int:
@@ -49,6 +50,16 @@ class Query:
         return [GitHubRepository.from_model(repo, 0) for repo in repositories]
 
     @strawberry.field
+    async def debug_cloning(self, info: Info) -> int:
+        user_id = get_user_id(info)
+        db = info.context["db"]
+        tracked_repositories = await get_repositories(db, user_id)
+        dependencies = get_repository_dependencies(tracked_repositories[0].clone_url)
+        print(dependencies)
+
+        return 0
+
+    @strawberry.field
     async def repositories(self, info: Info) -> List[GitHubRepository]:
         user_id = get_user_id(info)
         db = info.context["db"]
@@ -58,7 +69,7 @@ class Query:
         if len(repositories) == 0:
             return []
 
-        tracked_repositories = await get_repositories(db)
+        tracked_repositories = await get_repositories(db, user_id)
         repository_score_map: dict[int, int] = {
             repository.github_id: repository.score
             for repository in tracked_repositories
@@ -84,15 +95,11 @@ class Mutation:
         user_id = get_user_id(info)
         db = info.context["db"]
 
-        await sync_repository_ids(db, user_id, selected_github_repository_ids)
         repositories = await get_repository_information_from_github(db, user_id)
-
         tracked_repositories = [
-            repository.github_id for repository in set(await get_repositories(db))
+            r for r in repositories if r.get("id") in selected_github_repository_ids
         ]
 
-        return [
-            GitHubRepository.from_model(repo, 0)
-            for repo in repositories
-            if repo.get("id") in tracked_repositories
-        ]
+        await add_repository_ids(db, user_id, tracked_repositories)
+
+        return [GitHubRepository.from_model(repo, 0) for repo in tracked_repositories]

@@ -104,7 +104,7 @@ async def test_repositories_only_returns_tracked(
 @patch("app.graphql.resolvers.decode_token", return_value=123)
 @patch("app.graphql.resolvers.get_access_token", new_callable=AsyncMock)
 @patch("app.graphql.resolvers.httpx.AsyncClient.get", new_callable=AsyncMock)
-@patch("app.graphql.resolvers.sync_repository_ids", new_callable=AsyncMock)
+@patch("app.graphql.resolvers.add_repository_ids", new_callable=AsyncMock)
 @patch("app.graphql.resolvers.get_repositories", new_callable=AsyncMock)
 async def test_save_selected_repositories(
     mock_get_repositories,
@@ -134,7 +134,7 @@ async def test_save_selected_repositories(
     result = await schema.execute(
         mutation,
         context_value=mock_context,
-        variable_values={"selectedGithubRepositoryIds": [1, 2]},
+        variable_values={"selectedGithubRepositoryIds": [1]},
     )
 
     assert result.errors is None

@@ -10,3 +10,4 @@ class Repository(Base):
     github_id: Mapped[int] = mapped_column(unique=True, nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     score: Mapped[int] = mapped_column(nullable=True)
+    clone_url: Mapped[str] = mapped_column(nullable=True)
