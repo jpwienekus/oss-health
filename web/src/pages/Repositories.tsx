@@ -124,7 +124,10 @@ export const Repositories = () => {
                 Manage and monitor your imported repositories
               </p>
             </div>
-            <ImportReposDialog onConfirm={onDialogConfirm} />
+            <ImportReposDialog
+              onConfirm={onDialogConfirm}
+              alreadyTracked={data.map((e) => e.githubId)}
+            />
           </div>
         </div>
       )}

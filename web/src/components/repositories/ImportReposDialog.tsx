@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { useState } from 'react'
-import type { GitHubRepo } from '@/types'
+import type { GitHubRepository } from '@/types'
 import { getClient } from '@/graphql/client'
 import { Calendar, Eye, GitFork, Import, Search, Star } from 'lucide-react'
 import { GET_REPOSITORIES_FROM_GITHUB } from '@/graphql/queries'
@@ -18,25 +18,31 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Checkbox } from '../ui/checkbox'
 
 type ImportReposDialogParams = {
+  alreadyTracked: number[]
   onConfirm: (selectedRepoIds: number[]) => void
 }
 
-export const ImportReposDialog = ({ onConfirm }: ImportReposDialogParams) => {
+export const ImportReposDialog = ({
+  alreadyTracked,
+  onConfirm,
+}: ImportReposDialogParams) => {
   const { jwt } = useAuth()
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [isImporting, setIsImporting] = useState<boolean>(false)
-  const [githubRepos, setGitHubRepos] = useState<GitHubRepo[]>([])
-  const [selectedRepos, setSelectedRepos] = useState<number[]>([])
+  const [githubRepositories, setGitHubRepositories] = useState<
+    GitHubRepository[]
+  >([])
+  const [selectedRepositories, setSelectedRepositories] = useState<number[]>([])
 
-  const filteredRepos = githubRepos
+  const filteredRepos = githubRepositories
     .filter(
       (repo) =>
         repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
     .sort(
-      (a: GitHubRepo, b: GitHubRepo) =>
+      (a: GitHubRepository, b: GitHubRepository) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     )
 
@@ -48,15 +54,19 @@ export const ImportReposDialog = ({ onConfirm }: ImportReposDialogParams) => {
     setIsImporting(true)
     const client = getClient(jwt)
     const response = await client.request<{
-      getRepositoriesFromGithub: GitHubRepo[]
+      githubRepositories: GitHubRepository[]
     }>(GET_REPOSITORIES_FROM_GITHUB)
-    setGitHubRepos(response.getRepositoriesFromGithub)
+    setGitHubRepositories(
+      response.githubRepositories.filter(
+        (e) => !alreadyTracked.includes(e.githubId),
+      ),
+    )
     setIsImporting(false)
     setIsOpen(true)
   }
 
-  const handleRepoToggle = (githubId: number) => {
-    setSelectedRepos((previous) =>
+  const handleRepositoryToggle = (githubId: number) => {
+    setSelectedRepositories((previous) =>
       previous.includes(githubId)
         ? previous.filter((id) => id !== githubId)
         : [...previous, githubId],
@@ -84,7 +94,7 @@ export const ImportReposDialog = ({ onConfirm }: ImportReposDialogParams) => {
   }
 
   const handleConfirm = () => {
-    onConfirm(selectedRepos)
+    onConfirm(selectedRepositories)
     setIsOpen(false)
   }
 
@@ -115,14 +125,14 @@ export const ImportReposDialog = ({ onConfirm }: ImportReposDialogParams) => {
               {filteredRepos.map((repo, index) => (
                 <div
                   key={index}
-                  className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-slate-50 ${selectedRepos.includes(repo.githubId) ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
-                  onClick={() => handleRepoToggle(repo.githubId)}
+                  className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-slate-50 ${selectedRepositories.includes(repo.githubId) ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
+                  onClick={() => handleRepositoryToggle(repo.githubId)}
                 >
                   <Checkbox
-                    checked={selectedRepos.includes(repo.githubId)}
+                    checked={selectedRepositories.includes(repo.githubId)}
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleRepoToggle(repo.githubId)
+                      handleRepositoryToggle(repo.githubId)
                     }}
                     className="mt-1"
                   />
@@ -171,7 +181,7 @@ export const ImportReposDialog = ({ onConfirm }: ImportReposDialogParams) => {
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={selectedRepos.length === 0}
+              disabled={selectedRepositories.length === 0}
             >
               Confirm
             </Button>
