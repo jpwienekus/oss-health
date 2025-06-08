@@ -1,17 +1,11 @@
 import fnmatch
 import tempfile
 import subprocess
+import json
+import yaml
 from pathlib import Path
-from dataclasses import dataclass
 from typing import Callable, List, Tuple
-
-
-@dataclass
-class Dependency:
-    name: str
-    version: str
-    ecosystem: str
-
+from app.graphql.types import Dependency
 
 dependency_parsers: List[Tuple[str, Callable[[Path], List[Dependency]], str]] = []
 
@@ -38,9 +32,42 @@ def parse_requirements_txt(file_path: Path) -> List[Dependency]:
                 else:
                     name, version = line, "unknown"
 
-                dependencies.append(Dependency(name.strip(), version.strip(), "pypi"))
+                dependencies.append(Dependency(name=name, version=version, ecosystem="PyPI"))
 
     return dependencies
+
+@register_parser("pnpm-lock.yaml", "npm")
+def parse_pnpm_lock(file_path: Path) -> List[Dependency]:
+    dependencies = []
+    with file_path.open() as file:
+        data = yaml.safe_load(file)
+
+        for package_ref in data.get("packages").keys():
+            parts = package_ref.split("/")
+            if not parts or "node_modules" in parts:
+                continue
+
+            if "@" in package_ref:
+                name_version = package_ref.lstrip("/").rsplit("@", 1)
+                if len(name_version) == 2:
+                    name, version = name_version
+                    if name:
+
+                        dependencies.append(Dependency(name=name, version=version, ecosystem="npm"))
+
+    return dependencies
+
+@register_parser("package-lock.json", "npm")
+def parse_package_lock(file_path: Path) -> List[Dependency]:
+    dependencies = []
+    with file_path.open() as file:
+        data = json.load(file)
+        for name, info in data.get("dependencies", {}).items():
+            version = info.get("version", "unknown")
+            dependencies.append(Dependency(name=name, version=version, ecosystem="npm"))
+
+    return dependencies
+
 
 
 def clone_repository(repository_url: str) -> Path:

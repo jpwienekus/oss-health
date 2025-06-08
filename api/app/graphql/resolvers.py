@@ -1,12 +1,12 @@
 import httpx
-from typing import List
+from typing import Dict, List
 from sqlalchemy.ext.asyncio import AsyncSession
 import strawberry
 from strawberry.types import Info
 from app.auth.jwt_utils import decode_token
 from app.crud.repository import add_repository_ids, get_repositories
 from app.crud.user import get_access_token, get_user
-from app.graphql.types import GitHubRepository
+from app.graphql.types import Dependency, GitHubRepository, Vulnerability
 from app.scanners.scanner import get_repository_dependencies
 
 
@@ -30,6 +30,11 @@ async def get_repository_information_from_github(
 
     return repo_data
 
+def chunk_list(data, chunk_size):
+    """Yield successive chunks from data of size chunk_size."""
+    for i in range(0, len(data), chunk_size):
+        yield data[i:i + chunk_size]
+
 
 @strawberry.type
 class Query:
@@ -49,15 +54,76 @@ class Query:
 
         return [GitHubRepository.from_model(repo, 0) for repo in repositories]
 
-    @strawberry.field
-    async def debug_cloning(self, info: Info) -> int:
-        user_id = get_user_id(info)
-        db = info.context["db"]
-        tracked_repositories = await get_repositories(db, user_id)
-        dependencies = get_repository_dependencies(tracked_repositories[0].clone_url)
-        print(dependencies)
 
-        return 0
+    # @strawberry.field
+    # async def debug_cloning(self, info: Info) -> List[Dependency]:
+    #     user_id = get_user_id(info)
+    #     db = info.context["db"]
+    #     tracked_repositories = await get_repositories(db, user_id)
+    #     dependencies = get_repository_dependencies(tracked_repositories[1].clone_url)
+    #     matched_vulnerabilities: Dict[str, List[Vulnerability]] = {}
+    #
+    #     for chunk in chunk_list(dependencies, 500):
+    #         queries = [
+    #             {
+    #                 "package": {
+    #                     "name": dependency.name,
+    #                     "ecosystem": dependency.ecosystem
+    #                 },
+    #                 "version": dependency.version
+    #             }
+    #             for dependency in chunk
+    #         ]
+    #
+    #         if not queries:
+    #             return []
+    #
+    #
+    #         async with httpx.AsyncClient() as client:
+    #             response = await client.post(
+    #                 "https://api.osv.dev/v1/querybatch",
+    #                 json={"queries": queries},
+    #                 timeout=30
+    #             )
+    #             results = response.json()["results"]
+    #
+    #         vulnerability_ids = {
+    #             vulnerability.get("id")
+    #             for result in results
+    #             for vulnerability in result.get("vulns", "")
+    #         }
+    #
+    #         vulnerability_details = {}
+    #
+    #         for vulnerability_id in vulnerability_ids:
+    #             async with httpx.AsyncClient() as client:
+    #                 response = await client.get(
+    #                     f"https://api.osv.dev/v1/vulns/{vulnerability_id}",
+    #                 )
+    #                 if response.status_code == 200:
+    #                     vulnerability_details[vulnerability_id] = response.json()
+    #
+    #
+    #         for dependency, result in zip(dependencies, results):
+    #             vulnerabilities = []
+    #             for v in result.get("vulns", []):
+    #                 full = vulnerability_details.get(v.get("id"))
+    #                 if full:
+    #                     vulnerabilities.append(
+    #                         Vulnerability(
+    #                             id=full.get("id"),
+    #                             summary=full.get("summary", ""),
+    #                             severity=full.get("severity", "")
+    #                         )
+    #                     )
+    #
+    #             if vulnerabilities:
+    #                 matched_vulnerabilities[dependency.name] = vulnerabilities
+    #
+    #     print('@' * 100)
+    #     print(matched_vulnerabilities)
+    #
+    #     return dependencies
 
     @strawberry.field
     async def repositories(self, info: Info) -> List[GitHubRepository]:

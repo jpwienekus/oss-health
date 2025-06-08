@@ -1,6 +1,18 @@
 import strawberry
 from datetime import datetime
 
+@strawberry.type
+class Dependency:
+    name: str
+    version: str
+    ecosystem: str
+
+@strawberry.type
+class Vulnerability:
+    id: str
+    summary: str
+    severity: str
+    # affected_versions: List[str]
 
 @strawberry.type
 class GitHubRepository:
