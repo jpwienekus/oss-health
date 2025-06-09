@@ -33,12 +33,6 @@ async def get_repository_information_from_github(
     return repo_data
 
 
-def chunk_list(data, chunk_size):
-    """Yield successive chunks from data of size chunk_size."""
-    for i in range(0, len(data), chunk_size):
-        yield data[i : i + chunk_size]
-
-
 @strawberry.type
 class Query:
     @strawberry.field
