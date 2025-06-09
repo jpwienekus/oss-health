@@ -5,6 +5,7 @@ from app.models.dependency import Dependency
 from app.parsers import dependency_parsers
 from app.services.scanner import extract_dependencies, get_repository_dependencies
 
+
 def test_extract_dependencies_with_mock_parser(tmp_path: Path):
     dummy_file = tmp_path / "test.txt"
     dummy_file.write_text("dummy")

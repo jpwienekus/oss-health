@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from app.crud.repository import get_repository_with_dependencies_loaded
 from app.models import Dependency as DependencyDBModel
 
+
 async def get_dependency_with_vulnerabilities_loaded(
     db_session: AsyncSession, id: int
 ) -> DependencyDBModel | None:
@@ -16,13 +17,16 @@ async def get_dependency_with_vulnerabilities_loaded(
         )
     ).scalar_one_or_none()
 
+
 async def replace_repository_dependencies(
     db_session: AsyncSession,
     user_id: int,
     repository_id: int,
     dependencies: List[DependencyDBModel],
 ):
-    repository = await get_repository_with_dependencies_loaded(db_session, user_id, repository_id)
+    repository = await get_repository_with_dependencies_loaded(
+        db_session, user_id, repository_id
+    )
 
     if not repository:
         raise ValueError(f"Repository with id {repository_id} not found.")

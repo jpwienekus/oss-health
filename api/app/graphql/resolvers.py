@@ -32,10 +32,11 @@ async def get_repository_information_from_github(
 
     return repo_data
 
+
 def chunk_list(data, chunk_size):
     """Yield successive chunks from data of size chunk_size."""
     for i in range(0, len(data), chunk_size):
-        yield data[i:i + chunk_size]
+        yield data[i : i + chunk_size]
 
 
 @strawberry.type
@@ -56,7 +57,6 @@ class Query:
 
         return [GitHubRepository.from_model(repo, 0) for repo in repositories]
 
-
     @strawberry.field
     async def debug_cloning(self, info: Info) -> List[Dependency]:
         user_id = get_user_id(info)
@@ -65,7 +65,9 @@ class Query:
         tracked_repositories = await get_repositories(db, user_id)
         debug_repo = tracked_repositories[1]
         dependencies = get_repository_dependencies(debug_repo.clone_url)
-        attached_dependencies = await replace_repository_dependencies(db, user_id, debug_repo.id, dependencies)
+        attached_dependencies = await replace_repository_dependencies(
+            db, user_id, debug_repo.id, dependencies
+        )
         await update_dependency_vulnerability(db, attached_dependencies)
 
         return dependencies

@@ -7,6 +7,7 @@ from typing import List
 from app.models.dependency import Dependency
 from app.parsers import dependency_parsers
 
+
 def clone_repository(repository_url: str) -> Path:
     temp_dir = Path(tempfile.mkdtemp())
     subprocess.run(

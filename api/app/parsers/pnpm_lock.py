@@ -5,6 +5,7 @@ from typing import List
 from app.models.dependency import Dependency
 from app.parsers.base import register_parser
 
+
 @register_parser("pnpm-lock.yaml", "npm")
 def parse_pnpm_lock(file_path: Path) -> List[Dependency]:
     dependencies = []
@@ -22,6 +23,8 @@ def parse_pnpm_lock(file_path: Path) -> List[Dependency]:
                 if len(name_version) == 2:
                     name, version = name_version
                     if name:
-                        dependencies.append(Dependency(name=name, version=version, ecosystem="npm"))
+                        dependencies.append(
+                            Dependency(name=name, version=version, ecosystem="npm")
+                        )
 
     return dependencies

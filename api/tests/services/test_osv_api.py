@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, patch
 from app.models.dependency import Dependency
 from app.services.osv_api import update_dependency_vulnerability
 
+
 @pytest.mark.asyncio
 @patch("app.services.osv_api.httpx.AsyncClient.post")
 @patch("app.services.osv_api.update_dependency_vulnerabilities")

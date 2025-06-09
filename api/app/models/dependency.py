@@ -11,12 +11,10 @@ class Dependency(Base):
     version: Mapped[str] = mapped_column(nullable=True)
     ecosystem: Mapped[str] = mapped_column(nullable=True)
 
-    repositories: Mapped[List["Repository"]] = relationship( # type: ignore
-        secondary="repository_dependency",
-        back_populates="dependencies"
+    repositories: Mapped[List["Repository"]] = relationship(  # type: ignore
+        secondary="repository_dependency", back_populates="dependencies"
     )
 
-    vulnerabilities: Mapped[List["Vulnerability"]] = relationship( # type: ignore
-        secondary="dependency_vulnerability",
-        back_populates="dependencies"
+    vulnerabilities: Mapped[List["Vulnerability"]] = relationship(  # type: ignore
+        secondary="dependency_vulnerability", back_populates="dependencies"
     )

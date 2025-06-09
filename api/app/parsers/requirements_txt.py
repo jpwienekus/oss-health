@@ -18,6 +18,8 @@ def parse_requirements_txt(file_path: Path) -> List[Dependency]:
                 else:
                     name, version = line, "unknown"
 
-                dependencies.append(Dependency(name=name, version=version, ecosystem="PyPI"))
+                dependencies.append(
+                    Dependency(name=name, version=version, ecosystem="PyPI")
+                )
 
     return dependencies

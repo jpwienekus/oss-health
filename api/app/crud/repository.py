@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.models import Repository as RepositoryDBModel
 
+
 async def get_repository(
     db_session: AsyncSession, user_id: int, id: int
 ) -> RepositoryDBModel | None:
@@ -14,6 +15,7 @@ async def get_repository(
             .where(RepositoryDBModel.id == id)
         )
     ).scalar_one_or_none()
+
 
 async def get_repository_with_dependencies_loaded(
     db_session: AsyncSession, user_id: int, id: int
@@ -26,6 +28,7 @@ async def get_repository_with_dependencies_loaded(
             .where(RepositoryDBModel.id == id)
         )
     ).scalar_one_or_none()
+
 
 async def get_repositories(
     db_session: AsyncSession, user_id: int
