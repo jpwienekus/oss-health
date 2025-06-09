@@ -7,12 +7,12 @@ class Dependency:
     version: str
     ecosystem: str
 
-@strawberry.type
-class Vulnerability:
-    id: str
-    summary: str
-    severity: str
-    # affected_versions: List[str]
+# @strawberry.type
+# class Vulnerability:
+#     id: str
+#     summary: str
+#     severity: str
+#     # affected_versions: List[str]
 
 @strawberry.type
 class GitHubRepository:

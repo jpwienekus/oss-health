@@ -1,3 +1,4 @@
+import httpx
 import fnmatch
 import tempfile
 import subprocess
@@ -5,7 +6,8 @@ import json
 import yaml
 from pathlib import Path
 from typing import Callable, List, Tuple
-from app.graphql.types import Dependency
+
+from app.models.dependency import Dependency
 
 dependency_parsers: List[Tuple[str, Callable[[Path], List[Dependency]], str]] = []
 
@@ -80,7 +82,7 @@ def clone_repository(repository_url: str) -> Path:
 
 
 def extract_dependencies(repository_path: Path):
-    all_dependencies = []
+    all_dependencies: List[Dependency] = []
 
     for path in repository_path.rglob("*"):
         for pattern, parser, ecosystem in dependency_parsers:
@@ -97,7 +99,64 @@ def get_repository_dependencies(repository_url: str) -> List[Dependency]:
     repository_path = None
     try:
         repository_path = clone_repository(repository_url)
-        return extract_dependencies(repository_path)
+        dependencies = extract_dependencies(repository_path)
+        print('!' * 100)
+        print(dependencies)
+        
+        return dependencies
     finally:
         if repository_path and repository_path.exists():
             subprocess.run(["rm", "-rf", str(repository_path)])
+
+
+def chunk_list(data, chunk_size):
+    """Yield successive chunks from data of size chunk_size."""
+    for i in range(0, len(data), chunk_size):
+        yield data[i:i + chunk_size]
+
+# async def get_dependency_vulnerability(dependencies: List[Dependency]):
+#     # matched_vulnerabilities: Dict[str, List[Vulnerability]] = {}
+#     for chunk in chunk_list(dependencies, 500):
+#         queries = [
+#             {
+#                 "package": {
+#                     "name": dependency.name,
+#                     "ecosystem": dependency.ecosystem
+#                 },
+#                 "version": dependency.version
+#             }
+#             for dependency in chunk
+#         ]
+#
+#         if not queries:
+#             continue
+#
+#         async with httpx.AsyncClient() as client:
+#             response = await client.post(
+#                 "https://api.osv.dev/v1/querybatch",
+#                 json={"queries": queries},
+#                 timeout=30
+#             )
+#             results = response.json()["results"]
+#
+#         # vulnerability_ids = {
+#         #     vulnerability.get("id")
+#         #     for result in results
+#         #     for vulnerability in result.get("vulns", "")
+#         # }
+#         print('^' * 100)
+#         print(vulnerability_ids)
+#
+#
+#         for dependency, result in zip(dependencies, results):
+#             vulnerabilities = []
+#             for v in result.get("vulns", []):
+#                 full = vulnerability_details.get(v.get("id"))
+#                 if full:
+#                     vulnerabilities.append(
+#                         Vulnerability(
+#                             id=full.get("id"),
+#                             summary=full.get("summary", ""),
+#                             severity=full.get("severity", "")
+#                         )
+#                     )
