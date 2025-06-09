@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     test: bool = False
     project_name: str = "My FastAPI project"
     oauth_token_secret: str = "my_dev_secret"
-    log_level: str = "DEBUG"
+    log_level: str = "INFO"
     github_client_id: str = ""
     github_client_secret: str = ""
     secret_key: str = ""

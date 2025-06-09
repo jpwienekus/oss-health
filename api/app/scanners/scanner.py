@@ -3,11 +3,14 @@ import fnmatch
 import tempfile
 import subprocess
 import json
+from sqlalchemy.ext.asyncio import AsyncSession
 import yaml
 from pathlib import Path
 from typing import Callable, List, Tuple
 
+from app.crud.vulnerability import update_dependency_vulnerabilities
 from app.models.dependency import Dependency
+from app.models.vulnerability import Vulnerability
 
 dependency_parsers: List[Tuple[str, Callable[[Path], List[Dependency]], str]] = []
 
@@ -99,11 +102,7 @@ def get_repository_dependencies(repository_url: str) -> List[Dependency]:
     repository_path = None
     try:
         repository_path = clone_repository(repository_url)
-        dependencies = extract_dependencies(repository_path)
-        print('!' * 100)
-        print(dependencies)
-        
-        return dependencies
+        return extract_dependencies(repository_path)
     finally:
         if repository_path and repository_path.exists():
             subprocess.run(["rm", "-rf", str(repository_path)])
@@ -114,49 +113,44 @@ def chunk_list(data, chunk_size):
     for i in range(0, len(data), chunk_size):
         yield data[i:i + chunk_size]
 
-# async def get_dependency_vulnerability(dependencies: List[Dependency]):
-#     # matched_vulnerabilities: Dict[str, List[Vulnerability]] = {}
-#     for chunk in chunk_list(dependencies, 500):
-#         queries = [
-#             {
-#                 "package": {
-#                     "name": dependency.name,
-#                     "ecosystem": dependency.ecosystem
-#                 },
-#                 "version": dependency.version
-#             }
-#             for dependency in chunk
-#         ]
-#
-#         if not queries:
-#             continue
-#
-#         async with httpx.AsyncClient() as client:
-#             response = await client.post(
-#                 "https://api.osv.dev/v1/querybatch",
-#                 json={"queries": queries},
-#                 timeout=30
-#             )
-#             results = response.json()["results"]
-#
-#         # vulnerability_ids = {
-#         #     vulnerability.get("id")
-#         #     for result in results
-#         #     for vulnerability in result.get("vulns", "")
-#         # }
-#         print('^' * 100)
-#         print(vulnerability_ids)
-#
-#
-#         for dependency, result in zip(dependencies, results):
-#             vulnerabilities = []
-#             for v in result.get("vulns", []):
-#                 full = vulnerability_details.get(v.get("id"))
-#                 if full:
-#                     vulnerabilities.append(
-#                         Vulnerability(
-#                             id=full.get("id"),
-#                             summary=full.get("summary", ""),
-#                             severity=full.get("severity", "")
-#                         )
-#                     )
+async def update_dependency_vulnerability(db: AsyncSession, dependencies: List[Dependency]):
+    debug_info = []
+
+    for chunk in chunk_list(dependencies, 500):
+        queries = [
+            {
+                "package": {
+                    "name": dependency.name,
+                    "ecosystem": dependency.ecosystem
+                },
+                "version": dependency.version
+            }
+            for dependency in chunk
+        ]
+
+        if not queries:
+            continue
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.osv.dev/v1/querybatch",
+                json={"queries": queries},
+                timeout=30
+            )
+            results = response.json()["results"]
+
+        for dependency, result in zip(chunk, results):
+            vulnerabilities = [
+                Vulnerability(osv_id=v.get("id"))
+                for v in result.get("vulns", [])
+            ]
+
+            debug_info.append((dependency.id, [v.osv_id for v in vulnerabilities]))
+
+            await update_dependency_vulnerabilities(db, dependency.id, vulnerabilities)
+
+
+    print("\n--- Vulnerability Report ---")
+    for dep_id, vuln_ids in debug_info:
+        if len(vuln_ids) > 0:
+            print(f"Dependency ID: {dep_id}, Vulnerabilities: {vuln_ids}")

@@ -1,16 +1,26 @@
 from typing import List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from app.crud.repository import get_repository_with_dependencies_loaded
 from app.models import Dependency as DependencyDBModel
-from app.models.dependency import Dependency
 
+async def get_dependency_with_vulnerabilities_loaded(
+    db_session: AsyncSession, id: int
+) -> DependencyDBModel | None:
+    return (
+        await db_session.execute(
+            select(DependencyDBModel)
+            .options(selectinload(DependencyDBModel.vulnerabilities))
+            .where(DependencyDBModel.id == id)
+        )
+    ).scalar_one_or_none()
 
-async def add_dependencies_to_repository(
+async def replace_repository_dependencies(
     db_session: AsyncSession,
     user_id: int,
     repository_id: int,
-    dependencies: List[Dependency],
+    dependencies: List[DependencyDBModel],
 ):
     repository = await get_repository_with_dependencies_loaded(db_session, user_id, repository_id)
 
@@ -42,3 +52,5 @@ async def add_dependencies_to_repository(
     repository.dependencies.extend(attached_dependencies)
 
     await db_session.commit()
+
+    return attached_dependencies

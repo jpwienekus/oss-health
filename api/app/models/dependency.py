@@ -15,3 +15,8 @@ class Dependency(Base):
         secondary="repository_dependency",
         back_populates="dependencies"
     )
+
+    vulnerabilities: Mapped[List["Vulnerability"]] = relationship( # type: ignore
+        secondary="dependency_vulnerability",
+        back_populates="dependencies"
+    )

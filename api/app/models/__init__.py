@@ -5,3 +5,5 @@ from .user import User
 from .repository import Repository
 from .dependency import Dependency
 from .repository_dependency import RepositoryDependency
+from .vulnerability import Vulnerability
+from .dependency_vulnerability import DependencyVulnerability
