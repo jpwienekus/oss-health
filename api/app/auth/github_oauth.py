@@ -27,9 +27,7 @@ async def callback_html(code: str):
     frontend_url = "http://localhost:5173"
     return f"""
     <script>
-        window.opener.postMessage({
-            {"type": "github-oauth-code", "code": "{code}"}
-        }, "{frontend_url}")
+        window.opener.postMessage({{"type": "github-oauth-code", "code": "{code}"}}, "{frontend_url}") 
         window.close()
     </script>
     """
