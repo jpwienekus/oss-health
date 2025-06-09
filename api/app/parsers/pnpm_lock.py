@@ -13,6 +13,7 @@ def parse_pnpm_lock(file_path: Path) -> List[Dependency]:
 
         for package_ref in data.get("packages").keys():
             parts = package_ref.split("/")
+
             if not parts or "node_modules" in parts:
                 continue
 
@@ -21,7 +22,6 @@ def parse_pnpm_lock(file_path: Path) -> List[Dependency]:
                 if len(name_version) == 2:
                     name, version = name_version
                     if name:
-
                         dependencies.append(Dependency(name=name, version=version, ecosystem="npm"))
 
     return dependencies
