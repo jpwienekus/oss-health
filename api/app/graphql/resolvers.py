@@ -1,5 +1,5 @@
 import httpx
-from typing import Dict, List
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 import strawberry
 from strawberry.types import Info
@@ -8,7 +8,8 @@ from app.crud.dependency import replace_repository_dependencies
 from app.crud.repository import add_repository_ids, get_repositories
 from app.crud.user import get_access_token, get_user
 from app.graphql.types import Dependency, GitHubRepository
-from app.scanners.scanner import get_repository_dependencies, update_dependency_vulnerability
+from app.services.osv_api import update_dependency_vulnerability
+from app.services.scanner import get_repository_dependencies
 
 
 def get_user_id(info: Info) -> int:
