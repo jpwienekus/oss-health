@@ -14,3 +14,39 @@ multi_line_output=3
 include_trailing_comma = true
 force_grid_wrap=0
 use_parentheses = true
+
+[tool.poetry.group.dev.dependencies]
+black = "25.1.0"
+pytest = "8.4.0"
+pytest-asyncio = "1.0.0"
+isort = "6.0.1"
+
+[tool.isort]
+profile = "black"
+
+[project]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "JP Wienekus",email = "jpwienekus@gmail.com"}
+]
+packages = [{ include = "app" }]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic-settings (==2.9.1)",
+    "fastapi[standard] (==0.115.12)",
+    "strawberry-graphql[fastapi] (==0.271.1)",
+    "alembic (==1.16.1)",
+    "sqlalchemy (==2.0.41)",
+    "asyncpg (==0.30.0)",
+    "greenlet (==3.2.3)",
+    "python-jose[cryptography] (==3.5.0)",
+    "pyyaml (==6.0.2)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
