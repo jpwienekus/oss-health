@@ -9,14 +9,13 @@ force_grid_wrap=0
 use_parentheses = true
 
 [tool.poetry.group.dev.dependencies]
+black = "25.1.0"
 pytest = "8.4.0"
 pytest-asyncio = "1.0.0"
-ruff = "0.11.13"
+isort = "6.0.1"
 
-[tool.ruff.lint]
-select = ["E", "F", "I"]
-fixable = ["ALL"]
-
+[tool.isort]
+profile = "black"
 
 [project]
 name = "app"
