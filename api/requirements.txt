@@ -6,3 +6,4 @@ sqlalchemy==2.0.41
 asyncpg==0.30.0
 greenlet==3.2.3
 python-jose[cryptography]==3.5.0
+pyyaml==6.0.2

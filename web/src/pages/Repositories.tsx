@@ -20,7 +20,7 @@ import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
 import { getClient } from '@/graphql/client'
 import { SAVE_SELECTED_REPOSITORIES } from '@/graphql/mutations'
-import { GET_REPOSITORIES } from '@/graphql/queries'
+import { DEBUG_CLONING, GET_REPOSITORIES } from '@/graphql/queries'
 
 export const Repositories = () => {
   const { jwt } = useAuth()
@@ -64,6 +64,8 @@ export const Repositories = () => {
       const response = await client.request<{
         repositories: GitHubRepository[]
       }>(GET_REPOSITORIES)
+
+      await client.request(DEBUG_CLONING)
 
       setData(response.repositories)
     }

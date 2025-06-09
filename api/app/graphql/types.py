@@ -3,6 +3,21 @@ from datetime import datetime
 
 
 @strawberry.type
+class Dependency:
+    name: str
+    version: str
+    ecosystem: str
+
+
+# @strawberry.type
+# class Vulnerability:
+#     id: str
+#     summary: str
+#     severity: str
+#     # affected_versions: List[str]
+
+
+@strawberry.type
 class GitHubRepository:
     name: str
     description: str | None
@@ -15,6 +30,7 @@ class GitHubRepository:
     score: int
     vulnerabilities: int
     dependencies: int
+    clone_url: str
 
     @classmethod
     def from_model(cls, model, score: int) -> "GitHubRepository":
@@ -32,4 +48,5 @@ class GitHubRepository:
             score=score,
             vulnerabilities=0,
             dependencies=0,
+            clone_url=model.get("clone_url"),
         )

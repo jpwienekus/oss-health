@@ -37,3 +37,9 @@ export const GET_USERNAME = gql`
     username
   }
 `
+
+export const DEBUG_CLONING = gql`
+  query {
+    debugCloning
+  }
+`
