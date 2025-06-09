@@ -15,6 +15,6 @@ class Repository(Base):
     score: Mapped[int] = mapped_column(nullable=True)
     clone_url: Mapped[str] = mapped_column(nullable=True)
 
-    dependencies: Mapped[List["Dependency"]] = relationship(  # type: ignore
+    dependencies: Mapped[List["Dependency"]] = relationship(  # type: ignore # noqa: F821
         secondary="repository_dependency", back_populates="repositories"
     )

@@ -96,7 +96,6 @@ class Query:
 
 @strawberry.type
 class Mutation:
-
     @strawberry.mutation
     async def save_selected_repositories(
         self, info: Info, selected_github_repository_ids: List[int]
