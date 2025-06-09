@@ -1,18 +1,17 @@
-import sys
-import os
 import asyncio
+import os
+import sys
 from logging.config import fileConfig
-from asyncpg import Connection
 
+from asyncpg import Connection
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Add the parent directory of env.py to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from alembic import context
 from app.configuration import settings
 from app.models import Base
-
-from alembic import context
 
 config = context.config
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from app.parsers.pnpm_lock import parse_pnpm_lock
 
 

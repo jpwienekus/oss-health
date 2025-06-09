@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List
+
 from app.models.dependency import Dependency
 from app.parsers.base import register_parser
 

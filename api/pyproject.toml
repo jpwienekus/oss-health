@@ -7,6 +7,7 @@ mypy_path = "."
 
 [tool.isort]
 known_first_party = "app"
+profile = "black"
 
 # This is to make isort compatible with Black. See
 # https://black.readthedocs.io/en/stable/the_black_code_style.html#how-black-wraps-lines.
@@ -21,8 +22,6 @@ pytest = "8.4.0"
 pytest-asyncio = "1.0.0"
 isort = "6.0.1"
 
-[tool.isort]
-profile = "black"
 
 [project]
 name = "app"

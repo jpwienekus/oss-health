@@ -1,6 +1,6 @@
+import strawberry
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-import strawberry
 from strawberry.fastapi import GraphQLRouter
 
 from app.database import get_db_session
