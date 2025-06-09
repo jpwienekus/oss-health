@@ -1,10 +1,11 @@
+import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-import httpx
+
 from app.auth.jwt_utils import create_token_pair
-from app.crud.user import get_user_by_github_id, add_user, update_access_token
-from app.dependencies.core import DBSessionDep
 from app.configuration import settings
+from app.crud.user import add_user, get_user_by_github_id, update_access_token
+from app.dependencies.core import DBSessionDep
 
 router = APIRouter()
 
@@ -20,13 +21,13 @@ async def login(code_challenge: str):
         f"&code_challenge_method=S256"
     )
 
-
+# ruff: noqa: E501
 @router.get("/auth/github/callback", response_class=HTMLResponse)
 async def callback_html(code: str):
     frontend_url = "http://localhost:5173"
     return f"""
     <script>
-        window.opener.postMessage({{"type": "github-oauth-code", "code": "{code}"}}, "{frontend_url}")
+        window.opener.postMessage({{"type": "github-oauth-code", "code": "{code}"}}, "{frontend_url}") 
         window.close()
     </script>
     """

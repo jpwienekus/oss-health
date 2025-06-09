@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from app.models.dependency import Dependency
 from app.services.osv_api import update_dependency_vulnerability
 

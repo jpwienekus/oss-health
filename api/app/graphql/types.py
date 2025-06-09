@@ -1,5 +1,6 @@
-import strawberry
 from datetime import datetime
+
+import strawberry
 
 
 @strawberry.type

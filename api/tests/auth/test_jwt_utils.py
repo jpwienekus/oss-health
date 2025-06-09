@@ -1,9 +1,8 @@
+
 import pytest
-from jose import jwt, JWTError
-from datetime import datetime, timedelta
 from fastapi import HTTPException
+
 from app.auth.jwt_utils import create_token_pair, decode_token
-from app.configuration import settings
 
 
 def test_create_and_decode_token():

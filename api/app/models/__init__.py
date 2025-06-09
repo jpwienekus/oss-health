@@ -1,9 +1,8 @@
-# need access to this before importing models
-from app.database import Base
+from app.database import Base as Base
 
-from .user import User
-from .repository import Repository
-from .dependency import Dependency
-from .repository_dependency import RepositoryDependency
-from .vulnerability import Vulnerability
-from .dependency_vulnerability import DependencyVulnerability
+from .dependency import Dependency as Dependency
+from .dependency_vulnerability import DependencyVulnerability as DependencyVulnerability
+from .repository import Repository as Repository
+from .repository_dependency import RepositoryDependency as RepositoryDependency
+from .user import User as User
+from .vulnerability import Vulnerability as Vulnerability

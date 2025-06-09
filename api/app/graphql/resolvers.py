@@ -1,8 +1,10 @@
-import httpx
 from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
+
+import httpx
 import strawberry
+from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
+
 from app.auth.jwt_utils import decode_token
 from app.crud.dependency import replace_repository_dependencies
 from app.crud.repository import add_repository_ids, get_repositories
@@ -94,7 +96,6 @@ class Query:
 
 @strawberry.type
 class Mutation:
-
     @strawberry.mutation
     async def save_selected_repositories(
         self, info: Info, selected_github_repository_ids: List[int]

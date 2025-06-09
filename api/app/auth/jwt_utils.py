@@ -1,6 +1,8 @@
-from jose import jwt, JWTError
 from datetime import datetime, timedelta
+
 from fastapi import HTTPException
+from jose import JWTError, jwt
+
 from app.configuration import settings
 
 

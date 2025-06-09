@@ -1,7 +1,9 @@
 from typing import List
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
 from app.crud.repository import get_repository_with_dependencies_loaded
 from app.models import Dependency as DependencyDBModel
 

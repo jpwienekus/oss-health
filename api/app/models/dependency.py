@@ -1,5 +1,7 @@
 from typing import List
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from . import Base
 
 
@@ -11,10 +13,10 @@ class Dependency(Base):
     version: Mapped[str] = mapped_column(nullable=True)
     ecosystem: Mapped[str] = mapped_column(nullable=True)
 
-    repositories: Mapped[List["Repository"]] = relationship(  # type: ignore
+    repositories: Mapped[List["Repository"]] = relationship(  # type: ignore # noqa: F821
         secondary="repository_dependency", back_populates="dependencies"
     )
 
-    vulnerabilities: Mapped[List["Vulnerability"]] = relationship(  # type: ignore
+    vulnerabilities: Mapped[List["Vulnerability"]] = relationship(  # type: ignore # noqa: F821
         secondary="dependency_vulnerability", back_populates="dependencies"
     )

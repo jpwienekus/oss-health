@@ -1,9 +1,11 @@
-import httpx
 from typing import List
+
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.crud.vulnerability import update_dependency_vulnerabilities
 from app.models.dependency import Dependency
 from app.models.vulnerability import Vulnerability
-from app.crud.vulnerability import update_dependency_vulnerabilities
 from app.utils.chunking import chunk_list
 
 

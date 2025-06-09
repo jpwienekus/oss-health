@@ -1,6 +1,7 @@
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
-import tempfile
+
 from app.models.dependency import Dependency
 from app.parsers import dependency_parsers
 from app.services.scanner import extract_dependencies, get_repository_dependencies
