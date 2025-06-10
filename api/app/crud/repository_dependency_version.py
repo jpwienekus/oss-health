@@ -47,12 +47,15 @@ async def replace_repository_dependency_versions(
             existing_dependencies += 1
 
         version_result = await db_session.execute(
-            select(VersionDBModel).where(VersionDBModel.version == version_str)
+            select(VersionDBModel).where(
+                VersionDBModel.version == version_str,
+                VersionDBModel.dependency_id == dependency.id
+            )
         )
         version = version_result.scalar_one_or_none()
 
         if not version:
-            version = VersionDBModel(version=version_str)
+            version = VersionDBModel(version=version_str, dependency_id=dependency.id)
             db_session.add(version)
             await db_session.flush()
             inserted_versions += 1
