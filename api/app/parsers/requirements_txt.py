@@ -1,14 +1,13 @@
 from pathlib import Path
 from typing import List
 
-from app.models.dependency import Dependency
 from app.parsers.base import register_parser
 
 
 @register_parser("requirements.txt", "pypi")
 @register_parser("requirements-*.txt", "pypi")
 @register_parser("requirements/*.txt", "pypi")
-def parse_requirements_txt(file_path: Path) -> List[Dependency]:
+def parse_requirements_txt(file_path: Path) -> List[tuple[str, str, str]]:
     dependencies = []
     with file_path.open() as file:
         for line in file:
@@ -19,8 +18,6 @@ def parse_requirements_txt(file_path: Path) -> List[Dependency]:
                 else:
                     name, version = line, "unknown"
 
-                dependencies.append(
-                    Dependency(name=name, version=version, ecosystem="PyPI")
-                )
+                dependencies.append((name, version, "PyPi"))
 
     return dependencies

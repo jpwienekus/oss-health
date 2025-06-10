@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     database_password: str = "password"
     database_url: str = "localhost"
     database_name: str = "dev_db"
-    echo_sql: bool = True
+    echo_sql: bool = False
     test: bool = False
     project_name: str = "My FastAPI project"
     oauth_token_secret: str = "my_dev_secret"

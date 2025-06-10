@@ -10,5 +10,7 @@ def test_parse_package_lock(tmp_path: Path):
     result = parse_package_lock(file)
 
     assert len(result) == 1
-    assert result[0].name == "lodash"
-    assert result[0].version == "4.17.21"
+    name, version, ecosystem = result[0]
+    assert name == "lodash"
+    assert version == "4.17.21"
+    assert ecosystem == "npm"
