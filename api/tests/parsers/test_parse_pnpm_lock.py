@@ -18,5 +18,7 @@ packages:
     result = parse_pnpm_lock(file)
 
     assert len(result) == 1
-    assert result[0].name == "axios"
-    assert result[0].version == "1.0.0"
+    name, version, ecosystem = result[0]
+    assert name == "axios"
+    assert version == "1.0.0"
+    assert ecosystem == "npm"

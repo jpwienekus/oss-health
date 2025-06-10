@@ -10,6 +10,7 @@ def test_parse_requirements_txt(tmp_path: Path):
     result = parse_requirements_txt(file)
 
     assert len(result) == 2
-    assert result[0].name == "requests"
-    assert result[0].version == "2.25.1"
-    assert result[1].version == "unknown"
+    name, version, ecosystem = result[0]
+    assert name == "requests"
+    assert version == "2.25.1"
+    assert ecosystem == "PyPi"

@@ -6,11 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
 
 from app.auth.jwt_utils import decode_token
-from app.crud.dependency import replace_repository_dependencies
+
+# from app.crud.dependency import replace_repository_dependencies
 from app.crud.repository import add_repository_ids, get_repositories
+from app.crud.repository_dependency_version import (
+    replace_repository_dependency_versions,
+)
 from app.crud.user import get_access_token, get_user
 from app.graphql.types import Dependency, GitHubRepository
-from app.services.osv_api import update_dependency_vulnerability
+
+# from app.services.osv_api import update_dependency_vulnerability
 from app.services.scanner import get_repository_dependencies
 
 
@@ -60,13 +65,15 @@ class Query:
 
         tracked_repositories = await get_repositories(db, user_id)
         debug_repo = tracked_repositories[1]
-        dependencies = get_repository_dependencies(debug_repo.clone_url)
-        attached_dependencies = await replace_repository_dependencies(
-            db, user_id, debug_repo.id, dependencies
-        )
-        await update_dependency_vulnerability(db, attached_dependencies)
+        repo_id, dependencies = get_repository_dependencies(debug_repo.id, debug_repo.clone_url)
+        await replace_repository_dependency_versions(db, repo_id, dependencies)
 
-        return dependencies
+        # attached_dependencies = await replace_repository_dependencies(
+        #     db, user_id, debug_repo.id, dependencies
+        # )
+        # await update_dependency_vulnerability(db, attached_dependencies)
+
+        return []
 
     @strawberry.field
     async def repositories(self, info: Info) -> List[GitHubRepository]:
