@@ -1,33 +1,39 @@
+import httpx
+from typing import List
+from app.utils.chunking import chunk_list
 
 
+async def get_dependency_version_vulnerability(
+    dependency_versions: List[tuple[int, str, str, str]]
+) -> List[tuple[int, List[str]]]:
+    vulnerabilities: List[tuple[int, List[str]]] = []
 
+    for chunk in chunk_list(dependency_versions, 500):
+        queries = [
+            {
+                "package": {"name": name, "ecosystem": ecosystem},
+                "version": version,
+            }
+            for _, name, version, ecosystem in chunk
+        ]
 
-# async def update_dependency_vulnerability(
-#     db: AsyncSession, dependencies: List[Dependency]
-# ):
-#     for chunk in chunk_list(dependencies, 500):
-#         queries = [
-#             {
-#                 "package": {"name": dependency.name, "ecosystem": dependency.ecosystem},
-#                 "version": dependency.version,
-#             }
-#             for dependency in chunk
-#         ]
-#
-#         if not queries:
-#             continue
-#
-#         async with httpx.AsyncClient() as client:
-#             response = await client.post(
-#                 "https://api.osv.dev/v1/querybatch",
-#                 json={"queries": queries},
-#                 timeout=30,
-#             )
-#             results = response.json()["results"]
-#
-#         for dependency, result in zip(chunk, results):
-#             vulnerabilities = [
-#                 Vulnerability(osv_id=v.get("id")) for v in result.get("vulns", [])
-#             ]
-#
-#             await update_dependency_vulnerabilities(db, dependency.id, vulnerabilities)
+        if not queries:
+            continue
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.osv.dev/v1/querybatch",
+                json={"queries": queries},
+                timeout=30,
+            )
+            results = response.json()["results"]
+
+        # for (version_id, _, _, _), result in zip(chunk, results):
+        for (version_id, name, version, ecosystem), result in zip(chunk, results):
+            vulnerability_ids = [v["id"] for v in result.get("vulns", [])]
+            vulnerabilities.append((version_id, vulnerability_ids))
+            if len(vulnerability_ids) > 0: 
+                print(f"Package: {name}, Version: {version}, Ecosystem: {ecosystem} -> Vulnerabilities: {vulnerability_ids}")
+
+    return vulnerabilities
+

@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Tuple
 
+from app.models.dependency import Dependency
 from app.parsers import dependency_parsers
 
 

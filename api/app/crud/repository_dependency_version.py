@@ -23,6 +23,7 @@ async def replace_repository_dependency_versions(
         )
     )
     await db_session.flush()
+    dependency_versions: List[tuple[int, str, str, str]] = []
 
     inserted_dependencies = 0
     existing_dependencies = 0
@@ -69,9 +70,12 @@ async def replace_repository_dependency_versions(
         )
 
         db_session.add(repository_dependency_version_link)
+        dependency_versions.append((version.id, name, version_str, ecosystem))
 
     await db_session.commit()
     logger.info(
         f"Dependencies: {inserted_dependencies} inserted, {existing_dependencies} existing; "
         f"Versions: {inserted_versions} inserted, {existing_versions} existing; "
     )
+
+    return dependency_versions
