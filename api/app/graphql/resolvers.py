@@ -6,11 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
 
 from app.auth.jwt_utils import decode_token
-from app.crud.dependency import replace_repository_dependencies
 from app.crud.repository import add_repository_ids, get_repositories
+from app.crud.repository_dependency_version import (
+    replace_repository_dependency_versions,
+)
 from app.crud.user import get_access_token, get_user
+from app.crud.vulnerability import replace_version_vulnerabilities
 from app.graphql.types import Dependency, GitHubRepository
-from app.services.osv_api import update_dependency_vulnerability
+from app.services.osv_api import get_dependency_version_vulnerability
 from app.services.scanner import get_repository_dependencies
 
 
@@ -59,14 +62,19 @@ class Query:
         db = info.context["db"]
 
         tracked_repositories = await get_repositories(db, user_id)
-        debug_repo = tracked_repositories[1]
-        dependencies = get_repository_dependencies(debug_repo.clone_url)
-        attached_dependencies = await replace_repository_dependencies(
-            db, user_id, debug_repo.id, dependencies
+        debug_repo = tracked_repositories[0]
+        repo_id, dependencies = get_repository_dependencies(
+            debug_repo.id, debug_repo.clone_url
         )
-        await update_dependency_vulnerability(db, attached_dependencies)
+        dependency_versions_to_check = await replace_repository_dependency_versions(
+            db, repo_id, dependencies
+        )
+        test = await get_dependency_version_vulnerability(dependency_versions_to_check)
+        await replace_version_vulnerabilities(db, test)
 
-        return dependencies
+        # print(test)
+
+        return []
 
     @strawberry.field
     async def repositories(self, info: Info) -> List[GitHubRepository]:

@@ -1,24 +1,22 @@
 from typing import List
 
 import httpx
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud.vulnerability import update_dependency_vulnerabilities
-from app.models.dependency import Dependency
-from app.models.vulnerability import Vulnerability
 from app.utils.chunking import chunk_list
 
 
-async def update_dependency_vulnerability(
-    db: AsyncSession, dependencies: List[Dependency]
-):
-    for chunk in chunk_list(dependencies, 500):
+async def get_dependency_version_vulnerability(
+    dependency_versions: List[tuple[int, str, str, str]],
+) -> List[tuple[int, List[str]]]:
+    vulnerabilities: List[tuple[int, List[str]]] = []
+
+    for chunk in chunk_list(dependency_versions, 500):
         queries = [
             {
-                "package": {"name": dependency.name, "ecosystem": dependency.ecosystem},
-                "version": dependency.version,
+                "package": {"name": name, "ecosystem": ecosystem},
+                "version": version,
             }
-            for dependency in chunk
+            for _, name, version, ecosystem in chunk
         ]
 
         if not queries:
@@ -32,9 +30,14 @@ async def update_dependency_vulnerability(
             )
             results = response.json()["results"]
 
-        for dependency, result in zip(chunk, results):
-            vulnerabilities = [
-                Vulnerability(osv_id=v.get("id")) for v in result.get("vulns", [])
-            ]
+        for (version_id, name, version, ecosystem), result in zip(chunk, results):
+            vulnerability_ids = [v["id"] for v in result.get("vulns", [])]
+            vulnerabilities.append((version_id, vulnerability_ids))
 
-            await update_dependency_vulnerabilities(db, dependency.id, vulnerabilities)
+            if len(vulnerability_ids) > 0:
+                # ruff: noqa: E501
+                print(
+                    f"Package: {name}, Version: {version}, Ecosystem: {ecosystem} -> Vulnerabilities: {vulnerability_ids}"
+                )
+
+    return vulnerabilities

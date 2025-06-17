@@ -2,34 +2,8 @@ from typing import List, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models import Repository as RepositoryDBModel
-
-
-async def get_repository(
-    db_session: AsyncSession, user_id: int, id: int
-) -> RepositoryDBModel | None:
-    return (
-        await db_session.execute(
-            select(RepositoryDBModel)
-            .where(RepositoryDBModel.user_id == user_id)
-            .where(RepositoryDBModel.id == id)
-        )
-    ).scalar_one_or_none()
-
-
-async def get_repository_with_dependencies_loaded(
-    db_session: AsyncSession, user_id: int, id: int
-) -> RepositoryDBModel | None:
-    return (
-        await db_session.execute(
-            select(RepositoryDBModel)
-            .options(selectinload(RepositoryDBModel.dependencies))
-            .where(RepositoryDBModel.user_id == user_id)
-            .where(RepositoryDBModel.id == id)
-        )
-    ).scalar_one_or_none()
 
 
 async def get_repositories(

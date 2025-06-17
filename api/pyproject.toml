@@ -12,10 +12,22 @@ use_parentheses = true
 pytest = "8.4.0"
 pytest-asyncio = "1.0.0"
 ruff = "0.11.13"
+pytest-env = "^1.1.5"
+black = "^25.1.0"
+
+[tool.black]
+line-length = 88
+# target-version = ["py311"]  # or py312 depending on your Python version
+# skip-string-normalization = false
+
+[tool.ruff]
+# target-version = "py311"  # match your Python version
+line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 fixable = ["ALL"]
+
 
 
 [project]

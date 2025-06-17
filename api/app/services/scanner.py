@@ -2,9 +2,8 @@ import fnmatch
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
-from app.models.dependency import Dependency
 from app.parsers import dependency_parsers
 
 
@@ -18,7 +17,7 @@ def clone_repository(repository_url: str) -> Path:
 
 
 def extract_dependencies(repository_path: Path):
-    all_dependencies: List[Dependency] = []
+    all_dependencies: List[tuple[str, str, str]] = []
 
     for path in repository_path.rglob("*"):
         for pattern, parser, ecosystem in dependency_parsers:
@@ -32,11 +31,14 @@ def extract_dependencies(repository_path: Path):
     return all_dependencies
 
 
-def get_repository_dependencies(repository_url: str) -> List[Dependency]:
+def get_repository_dependencies(
+    repository_id: int, repository_url: str
+) -> Tuple[int, List[tuple[str, str, str]]]:
     repository_path = None
     try:
         repository_path = clone_repository(repository_url)
-        return extract_dependencies(repository_path)
+        dependencies = extract_dependencies(repository_path)
+        return repository_id, dependencies
     finally:
         if repository_path and repository_path.exists():
             subprocess.run(["rm", "-rf", str(repository_path)])

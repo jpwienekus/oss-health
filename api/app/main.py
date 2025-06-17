@@ -1,5 +1,3 @@
-import logging
-import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,11 +7,9 @@ from app.auth.github_oauth import router as auth_router
 from app.configuration import settings
 from app.database import sessionmanager
 from app.graphql.schema import graphql_app
+from app.utils.loggin import configure_logging
 
-logging.basicConfig(
-    stream=sys.stdout,
-    level=logging.DEBUG if settings.log_level == "DEBUG" else logging.INFO,
-)
+configure_logging(settings.log_level)
 
 
 # https://github.com/ThomasAitken/demo-fastapi-async-sqlalchemy/blob/main/backend/requirements.txt

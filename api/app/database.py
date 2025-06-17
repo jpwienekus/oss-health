@@ -59,7 +59,7 @@ class DatabaseSessionManager:
 
 
 sessionmanager = DatabaseSessionManager(
-    f"postgresql+asyncpg://{settings.database_user}:{settings.database_password}@{settings.database_url}:5432/dev_db",
+    settings.database_url,
     {"echo": settings.echo_sql},
 )
 
