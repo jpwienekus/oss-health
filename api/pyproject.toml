@@ -11,7 +11,7 @@ use_parentheses = true
 [tool.poetry.group.dev.dependencies]
 pytest = "8.4.0"
 pytest-asyncio = "1.0.0"
-ruff = "0.11.13"
+ruff = "0.12.0"
 pytest-env = "^1.1.5"
 black = "^25.1.0"
 pytest-cov = "^6.2.1"
