@@ -39,12 +39,12 @@ authors = [
 ]
 packages = [{ include = "app" }]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "pydantic-settings (==2.9.1)",
-    "fastapi[standard] (==0.115.12)",
-    "strawberry-graphql[fastapi] (==0.271.1)",
-    "alembic (==1.16.1)",
+    "fastapi[standard] (==0.115.13)",
+    "strawberry-graphql[fastapi] (==0.274.0)",
+    "alembic (==1.16.2)",
     "sqlalchemy (==2.0.41)",
     "asyncpg (==0.30.0)",
     "greenlet (==3.2.3)",
