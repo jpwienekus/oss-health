@@ -1,11 +1,9 @@
+import os
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_user: str = "dev-user"
-    database_password: str = "password"
-    database_url: str = "localhost"
-    database_name: str = "dev_db"
+    database_url: str = "postgresql+asyncpg://dev-user:password@localhost:5432/dev_db"
     echo_sql: bool = False
     test: bool = False
     project_name: str = "My FastAPI project"
@@ -17,9 +15,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
 
     model_config = {
-        "env_file": ".env",
+        "env_file": os.getenv("ENV_FILE", ".env"),
         "env_file_encoding": "utf-8"
     }
 
 
 settings = Settings()  # type: ignore
+

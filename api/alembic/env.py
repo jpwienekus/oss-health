@@ -7,7 +7,6 @@ from asyncpg import Connection
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-# Add the parent directory of env.py to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from alembic import context
 from app.configuration import settings
@@ -22,7 +21,7 @@ target_metadata = Base.metadata
 
 
 def get_url():
-    return f"postgresql+asyncpg://{settings.database_user}:{settings.database_password}@{settings.database_url}:5432/{settings.database_name}"
+    return settings.database_url
 
 
 def run_migrations_offline() -> None:

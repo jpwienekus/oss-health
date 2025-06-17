@@ -12,6 +12,8 @@ use_parentheses = true
 pytest = "8.4.0"
 pytest-asyncio = "1.0.0"
 ruff = "0.11.13"
+psycopg2-binary = "^2.9.10"
+pytest-env = "^1.1.5"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
