@@ -3,7 +3,13 @@ import sys
 
 
 def configure_logging(log_level_str="INFO"):
-    log_level = logging.DEBUG if log_level_str.upper() == "DEBUG" else logging.INFO
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+    }
+    log_level = level_map.get(log_level_str.upper(), logging.INFO)
 
     formatter = logging.Formatter('%(levelname)-9s %(message)s')
     handler = logging.StreamHandler(sys.stdout)
