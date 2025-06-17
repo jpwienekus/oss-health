@@ -2,53 +2,36 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User as UserDBModel
 from app.models.repository import Repository as RepositoryDBModel
 from app.models.dependency import Dependency as DependencyDBModel
 from app.models.version import Version as VersionDBModel
 from app.models.relationships import RepositoryDependencyVersion as RepositoryDependencyVersionDBModel
 from app.crud.repository_dependency_version import replace_repository_dependency_versions
 
-async def insert_test_user(db_session: AsyncSession) -> UserDBModel: 
-    user = UserDBModel(github_id=1, github_username="test_github_username", access_token="test_access_token")
-    db_session.add(user)
-    await db_session.flush()
-    return user
-
-async def insert_test_repository(db_session: AsyncSession, user_id: int) -> RepositoryDBModel:
-    repo = RepositoryDBModel(github_id=12345, user_id=user_id, clone_url="https://github.com/example/repo")
-    db_session.add(repo)
-    await db_session.flush()
-    return repo
-
-
 @pytest.mark.asyncio
-
-async def test_replace_repository_dependency_versions_inserts_new(db_session: AsyncSession):
-    test_user= await insert_test_user(db_session)
-    test_repository = await insert_test_repository(db_session, test_user.id)
-    dep_version_pairs = [("requests", "2.31.0", "pypi")]
+async def test_replace_repository_dependency_versions_inserts_new(db_session: AsyncSession, test_repository: RepositoryDBModel):
+    dependency_version_pairs = [("requests", "2.31.0", "pypi")]
 
     result = await replace_repository_dependency_versions(
         db_session=db_session,
         repository_id=test_repository.id,
-        dep_version_pairs=dep_version_pairs,
+        dependency_version_pairs=dependency_version_pairs,
     )
 
     # 1 dependency, 1 version, 1 relationship
     assert len(result) == 1
-    version_id, name, version_str, ecosystem = result[0]
+    _, name, version_str, ecosystem = result[0]
     assert name == "requests"
     assert version_str == "2.31.0"
     assert ecosystem == "pypi"
 
     # Check dependency exists
-    dep_result = await db_session.execute(
+    dependency_result = await db_session.execute(
         select(DependencyDBModel).where(
             DependencyDBModel.name == "requests", DependencyDBModel.ecosystem == "pypi"
         )
     )
-    dependency = dep_result.scalar_one_or_none()
+    dependency = dependency_result.scalar_one_or_none()
     assert dependency is not None
 
     # Check version exists
@@ -62,12 +45,12 @@ async def test_replace_repository_dependency_versions_inserts_new(db_session: As
     assert version is not None
 
     # Check relationship exists
-    rel_result = await db_session.execute(
+    removed_links_result = await db_session.execute(
         select(RepositoryDependencyVersionDBModel).where(
             RepositoryDependencyVersionDBModel.repository_id == test_repository.id
         )
     )
-    links = rel_result.scalars().all()
+    links = removed_links_result.scalars().all()
     assert len(links) == 1
     assert links[0].dependency_id == dependency.id
     assert links[0].version_id == version.id
@@ -75,10 +58,7 @@ async def test_replace_repository_dependency_versions_inserts_new(db_session: As
 
 
 @pytest.mark.asyncio
-async def test_replace_repository_dependency_versions_replaces_old_links(db_session: AsyncSession):
-    test_user= await insert_test_user(db_session)
-    test_repository = await insert_test_repository(db_session, test_user.id)
-
+async def test_replace_repository_dependency_versions_replaces_old_links(db_session: AsyncSession, test_repository: RepositoryDBModel):
     # Setup first pair
     first_pair = [("flask", "2.0.0", "pypi")]
     await replace_repository_dependency_versions(db_session, test_repository.id, first_pair)
@@ -88,33 +68,31 @@ async def test_replace_repository_dependency_versions_replaces_old_links(db_sess
     await replace_repository_dependency_versions(db_session, test_repository.id, second_pair)
 
     # Should only have one new link
-    rel_result = await db_session.execute(
+    removed_links_result = await db_session.execute(
         select(RepositoryDependencyVersionDBModel).where(
             RepositoryDependencyVersionDBModel.repository_id == test_repository.id
         )
     )
-    links = rel_result.scalars().all()
+    links = removed_links_result.scalars().all()
     assert len(links) == 1
 
     # Check it's fastapi not flask
-    dep_result = await db_session.execute(
+    dependency_result = await db_session.execute(
         select(DependencyDBModel).where(DependencyDBModel.id == links[0].dependency_id)
     )
-    dep = dep_result.scalar_one()
-    assert dep.name == "fastapi"
+    dependency = dependency_result.scalar_one()
+    assert dependency.name == "fastapi"
 
 
 @pytest.mark.asyncio
-async def test_replace_repository_dependency_versions_skips_existing_dependency_and_version(db_session: AsyncSession):
-    test_user= await insert_test_user(db_session)
-    test_repository = await insert_test_repository(db_session, test_user.id)
+async def test_replace_repository_dependency_versions_skips_existing_dependency_and_version(db_session: AsyncSession, test_repository: RepositoryDBModel):
 
     # Create dep/version manually
-    dep = DependencyDBModel(name="existing", ecosystem="pypi")
-    db_session.add(dep)
+    dependency = DependencyDBModel(name="existing", ecosystem="pypi")
+    db_session.add(dependency)
     await db_session.flush()
 
-    version = VersionDBModel(version="1.0.0", dependency_id=dep.id)
+    version = VersionDBModel(version="1.0.0", dependency_id=dependency.id)
     db_session.add(version)
     await db_session.flush()
 
@@ -129,21 +107,19 @@ async def test_replace_repository_dependency_versions_skips_existing_dependency_
     assert len(result) == 1
 
     # Confirm no duplicate dependencies or versions created
-    dep_count = await db_session.execute(
+    dependency_count = await db_session.execute(
         select(DependencyDBModel).where(DependencyDBModel.name == "existing")
     )
-    assert len(dep_count.scalars().all()) == 1
+    assert len(dependency_count.scalars().all()) == 1
 
     version_count = await db_session.execute(
-        select(VersionDBModel).where(VersionDBModel.version == "1.0.0", VersionDBModel.dependency_id == dep.id)
+        select(VersionDBModel).where(VersionDBModel.version == "1.0.0", VersionDBModel.dependency_id == dependency.id)
     )
     assert len(version_count.scalars().all()) == 1
 
 
 @pytest.mark.asyncio
-async def test_replace_repository_dependency_versions_handles_empty_list(db_session: AsyncSession):
-    test_user= await insert_test_user(db_session)
-    test_repository = await insert_test_repository(db_session, test_user.id)
+async def test_replace_repository_dependency_versions_handles_empty_list(db_session: AsyncSession, test_repository: RepositoryDBModel):
     # Pre-insert link
     await replace_repository_dependency_versions(
         db_session, test_repository.id, [("something", "0.1", "pypi")]
@@ -155,11 +131,11 @@ async def test_replace_repository_dependency_versions_handles_empty_list(db_sess
     )
 
     # Should remove previous links
-    rel_result = await db_session.execute(
+    removed_links_result = await db_session.execute(
         select(RepositoryDependencyVersionDBModel).where(
             RepositoryDependencyVersionDBModel.repository_id == test_repository.id
         )
     )
-    links = rel_result.scalars().all()
+    links = removed_links_result.scalars().all()
     assert len(links) == 0
     assert result == []

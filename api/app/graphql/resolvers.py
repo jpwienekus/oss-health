@@ -64,7 +64,7 @@ class Query:
         db = info.context["db"]
 
         tracked_repositories = await get_repositories(db, user_id)
-        debug_repo = tracked_repositories[1]
+        debug_repo = tracked_repositories[0]
         repo_id, dependencies = get_repository_dependencies(debug_repo.id, debug_repo.clone_url)
         dependency_versions_to_check = await replace_repository_dependency_versions(db, repo_id, dependencies)
         test = await get_dependency_version_vulnerability(dependency_versions_to_check)

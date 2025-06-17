@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from sqlalchemy import Connection, text
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 from app.configuration import settings
 
 import asyncio
@@ -13,6 +13,10 @@ from alembic.operations import Operations
 from alembic.script import ScriptDirectory
 from app.database import Base, DatabaseSessionManager, get_db_session
 from app.main import app as actual_app
+from app.models.user import User as UserDBModel
+from app.models.repository import Repository as RepositoryDBModel
+from app.models.dependency import Dependency as DependencyDBModel
+from app.models.version import Version as VersionDBModel
 
 @pytest.fixture(autouse=False)
 def app():
@@ -32,7 +36,7 @@ def run_migrations(connection: Connection):
     config.set_main_option("sqlalchemy.url", settings.database_url)
     script = ScriptDirectory.from_config(config)
 
-    def upgrade(rev, context):
+    def upgrade(rev, _):
         return script._upgrade_revs("head", rev)
 
     context = MigrationContext.configure(connection, opts={"target_metadata": Base.metadata, "fn": upgrade})
@@ -76,3 +80,30 @@ async def db_session(app):
             conn = await session.connection()
             await truncate_all_tables(conn)
             await test_sessionmanager.close()
+
+
+@pytest_asyncio.fixture
+async def test_user(db_session: AsyncSession) -> UserDBModel: 
+    user = UserDBModel(github_id=1, github_username="test_github_username", access_token="test_access_token")
+    db_session.add(user)
+    await db_session.flush()
+    return user
+
+@pytest_asyncio.fixture
+async def test_repository(db_session: AsyncSession, test_user: UserDBModel) -> RepositoryDBModel:
+    repo = RepositoryDBModel(github_id=12345, user_id=test_user.id, clone_url="https://github.com/example/repo")
+    db_session.add(repo)
+    await db_session.flush()
+    return repo
+
+@pytest_asyncio.fixture
+async def test_version(db_session: AsyncSession, version_str: str = "1.0.0") -> VersionDBModel:
+    dependency = DependencyDBModel(name="example-package", ecosystem="pypi")
+    db_session.add(dependency)
+    await db_session.flush()
+
+    version = VersionDBModel(version=version_str, dependency_id=dependency.id)
+    db_session.add(version)
+    await db_session.flush()
+
+    return version

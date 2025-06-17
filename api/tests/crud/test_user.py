@@ -1,6 +1,5 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import User as UserDBModel
 from app.crud.user import (
     add_user,
     get_user,
@@ -31,7 +30,7 @@ async def test_add_and_get_user(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_get_user_by_github_id(db_session: AsyncSession):
-    user = await add_user(
+    await add_user(
         db_session=db_session,
         github_id=12345,
         github_username="octocat",
@@ -83,7 +82,6 @@ async def test_update_access_token(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_update_access_token_user_not_found(db_session: AsyncSession):
-    # Should not raise error if user doesn't exist
     await update_access_token(db_session, github_id=9999, access_token="noop-token")
 
     user = await get_user_by_github_id(db_session, 9999)

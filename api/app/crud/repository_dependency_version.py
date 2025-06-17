@@ -15,7 +15,7 @@ logger = logging.getLogger()
 async def replace_repository_dependency_versions(
     db_session: AsyncSession,
     repository_id: int,
-    dep_version_pairs: List[tuple[str, str, str]],  # (name, version_str, ecosystem)
+    dependency_version_pairs: List[tuple[str, str, str]],  # (name, version_str, ecosystem)
 ):
     await db_session.execute(
         delete(RepositoryDependencyVersionDBModel).where(
@@ -30,7 +30,7 @@ async def replace_repository_dependency_versions(
     inserted_versions = 0
     existing_versions = 0
 
-    for name, version_str, ecosystem in dep_version_pairs:
+    for name, version_str, ecosystem in dependency_version_pairs:
         dependency_result = await db_session.execute(
             select(DependencyDBModel).where(
                 DependencyDBModel.name == name,
