@@ -14,6 +14,20 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data:cached
 
+  test-postgres:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: test-user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test_db
+    ports:
+      - 5434:5432 # Use a different port to avoid conflicts with the main database
+    expose:
+      - "5434" # Exposing the different port for clarity
+    volumes:
+      - test-db-data:/var/lib/postgresql/data:cached
+
   api:
     build:
       context: api
@@ -51,4 +65,4 @@ services:
 volumes:
   db-data:
   pgadmin-data:
-  # test-db-data:
+  test-db-data:
