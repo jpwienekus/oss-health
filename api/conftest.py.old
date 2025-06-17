@@ -11,21 +11,21 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from alembic.script import ScriptDirectory
-from app.database import Base, DatabaseSessionManager, get_db_session
+from app.database import Base, DatabaseSessionManager, get_db_session, sessionmanager
+# from app.database import Base, DatabaseSessionManager, get_db_session
 from app.main import app as actual_app
+
 
 @pytest.fixture(autouse=False)
 def app():
     with ExitStack():
         yield actual_app
 
-
 @pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
+def event_loop(request):
+    loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
-
 
 def run_migrations(connection: Connection):
     config = Config("./alembic.ini")
@@ -41,6 +41,16 @@ def run_migrations(connection: Connection):
         with Operations.context(context):
             context.run_migrations()
 
+@pytest_asyncio.fixture(scope="function", autouse=False)
+async def setup_database():
+    async with sessionmanager.connect() as connection:
+    # async with test_session_manager.connect() as connection:
+        await connection.run_sync(run_migrations)
+
+    yield
+
+    await sessionmanager.close()
+    # await test_session_manager.close()
 
 async def truncate_all_tables(connection: AsyncConnection):
     await connection.execute(text("COMMIT"))
@@ -51,28 +61,26 @@ async def truncate_all_tables(connection: AsyncConnection):
 
     await connection.execute(text("SET session_replication_role = origin;"))
 
-
 @pytest_asyncio.fixture(scope="function")
-async def db_session(app):
-    test_sessionmanager = DatabaseSessionManager(
-        settings.database_url, {"echo": settings.echo_sql}
-    )
-
-    async with test_sessionmanager.connect() as connection:
-        await connection.run_sync(run_migrations)
-
-    async def get_test_db_session():
-        async with test_sessionmanager.session() as session:
-            yield session
-
-    app.dependency_overrides[get_db_session] = get_test_db_session
-
-    async with test_sessionmanager.session() as session:
+async def transactional_session():
+    async with sessionmanager.session() as session:
+    # async with test_session_manager.session() as session:
         try:
             await session.begin()
             yield session
         finally:
             await session.rollback()
-            conn = await session.connection()
-            await truncate_all_tables(conn)
-            await test_sessionmanager.close()
+            connection = await session.connection()
+            await truncate_all_tables(connection)
+
+@pytest_asyncio.fixture(scope="function")
+async def db_session(transactional_session):
+    yield transactional_session
+
+
+@pytest_asyncio.fixture(scope="function", autouse=False)
+async def session_override(app):
+    async def get_db_session_override(db_session):
+        yield db_session
+
+    app.dependency_overrides[get_db_session] = get_db_session_override
