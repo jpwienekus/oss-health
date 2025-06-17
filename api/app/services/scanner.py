@@ -32,13 +32,13 @@ def extract_dependencies(repository_path: Path):
 
 
 def get_repository_dependencies(
-    repository_id: int, repository_url: str
-) -> Tuple[int, List[tuple[str, str, str]]]:
+    repository_url: str
+) -> List[tuple[str, str, str]]:
     repository_path = None
     try:
         repository_path = clone_repository(repository_url)
         dependencies = extract_dependencies(repository_path)
-        return repository_id, dependencies
+        return dependencies
     finally:
         if repository_path and repository_path.exists():
             subprocess.run(["rm", "-rf", str(repository_path)])

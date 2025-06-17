@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
 
 from app.auth.jwt_utils import decode_token
-from app.crud.repository import add_repository_ids, get_repositories
+from app.crud.repository import add_repository_ids, get_repositories, get_repository, update_scanned_date
 from app.crud.repository_dependency_version import (
     replace_repository_dependency_versions,
 )
@@ -37,6 +37,33 @@ async def get_repository_information_from_github(
 
     return repo_data
 
+async def get_repositories_for_user(user_id: int, db_session: AsyncSession) -> List[GitHubRepository]:
+    repositories = await get_repository_information_from_github(db_session, user_id)
+
+    if not repositories:
+        return []
+
+    repositories_by_id = {repo.get("id"): repo for repo in repositories}
+    tracked_repositories = await get_repositories(db_session, user_id)
+    results: List[GitHubRepository] = []
+
+    for repository in tracked_repositories:
+        total_vulnerabilities = sum(len(d.version.vulnerabilities) for d in repository.dependency_versions)
+
+        if repository.github_id in repositories_by_id:
+            results.append(
+                GitHubRepository.from_model(
+                    repositories_by_id[repository.github_id],
+                    id=repository.id,
+                    score=repository.score,
+                    number_of_dependencies=len(repository.dependency_versions),
+                    number_of_vulnerabilities=total_vulnerabilities,
+                    scanned_date=repository.scanned_date
+                )
+            )
+
+    return results
+
 
 @strawberry.type
 class Query:
@@ -54,52 +81,39 @@ class Query:
 
         repositories = await get_repository_information_from_github(db, user_id)
 
-        return [GitHubRepository.from_model(repo, 0) for repo in repositories]
+        return [GitHubRepository.from_model(repo) for repo in repositories]
 
     @strawberry.field
-    async def debug_cloning(self, info: Info) -> List[Dependency]:
+    async def manual_scan_debug(self, info: Info, repository_id: int) -> List[GitHubRepository]:
         user_id = get_user_id(info)
         db = info.context["db"]
 
-        tracked_repositories = await get_repositories(db, user_id)
-        debug_repo = tracked_repositories[0]
-        repo_id, dependencies = get_repository_dependencies(
-            debug_repo.id, debug_repo.clone_url
+        repository = await get_repository(db, repository_id, user_id)
+
+        if not repository:
+            return []
+
+        dependencies = get_repository_dependencies(
+            repository.clone_url
         )
         dependency_versions_to_check = await replace_repository_dependency_versions(
-            db, repo_id, dependencies
+            db, repository_id, dependencies
         )
-        test = await get_dependency_version_vulnerability(dependency_versions_to_check)
-        await replace_version_vulnerabilities(db, test)
+        dependency_version_vulnerabilities = await get_dependency_version_vulnerability(dependency_versions_to_check)
+        await replace_version_vulnerabilities(db, dependency_version_vulnerabilities)
+        await update_scanned_date(db, repository_id, user_id)
 
         # print(test)
 
-        return []
+        return await get_repositories_for_user(user_id, db)
 
     @strawberry.field
     async def repositories(self, info: Info) -> List[GitHubRepository]:
         user_id = get_user_id(info)
         db = info.context["db"]
 
-        repositories = await get_repository_information_from_github(db, user_id)
+        return await get_repositories_for_user(user_id, db)
 
-        if len(repositories) == 0:
-            return []
-
-        tracked_repositories = await get_repositories(db, user_id)
-        repository_score_map: dict[int, int] = {
-            repository.github_id: repository.score
-            for repository in tracked_repositories
-        }
-        tracked_repository_ids = repository_score_map.keys()
-
-        return [
-            GitHubRepository.from_model(
-                repo, score=repository_score_map.get(repo.get("id", 0), 0)
-            )
-            for repo in repositories
-            if repo.get("id") in tracked_repository_ids
-        ]
 
 
 @strawberry.type
@@ -118,4 +132,4 @@ class Mutation:
 
         await add_repository_ids(db, user_id, tracked_repositories)
 
-        return [GitHubRepository.from_model(repo, 0) for repo in tracked_repositories]
+        return [GitHubRepository.from_model(repo) for repo in tracked_repositories]

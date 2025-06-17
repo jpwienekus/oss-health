@@ -1,4 +1,5 @@
 export interface GitHubRepository {
+  id: number
   githubId: number
   name: string
   description: string
@@ -6,8 +7,9 @@ export interface GitHubRepository {
   private: boolean
   forks: number
   watchers: number
-  updatedAt: string
   score: number
   vulnerabilities: number
   dependencies: number
+  scannedDate: string
+  updatedAt: string
 }
