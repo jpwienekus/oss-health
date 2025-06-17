@@ -1,4 +1,5 @@
 import os
+
 from pydantic_settings import BaseSettings
 
 
@@ -16,9 +17,8 @@ class Settings(BaseSettings):
 
     model_config = {
         "env_file": os.getenv("ENV_FILE", ".env"),
-        "env_file_encoding": "utf-8"
+        "env_file_encoding": "utf-8",
     }
 
 
 settings = Settings()  # type: ignore
-

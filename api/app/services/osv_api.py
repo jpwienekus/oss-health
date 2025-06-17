@@ -1,10 +1,12 @@
-import httpx
 from typing import List
+
+import httpx
+
 from app.utils.chunking import chunk_list
 
 
 async def get_dependency_version_vulnerability(
-    dependency_versions: List[tuple[int, str, str, str]]
+    dependency_versions: List[tuple[int, str, str, str]],
 ) -> List[tuple[int, List[str]]]:
     vulnerabilities: List[tuple[int, List[str]]] = []
 
@@ -28,12 +30,14 @@ async def get_dependency_version_vulnerability(
             )
             results = response.json()["results"]
 
-        # for (version_id, _, _, _), result in zip(chunk, results):
         for (version_id, name, version, ecosystem), result in zip(chunk, results):
             vulnerability_ids = [v["id"] for v in result.get("vulns", [])]
             vulnerabilities.append((version_id, vulnerability_ids))
-            if len(vulnerability_ids) > 0: 
-                print(f"Package: {name}, Version: {version}, Ecosystem: {ecosystem} -> Vulnerabilities: {vulnerability_ids}")
+
+            if len(vulnerability_ids) > 0:
+                # ruff: noqa: E501
+                print(
+                    f"Package: {name}, Version: {version}, Ecosystem: {ecosystem} -> Vulnerabilities: {vulnerability_ids}"
+                )
 
     return vulnerabilities
-

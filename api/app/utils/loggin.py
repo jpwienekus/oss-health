@@ -11,7 +11,7 @@ def configure_logging(log_level_str="INFO"):
     }
     log_level = level_map.get(log_level_str.upper(), logging.INFO)
 
-    formatter = logging.Formatter('%(levelname)-9s %(message)s')
+    formatter = logging.Formatter("%(levelname)-9s %(message)s")
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
 

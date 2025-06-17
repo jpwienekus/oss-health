@@ -12,10 +12,13 @@ from app.models.version import Version as VersionDBModel
 
 logger = logging.getLogger()
 
+
 async def replace_repository_dependency_versions(
     db_session: AsyncSession,
     repository_id: int,
-    dependency_version_pairs: List[tuple[str, str, str]],  # (name, version_str, ecosystem)
+    dependency_version_pairs: List[
+        tuple[str, str, str]
+    ],  # (name, version_str, ecosystem)
 ):
     await db_session.execute(
         delete(RepositoryDependencyVersionDBModel).where(
@@ -50,7 +53,7 @@ async def replace_repository_dependency_versions(
         version_result = await db_session.execute(
             select(VersionDBModel).where(
                 VersionDBModel.version == version_str,
-                VersionDBModel.dependency_id == dependency.id
+                VersionDBModel.dependency_id == dependency.id,
             )
         )
         version = version_result.scalar_one_or_none()
@@ -74,6 +77,7 @@ async def replace_repository_dependency_versions(
 
     await db_session.commit()
     logger.info(
+        # ruff: noqa: E501
         f"Dependencies: {inserted_dependencies} inserted, {existing_dependencies} existing; "
         f"Versions: {inserted_versions} inserted, {existing_versions} existing; "
     )

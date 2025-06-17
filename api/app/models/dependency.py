@@ -1,4 +1,5 @@
 from typing import List
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from . import Base
@@ -12,4 +13,3 @@ class Dependency(Base):
     ecosystem: Mapped[str] = mapped_column(nullable=True)
 
     versions: Mapped[List["Version"]] = relationship(back_populates="dependency")  # type: ignore # noqa: F821
-

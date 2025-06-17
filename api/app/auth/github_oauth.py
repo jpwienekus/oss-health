@@ -21,6 +21,7 @@ async def login(code_challenge: str):
         f"&code_challenge_method=S256"
     )
 
+
 # ruff: noqa: E501
 @router.get("/auth/github/callback", response_class=HTMLResponse)
 async def callback_html(code: str):

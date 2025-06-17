@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 from typing import List, Tuple
 
-from app.models.dependency import Dependency
 from app.parsers import dependency_parsers
 
 
@@ -32,7 +31,9 @@ def extract_dependencies(repository_path: Path):
     return all_dependencies
 
 
-def get_repository_dependencies(repository_id: int, repository_url: str) -> Tuple[int, List[tuple[str, str, str]]]:
+def get_repository_dependencies(
+    repository_id: int, repository_url: str
+) -> Tuple[int, List[tuple[str, str, str]]]:
     repository_path = None
     try:
         repository_path = clone_repository(repository_url)

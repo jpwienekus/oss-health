@@ -1,7 +1,10 @@
 from pathlib import Path
 from typing import Callable, List, Tuple
 
-dependency_parsers: List[Tuple[str, Callable[[Path], List[tuple[str, str, str]]], str]] = []
+# ruff: noqa: E501
+dependency_parsers: List[
+    Tuple[str, Callable[[Path], List[tuple[str, str, str]]], str]
+] = []
 
 
 def register_parser(pattern: str, ecosystem: str):

@@ -1,10 +1,11 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.crud.user import (
     add_user,
+    get_access_token,
     get_user,
     get_user_by_github_id,
-    get_access_token,
     update_access_token,
 )
 
@@ -25,7 +26,6 @@ async def test_add_and_get_user(db_session: AsyncSession):
     assert fetched_user.id == user.id
     assert fetched_user.github_id == 42
     assert fetched_user.github_username == "testuser42"
-
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,9 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.repository import get_repositories, add_repository_ids
+
+from app.crud.repository import add_repository_ids, get_repositories
 from app.models.user import User as UserDBModel
+
 
 @pytest.mark.asyncio
 async def test_add_repository_ids(db_session: AsyncSession, test_user: UserDBModel):
@@ -18,4 +20,3 @@ async def test_add_repository_ids(db_session: AsyncSession, test_user: UserDBMod
     assert repos[0].clone_url == "https://github.com/test/repo1"
     assert repos[1].github_id == 2222
     assert repos[1].clone_url == "https://github.com/test/repo2"
-
