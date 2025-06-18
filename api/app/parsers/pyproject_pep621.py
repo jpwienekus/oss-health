@@ -1,7 +1,8 @@
-import toml
+import re
 from pathlib import Path
 from typing import List
-import re
+
+import toml
 
 from app.parsers.base import register_parser
 
@@ -25,4 +26,3 @@ def parse_pep621_pyproject(file_path: Path) -> List[tuple[str, str, str]]:
         dependencies.append((name, version, "PyPI"))
 
     return dependencies
-

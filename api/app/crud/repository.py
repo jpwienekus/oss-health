@@ -1,5 +1,5 @@
-from typing import List, Sequence
 from datetime import datetime, timezone
+from typing import List, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,18 +44,16 @@ async def add_repository_ids(
     await db_session.commit()
 
 
-
-async def get_repository(
-    db_session: AsyncSession, repository_id: int, user_id: int
-):
+async def get_repository(db_session: AsyncSession, repository_id: int, user_id: int):
     return (
         await db_session.scalars(
-            select(RepositoryDBModel)
-            .where(
-                RepositoryDBModel.id == repository_id, 
-                RepositoryDBModel.user_id == user_id)
+            select(RepositoryDBModel).where(
+                RepositoryDBModel.id == repository_id,
+                RepositoryDBModel.user_id == user_id,
+            )
         )
     ).first()
+
 
 async def update_scanned_date(
     db_session: AsyncSession, repository_id: int, user_id: int

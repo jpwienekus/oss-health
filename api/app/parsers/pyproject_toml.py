@@ -1,7 +1,8 @@
-import toml
+import re
 from pathlib import Path
 from typing import List
-import re
+
+import toml
 
 from app.parsers.base import register_parser
 
@@ -35,6 +36,7 @@ def parse_pyproject_toml(file_path: Path) -> List[tuple[str, str, str]]:
         dependencies.append((name, version, "PyPI"))
 
     return dependencies
+
 
 def get_name_and_version(name: str, version):
     parsed_version = "unknown"

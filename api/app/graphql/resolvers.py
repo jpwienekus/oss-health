@@ -6,13 +6,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
 
 from app.auth.jwt_utils import decode_token
-from app.crud.repository import add_repository_ids, get_repositories, get_repository, update_scanned_date
+from app.crud.repository import (
+    add_repository_ids,
+    get_repositories,
+    get_repository,
+    update_scanned_date,
+)
 from app.crud.repository_dependency_version import (
     replace_repository_dependency_versions,
 )
 from app.crud.user import get_access_token, get_user
 from app.crud.vulnerability import replace_version_vulnerabilities
-from app.graphql.types import Dependency, GitHubRepository
+from app.graphql.types import GitHubRepository
 from app.services.osv_api import get_dependency_version_vulnerability
 from app.services.scanner import get_repository_dependencies
 
@@ -37,7 +42,10 @@ async def get_repository_information_from_github(
 
     return repo_data
 
-async def get_repositories_for_user(user_id: int, db_session: AsyncSession) -> List[GitHubRepository]:
+
+async def get_repositories_for_user(
+    user_id: int, db_session: AsyncSession
+) -> List[GitHubRepository]:
     repositories = await get_repository_information_from_github(db_session, user_id)
 
     if not repositories:
@@ -48,7 +56,9 @@ async def get_repositories_for_user(user_id: int, db_session: AsyncSession) -> L
     results: List[GitHubRepository] = []
 
     for repository in tracked_repositories:
-        total_vulnerabilities = sum(len(d.version.vulnerabilities) for d in repository.dependency_versions)
+        total_vulnerabilities = sum(
+            len(d.version.vulnerabilities) for d in repository.dependency_versions
+        )
 
         if repository.github_id in repositories_by_id:
             results.append(
@@ -58,7 +68,7 @@ async def get_repositories_for_user(user_id: int, db_session: AsyncSession) -> L
                     score=repository.score,
                     number_of_dependencies=len(repository.dependency_versions),
                     number_of_vulnerabilities=total_vulnerabilities,
-                    scanned_date=repository.scanned_date
+                    scanned_date=repository.scanned_date,
                 )
             )
 
@@ -84,7 +94,9 @@ class Query:
         return [GitHubRepository.from_model(repo) for repo in repositories]
 
     @strawberry.field
-    async def manual_scan_debug(self, info: Info, repository_id: int) -> List[GitHubRepository]:
+    async def manual_scan_debug(
+        self, info: Info, repository_id: int
+    ) -> List[GitHubRepository]:
         user_id = get_user_id(info)
         db = info.context["db"]
 
@@ -93,13 +105,13 @@ class Query:
         if not repository:
             return []
 
-        dependencies = get_repository_dependencies(
-            repository.clone_url
-        )
+        dependencies = get_repository_dependencies(repository.clone_url)
         dependency_versions_to_check = await replace_repository_dependency_versions(
             db, repository_id, dependencies
         )
-        dependency_version_vulnerabilities = await get_dependency_version_vulnerability(dependency_versions_to_check)
+        dependency_version_vulnerabilities = await get_dependency_version_vulnerability(
+            dependency_versions_to_check
+        )
         await replace_version_vulnerabilities(db, dependency_version_vulnerabilities)
         await update_scanned_date(db, repository_id, user_id)
 
@@ -113,7 +125,6 @@ class Query:
         db = info.context["db"]
 
         return await get_repositories_for_user(user_id, db)
-
 
 
 @strawberry.type

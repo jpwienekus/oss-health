@@ -2,6 +2,7 @@ from pathlib import Path
 
 from app.parsers.pyproject_pep621 import parse_pep621_pyproject
 
+
 def test_parse_pep621_pyproject(tmp_path: Path):
     file = tmp_path / "pyproject.toml"
     file.write_text(
