@@ -9,7 +9,7 @@ force_grid_wrap=0
 use_parentheses = true
 
 [tool.poetry.group.dev.dependencies]
-pytest = "8.4.0"
+pytest = "8.4.1"
 pytest-asyncio = "1.0.0"
 ruff = "0.12.0"
 pytest-env = "^1.1.5"
