@@ -1,1 +1,1 @@
-from .tasks.dependency_tasks import resolve_github_urls_task as resolve_github_urls_task 
+from .tasks.dependency_tasks import resolve_github_urls_task as resolve_github_urls_task

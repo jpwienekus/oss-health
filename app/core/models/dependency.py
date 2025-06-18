@@ -19,5 +19,4 @@ class Dependency(Base):
         DateTime(timezone=True), nullable=True
     )
 
-
     versions: Mapped[List["Version"]] = relationship(back_populates="dependency")  # type: ignore # noqa: F821

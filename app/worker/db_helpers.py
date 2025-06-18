@@ -1,10 +1,12 @@
 from functools import wraps
-from typing import Callable, Awaitable, TypeVar
+from typing import Awaitable, Callable, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.database import sessionmanager
 
 F = TypeVar("F", bound=Callable[..., Awaitable[None]])
+
 
 def with_db_session(func: F) -> F:
     @wraps(func)
@@ -21,4 +23,5 @@ def with_db_session(func: F) -> F:
             raise
         finally:
             await session.close()
-    return wrapper # type: ignore
+
+    return wrapper  # type: ignore
