@@ -8,12 +8,11 @@ export const SAVE_SELECTED_REPOSITORIES = gql`
       name
       description
       githubId
-      stars
-      watchers
       updatedAt
       private
+      stars
+      watchers
       forks
-      score
     }
   }
 `

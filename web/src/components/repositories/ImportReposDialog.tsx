@@ -16,6 +16,7 @@ import { GET_REPOSITORIES_FROM_GITHUB } from '@/graphql/queries'
 import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { Checkbox } from '../ui/checkbox'
+import { formatDate } from '@/utils'
 
 type ImportReposDialogParams = {
   alreadyTracked: number[]
@@ -71,26 +72,6 @@ export const ImportReposDialog = ({
         ? previous.filter((id) => id !== githubId)
         : [...previous, githubId],
     )
-  }
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) {
-      return '-'
-    }
-
-    const date = new Date(dateString)
-    if (!date) {
-      return '-'
-    }
-
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-    })
   }
 
   const handleConfirm = () => {

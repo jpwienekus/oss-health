@@ -18,6 +18,6 @@ def parse_requirements_txt(file_path: Path) -> List[tuple[str, str, str]]:
                 else:
                     name, version = line, "unknown"
 
-                dependencies.append((name, version, "PyPi"))
+                dependencies.append((name, version, "PyPI"))
 
     return dependencies

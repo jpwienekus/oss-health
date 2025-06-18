@@ -2,7 +2,7 @@ import fnmatch
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 from app.parsers import dependency_parsers
 
@@ -31,14 +31,12 @@ def extract_dependencies(repository_path: Path):
     return all_dependencies
 
 
-def get_repository_dependencies(
-    repository_id: int, repository_url: str
-) -> Tuple[int, List[tuple[str, str, str]]]:
+def get_repository_dependencies(repository_url: str) -> List[tuple[str, str, str]]:
     repository_path = None
     try:
         repository_path = clone_repository(repository_url)
         dependencies = extract_dependencies(repository_path)
-        return repository_id, dependencies
+        return dependencies
     finally:
         if repository_path and repository_path.exists():
             subprocess.run(["rm", "-rf", str(repository_path)])

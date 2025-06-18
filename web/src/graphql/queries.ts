@@ -6,10 +6,11 @@ export const GET_REPOSITORIES_FROM_GITHUB = gql`
       name
       description
       githubId
+      private
+      scannedDate
+      updatedAt
       stars
       watchers
-      updatedAt
-      private
       forks
     }
   }
@@ -17,17 +18,19 @@ export const GET_REPOSITORIES_FROM_GITHUB = gql`
 export const GET_REPOSITORIES = gql`
   query {
     repositories {
+      id
       name
       description
       githubId
-      stars
-      watchers
-      updatedAt
       private
-      forks
       score
       vulnerabilities
       dependencies
+      scannedDate
+      updatedAt
+      stars
+      watchers
+      forks
     }
   }
 `
@@ -38,8 +41,22 @@ export const GET_USERNAME = gql`
   }
 `
 
-export const DEBUG_CLONING = gql`
-  query {
-    debugCloning
+export const MANUAL_SCAN_DEBUG = gql`
+  query ManualScanDebug($repositoryId: Int!) {
+    manualScanDebug(repositoryId: $repositoryId) {
+      id
+      name
+      description
+      githubId
+      private
+      score
+      vulnerabilities
+      dependencies
+      scannedDate
+      updatedAt
+      stars
+      watchers
+      forks
+    }
   }
 `

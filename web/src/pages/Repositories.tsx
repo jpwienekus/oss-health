@@ -1,26 +1,14 @@
 import type { GitHubRepository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  AlertTriangle,
-  CheckCircle,
-  Package,
-  Star,
-  XCircle,
-} from 'lucide-react'
+import { Package } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
 import { getClient } from '@/graphql/client'
 import { SAVE_SELECTED_REPOSITORIES } from '@/graphql/mutations'
-import { DEBUG_CLONING, GET_REPOSITORIES } from '@/graphql/queries'
+import { GET_REPOSITORIES } from '@/graphql/queries'
+import { RepositoryOverview } from '@/components/repositories/RepositoryOverview'
 
 export const Repositories = () => {
   const { jwt } = useAuth()
@@ -64,13 +52,14 @@ export const Repositories = () => {
       const response = await client.request<{
         repositories: GitHubRepository[]
       }>(GET_REPOSITORIES)
-
-      await client.request(DEBUG_CLONING)
-
       setData(response.repositories)
     }
     fetchRepositories()
   }, [jwt])
+
+  const onManualScan = async (result: GitHubRepository[]) => {
+    setData(result)
+  }
 
   const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
     if (!jwt) {
@@ -84,26 +73,6 @@ export const Repositories = () => {
       selectedGithubRepositoryIds: selectedRepositoryIds,
     })
     setData(response.saveSelectedRepositories)
-  }
-
-  const getHealthIcon = (score: number) => {
-    if (score >= 80) {
-      return <CheckCircle className="w-5 h-5 text-green-600" />
-    } else if (score >= 60) {
-      return <AlertTriangle className="w-5 h-5 text-yello-600" />
-    } else {
-      return <XCircle className="w-5 h-5 text-red-600" />
-    }
-  }
-
-  const getHealthColor = (score: number) => {
-    if (score >= 80) {
-      return 'text-green-600'
-    } else if (score >= 60) {
-      return 'text-yellow-600'
-    } else {
-      return 'text-red-600'
-    }
   }
 
   return (
@@ -196,52 +165,11 @@ export const Repositories = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredAndSortedRepositories.map((repository, index) => (
-              <Card key={index} className="hover:shadow-lg transition shadow">
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <span>{repository.name}</span>
-                        {getHealthIcon(repository.score)}
-                        <span
-                          className={`text-sm font-medium ${getHealthColor(repository.score)}`}
-                        >
-                          {repository.score}/100
-                        </span>
-                        {repository.private && (
-                          <Badge variant="secondary" className="text-xs">
-                            Private
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        {repository.description ?? '-'}
-                      </CardDescription>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                    <div className="flex items-center gap-1">
-                      <Package size={12} />
-                      <span>{repository.dependencies} dependencies</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <AlertTriangle size={12} />
-                      <span
-                        className={
-                          repository.vulnerabilities > 0 ? 'text-red-600' : ''
-                        }
-                      >
-                        {repository.vulnerabilities} vulnerabilities
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star size={12} />
-                      <span>{repository.stars}</span>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
+              <RepositoryOverview
+                key={index}
+                repository={repository}
+                onUpdate={onManualScan}
+              />
             ))}
           </div>
         </div>
