@@ -3,8 +3,8 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.fastapi import GraphQLRouter
 
-from core.database import get_db_session
 from api.graphql.resolvers import Mutation, Query
+from core.database import get_db_session
 
 
 async def get_context(

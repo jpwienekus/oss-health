@@ -32,13 +32,13 @@ fixable = ["ALL"]
 
 
 [project]
-name = "app"
+name = "api"
 version = "0.1.0"
 description = ""
 authors = [
     {name = "JP Wienekus",email = "jpwienekus@gmail.com"}
 ]
-packages = [{ include = "app" }]
+packages = [{ include = "api" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [

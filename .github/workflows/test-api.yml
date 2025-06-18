@@ -40,15 +40,15 @@ jobs:
 
       - name: Install dependencies with Poetry
         run: |
-          cd api/
+          cd app/
           poetry install
 
       - name: Run Ruff Linter
         run: |
-          cd api/
+          cd app/
           poetry run ruff check .
 
       - name: Run Tests # Tests handle migrations
         run: |
-          cd api/
-          poetry run pytest --cov=app tests --cov-fail-under=85
+          cd app/
+          poetry run pytest --cov=api --cov=core tests --cov-fail-under=85
