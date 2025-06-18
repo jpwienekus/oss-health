@@ -32,7 +32,7 @@ def test_get_repository_dependencies(mock_rm, mock_extract, mock_clone):
     mock_clone.return_value = Path(mock_path)
     mock_extract.return_value = []
 
-    _, dependencies = get_repository_dependencies(1, "https://fake.repo")
+    dependencies = get_repository_dependencies("https://fake.repo")
 
     assert dependencies == []
     mock_rm.assert_called()

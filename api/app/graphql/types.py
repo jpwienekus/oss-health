@@ -16,6 +16,9 @@ class GitHubRepository:
     name: str
     description: str | None
     github_id: int
+    stars: int
+    watchers: int
+    forks: int
     private: bool
     score: int | None
     vulnerabilities: int | None
@@ -35,6 +38,9 @@ class GitHubRepository:
             github_id=model.get("id"),
             private=model.get("private"),
             score=score,
+            stars=model.get("stargazers_count"),
+            watchers=model.get("watchers_count"),
+            forks=model.get("forks_count"),
             vulnerabilities=number_of_vulnerabilities,
             dependencies=number_of_dependencies,
             clone_url=model.get("clone_url"),

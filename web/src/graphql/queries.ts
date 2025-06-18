@@ -9,6 +9,9 @@ export const GET_REPOSITORIES_FROM_GITHUB = gql`
       private
       scannedDate
       updatedAt
+      stars
+      watchers
+      forks
     }
   }
 `
@@ -25,6 +28,9 @@ export const GET_REPOSITORIES = gql`
       dependencies
       scannedDate
       updatedAt
+      stars
+      watchers
+      forks
     }
   }
 `
@@ -48,6 +54,9 @@ export const MANUAL_SCAN_DEBUG = gql`
       dependencies
       scannedDate
       updatedAt
+      stars
+      watchers
+      forks
     }
   }
 `

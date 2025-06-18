@@ -44,8 +44,8 @@ async def test_github_repositories(
 ):
     mock_get_access_token.return_value = "fake_github_token"
     mock_get.return_value.json = lambda: [
-        {"id": 1, "name": "repo1"},
-        {"id": 2, "name": "repo2"},
+        {"id": 1, "name": "repo1", "updated_at": "2025-03-17T17:49:00Z"},
+        {"id": 2, "name": "repo2", "updated_at": "2025-03-17T17:49:00Z"},
     ]
     query = """
   query {
@@ -79,8 +79,8 @@ async def test_repositories_only_returns_tracked(
 ):
     mock_get_access_token.return_value = "fake_token"
     mock_get.return_value.json = lambda: [
-        {"id": 1, "name": "repo1"},
-        {"id": 2, "name": "repo2"},
+        {"id": 1, "name": "repo1", "updated_at": "2025-03-17T17:49:00Z"},
+        {"id": 2, "name": "repo2", "updated_at": "2025-03-17T17:49:00Z"},
     ]
     mock_get_repositories.return_value = [
         MagicMock(github_id=1, score=10),
@@ -118,8 +118,8 @@ async def test_save_selected_repositories(
 ):
     mock_get_access_token.return_value = "gh_token"
     mock_get.return_value.json = lambda: [
-        {"id": 1, "name": "repo1"},
-        {"id": 2, "name": "repo2"},
+        {"id": 1, "name": "repo1", "updated_at": "2025-03-17T17:49:00Z"},
+        {"id": 2, "name": "repo2", "updated_at": "2025-03-17T17:49:00Z"},
     ]
     mock_get_repositories.return_value = [MagicMock(github_id=1)]
     mutation = """
