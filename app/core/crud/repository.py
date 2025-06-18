@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from core.models import Repository as RepositoryDBModel
-from core.models import RepositoryDependencyVersion as RepositoryDependencyVersionDBModel
+from core.models import (
+    RepositoryDependencyVersion as RepositoryDependencyVersionDBModel,
+)
 from core.models import Version as VersionDBModel
 
 

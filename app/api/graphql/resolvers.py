@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
 
 from api.auth.jwt_utils import decode_token
+from api.graphql.types import GitHubRepository
 from core.crud.repository import (
     add_repository_ids,
     get_repositories,
@@ -17,7 +18,6 @@ from core.crud.repository_dependency_version import (
 )
 from core.crud.user import get_access_token, get_user
 from core.crud.vulnerability import replace_version_vulnerabilities
-from api.graphql.types import GitHubRepository
 from core.services.osv_api import get_dependency_version_vulnerability
 from core.services.scanner import get_repository_dependencies
 

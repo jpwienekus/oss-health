@@ -11,6 +11,7 @@ from core.utils.loggin import configure_logging
 
 configure_logging(settings.log_level)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
