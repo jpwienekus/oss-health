@@ -2,7 +2,7 @@ from typing import Optional
 
 import httpx
 
-from core.parsers.package_repository_resolvers.base import (
+from core.dependency_repository_resolvers.base import (
     register_package_repository_resolver,
 )
 
