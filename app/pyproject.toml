@@ -1,0 +1,60 @@
+[tool.mypy]
+ignore_missing_imports = true
+namespace_packages = true
+mypy_path = "."
+
+multi_line_output=3
+include_trailing_comma = true
+force_grid_wrap=0
+use_parentheses = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = "8.4.1"
+pytest-asyncio = "1.0.0"
+ruff = "0.12.0"
+pytest-env = "^1.1.5"
+black = "^25.1.0"
+pytest-cov = "^6.2.1"
+
+[tool.black]
+line-length = 88
+# target-version = ["py311"]  # or py312 depending on your Python version
+# skip-string-normalization = false
+
+[tool.ruff]
+# target-version = "py311"  # match your Python version
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+fixable = ["ALL"]
+
+
+
+[project]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "JP Wienekus",email = "jpwienekus@gmail.com"}
+]
+packages = [{ include = "app" }]
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "pydantic-settings (==2.9.1)",
+    "fastapi[standard] (==0.115.13)",
+    "strawberry-graphql[fastapi] (==0.274.0)",
+    "alembic (==1.16.2)",
+    "sqlalchemy (==2.0.41)",
+    "asyncpg (==0.30.0)",
+    "greenlet (==3.2.3)",
+    "python-jose[cryptography] (==3.5.0)",
+    "pyyaml (==6.0.2)",
+    "toml (>=0.10.2,<0.11.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
