@@ -13,4 +13,4 @@ def test_parse_requirements_txt(tmp_path: Path):
     name, version, ecosystem = result[0]
     assert name == "requests"
     assert version == "2.25.1"
-    assert ecosystem == "PyPi"
+    assert ecosystem == "PyPI"
