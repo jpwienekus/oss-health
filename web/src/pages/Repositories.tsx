@@ -1,9 +1,7 @@
 import type { GitHubRepository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  Package,
-} from 'lucide-react'
+import { Package } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
@@ -167,7 +165,11 @@ export const Repositories = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredAndSortedRepositories.map((repository, index) => (
-              <RepositoryOverview key={index} repository={repository} onUpdate={onManualScan}/>
+              <RepositoryOverview
+                key={index}
+                repository={repository}
+                onUpdate={onManualScan}
+              />
             ))}
           </div>
         </div>

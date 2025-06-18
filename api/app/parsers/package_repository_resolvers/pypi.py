@@ -1,6 +1,10 @@
-import httpx
 from typing import Optional
-from app.parsers.package_repository_resolvers.base import register_package_repository_resolver
+
+import httpx
+
+from app.parsers.package_repository_resolvers.base import (
+    register_package_repository_resolver,
+)
 
 
 @register_package_repository_resolver("PyPI")

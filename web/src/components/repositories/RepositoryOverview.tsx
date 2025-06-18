@@ -1,5 +1,5 @@
 import type { GitHubRepository } from '@/types'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   AlertTriangle,
@@ -7,7 +7,7 @@ import {
   Package,
   XCircle,
   RefreshCw,
-  CalendarClock
+  CalendarClock,
 } from 'lucide-react'
 import {
   Card,
@@ -26,7 +26,10 @@ type RepositoryOverviewParams = {
   onUpdate: (result: GitHubRepository[]) => void
 }
 
-export const RepositoryOverview = ({ repository, onUpdate }: RepositoryOverviewParams) => {
+export const RepositoryOverview = ({
+  repository,
+  onUpdate,
+}: RepositoryOverviewParams) => {
   const { jwt } = useAuth()
   const [loading, setLoading] = useState(false)
 
@@ -39,7 +42,7 @@ export const RepositoryOverview = ({ repository, onUpdate }: RepositoryOverviewP
     const response = await client.request<{
       manualScanDebug: GitHubRepository[]
     }>(MANUAL_SCAN_DEBUG, {
-      repositoryId
+      repositoryId,
     })
     setLoading(false)
     onUpdate(response.manualScanDebug)
@@ -72,7 +75,8 @@ export const RepositoryOverview = ({ repository, onUpdate }: RepositoryOverviewP
           <div className="flex-1">
             <CardTitle className="text-lg flex items-center gap-2">
               <span className="text-md font-medium">{repository.name}</span>
-              {repository.scannedDate !== null && repository.scannedDate !== undefined ? (
+              {repository.scannedDate !== null &&
+              repository.scannedDate !== undefined ? (
                 <>
                   {getHealthIcon(repository.score)}
                   <span
@@ -86,8 +90,16 @@ export const RepositoryOverview = ({ repository, onUpdate }: RepositoryOverviewP
                   Not scanned yet
                 </span>
               )}
-              <Button variant="ghost" size="icon" onClick={() => manualScanForDebug(repository.id)} >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-2 h-2" />}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => manualScanForDebug(repository.id)}
+              >
+                {loading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-2 h-2" />
+                )}
               </Button>
               {repository.private && (
                 <Badge variant="secondary" className="text-xs">
@@ -104,22 +116,30 @@ export const RepositoryOverview = ({ repository, onUpdate }: RepositoryOverviewP
         <div className="flex flex-wrap gap-4 text-xs text-slate-500">
           <div className="flex items-center gap-1">
             <Package size={12} />
-            <span>{repository.scannedDate ? repository.dependencies : '-'} dependencies</span>
+            <span>
+              {repository.scannedDate ? repository.dependencies : '-'}{' '}
+              dependencies
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <AlertTriangle size={12} />
             <span
               className={
-                repository.scannedDate && repository.vulnerabilities > 0 ? 'text-red-600' : ''
+                repository.scannedDate && repository.vulnerabilities > 0
+                  ? 'text-red-600'
+                  : ''
               }
             >
-              {repository.scannedDate ? repository.vulnerabilities : '-'} vulnerabilities
+              {repository.scannedDate ? repository.vulnerabilities : '-'}{' '}
+              vulnerabilities
             </span>
           </div>
           <div className="flex items-center gap-1">
             <CalendarClock size={12} />
             <span>
-              {repository.scannedDate ? formatDate(repository.scannedDate) : '-'}
+              {repository.scannedDate
+                ? formatDate(repository.scannedDate)
+                : '-'}
             </span>
           </div>
         </div>

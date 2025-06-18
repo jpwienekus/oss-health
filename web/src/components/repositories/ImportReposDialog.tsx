@@ -16,7 +16,7 @@ import { GET_REPOSITORIES_FROM_GITHUB } from '@/graphql/queries'
 import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { Checkbox } from '../ui/checkbox'
-import {formatDate} from '@/utils'
+import { formatDate } from '@/utils'
 
 type ImportReposDialogParams = {
   alreadyTracked: number[]
