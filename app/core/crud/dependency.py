@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependency_repository_resolvers.base import package_repository_resolvers
@@ -12,12 +12,16 @@ logger = logging.getLogger()
 
 
 async def resolve_pending_dependencies(
-    db_session: AsyncSession, batch_size: int, offset: int
+    db_session: AsyncSession, batch_size: int, offset: int, ecosystem: str
 ):
+    logger.info('&' * 100)
     pending = (
         await db_session.scalars(
             select(DependencyDBModel)
-            .where(DependencyDBModel.github_url_resolved == False)
+            .where(
+                DependencyDBModel.github_url_resolved == False,
+                func.lower(DependencyDBModel.ecosystem) == ecosystem.lower()
+            )
             .offset(offset)
             .limit(batch_size)
         )

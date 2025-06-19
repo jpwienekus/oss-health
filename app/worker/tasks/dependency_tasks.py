@@ -26,4 +26,4 @@ async def resolve_github_urls(
     if not db_session:
         return
 
-    await resolve_pending_dependencies(db_session, batch_size, offset)
+    await resolve_pending_dependencies(db_session, batch_size, offset, ecosystem)
