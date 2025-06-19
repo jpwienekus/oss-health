@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependency_repository_resolvers.base import package_repository_resolvers
 from core.models import Dependency as DependencyDBModel
+from core.utils.limiter_config import LIMITERS
 
 logger = logging.getLogger()
 
@@ -27,6 +28,9 @@ async def resolve_pending_dependencies(
     for dependency in pending:
         ecosystem = dependency.ecosystem.lower()
         resolver = package_repository_resolvers[ecosystem]
+
+        LIMITERS[ecosystem].wail_until_allowed()
+
         logger.info("$" * 100)
         logger.info(ecosystem)
 

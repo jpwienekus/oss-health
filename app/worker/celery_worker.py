@@ -10,4 +10,8 @@ celery_app = Celery(
     backend="redis://localhost:6379/1",
 )
 
-# celery_app.autodiscover_tasks(['worker.tasks'])
+celery_app.conf.task_routes = {
+    "worker.tasks.resolve_npm_github_urls": {"queue": "npm"},
+    "worker.tasks.resolve_pypi_github_urls": {"queue": "pypi"}
+}
+

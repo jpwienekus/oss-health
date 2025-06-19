@@ -8,14 +8,20 @@ from worker.celery_worker import celery_app
 from worker.db_helpers import with_db_session
 
 
-@celery_app.task(name="resolve_github_urls")
-def resolve_github_urls_task():
-    asyncio.run(resolve_github_urls(1, 0))
+# @celery_app.task(name="resolve_github_urls")
+@celery_app.task(name="worker.tasks.resolve_npm_github_urls")
+# def resolve_github_urls_task():
+def resolve_npm_github_urls():
+    asyncio.run(resolve_github_urls("npm", 1, 0))
+
+@celery_app.task(name="worker.tasks.resolve_pypi_github_urls")
+def resolve_pypi_github_urls():
+    asyncio.run(resolve_github_urls("pypi", 1, 0))
 
 
 @with_db_session
 async def resolve_github_urls(
-    batch_size: int, offset: int, db_session: Optional[AsyncSession] = None
+    ecosystem: str, batch_size: int, offset: int, db_session: Optional[AsyncSession] = None
 ):
     if not db_session:
         return
