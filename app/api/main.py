@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.auth.github_oauth import router as auth_router
-from api.configuration import settings
+from config.settings import settings
 from api.graphql.schema import graphql_app
 from core.database import sessionmanager
 from core.utils.loggin import configure_logging

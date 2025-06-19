@@ -10,7 +10,7 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from alembic.script import ScriptDirectory
-from api.configuration import settings
+from config.settings import settings
 from api.main import app as actual_app
 from core.database import Base, DatabaseSessionManager, get_db_session
 from core.models.dependency import Dependency as DependencyDBModel

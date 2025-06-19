@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://dev-user:password@localhost:5432/dev_db"
+    broker_url: str = "redis://localhost:6379"
     echo_sql: bool = False
     test: bool = False
     project_name: str = "My FastAPI project"

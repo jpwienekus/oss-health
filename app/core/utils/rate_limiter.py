@@ -1,6 +1,7 @@
 import logging
 import time
 import redis
+from config.settings import settings
 
 logger = logging.getLogger()
 
@@ -9,7 +10,7 @@ class RedisRateLimiter:
         self.name = name
         self.limit = limit
         self.period = period
-        self.redis = redis.Redis.from_url("redis://localhost:6379")
+        self.redis = redis.Redis.from_url(settings.broker_url)
 
     def _key(self):
         return f"ratelimit:{self.name}"

@@ -1,4 +1,5 @@
 from celery import Celery
+from config.settings import settings
 
 # from core.utils.loggin import configure_logging
 
@@ -6,8 +7,8 @@ from celery import Celery
 
 celery_app = Celery(
     "dependency_monitor",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/1",
+    broker=f"{settings.broker_url}/0",
+    backend=f"{settings.broker_url}/1",
 )
 
 celery_app.conf.task_routes = {
