@@ -7,10 +7,7 @@ from core.crud.dependency import resolve_pending_dependencies
 from worker.celery_worker import celery_app
 from worker.db_helpers import with_db_session
 
-
-# @celery_app.task(name="resolve_github_urls")
 @celery_app.task(name="worker.tasks.resolve_npm_github_urls")
-# def resolve_github_urls_task():
 def resolve_npm_github_urls():
     asyncio.run(resolve_github_urls("npm", 1, 0))
 

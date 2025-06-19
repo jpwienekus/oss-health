@@ -8,13 +8,12 @@ from core.dependency_repository_resolvers.base import package_repository_resolve
 from core.models import Dependency as DependencyDBModel
 from core.utils.limiter_config import LIMITERS
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 async def resolve_pending_dependencies(
     db_session: AsyncSession, batch_size: int, offset: int, ecosystem: str
 ):
-    logger.info('&' * 100)
     pending = (
         await db_session.scalars(
             select(DependencyDBModel)
@@ -34,9 +33,6 @@ async def resolve_pending_dependencies(
         resolver = package_repository_resolvers[ecosystem]
 
         LIMITERS[ecosystem].wail_until_allowed()
-
-        logger.info("$" * 100)
-        logger.info(ecosystem)
 
         if resolver:
             url = await resolver(dependency.name)

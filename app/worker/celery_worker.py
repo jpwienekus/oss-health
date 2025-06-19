@@ -1,15 +1,20 @@
 from celery import Celery
 from config.settings import settings
 
-# from core.utils.loggin import configure_logging
+from core.utils.loggin import configure_logging
 
-# configure_logging(log_level_str="INFO")
+configure_logging(log_level_str="INFO")
 
 celery_app = Celery(
     "dependency_monitor",
-    broker=f"{settings.broker_url}/0",
-    backend=f"{settings.broker_url}/1",
 )
+
+celery_app.config_from_object({
+    "broker_url": f"{settings.broker_url}/0",
+    "result_backend": f"{settings.broker_url}/1",
+    "worker_hijack_root_logger": False,
+
+})
 
 celery_app.conf.task_routes = {
     "worker.tasks.resolve_npm_github_urls": {"queue": "npm"},

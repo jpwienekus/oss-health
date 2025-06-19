@@ -3,7 +3,7 @@ import time
 import redis
 from config.settings import settings
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 class RedisRateLimiter:
     def __init__(self, name: str, limit: int, period: int = 60) -> None:
