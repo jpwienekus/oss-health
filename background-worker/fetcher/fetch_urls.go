@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/oss-health/background-worker/db"
 	"github.com/oss-health/background-worker/utils"
@@ -16,6 +17,9 @@ var Resolvers = map[string]func(ctx context.Context, name string) (string, error
 }
 
 func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) error {
+	// requestCtx, cancel := context.WithTimeout(ctxX, 2*time.Minute)
+	// defer cancel()
+
 	dependencies, err := db.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
@@ -32,39 +36,73 @@ func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecos
 	var resolvedDependencies []db.Dependency
 	failureReasons := make(map[int64]string)
 
+	concurrency := 10
+	sem := make(chan struct{}, concurrency)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
 	for _, dependency := range dependencies {
-		ecosystem := strings.ToLower(dependency.Ecosystem)
-		log.Printf("Resolving url for: %s", dependency.Name)
+		// NOTE: In Go, the range loop reuses the same dependency variable each time.
+		// So if you spin up goroutines in a loop, they all reference the same variable
+		// Thus need to make a copy.
+		dependencyCopy := dependency
+		sem <- struct{}{}
+		wg.Add(1)
 
-		resolver, ok := Resolvers[ecosystem]
-		if !ok {
-			log.Printf("No resolver found for ecosystem: %s", ecosystem)
-			failureReasons[dependency.ID] = "unsupported ecosystem"
-			continue
-		}
+		go func() {
+			defer func() { 
+				<-sem 
+				wg.Done()
+			}()
 
-		if err := utils.WaitUntilAllowed(ctx, ecosystem); err != nil {
-			log.Printf("Rate limiter error for %s: %v", dependency.Name, err)
-			continue
-		}
+			ecosystem := strings.ToLower(dependencyCopy.Ecosystem)
+			log.Printf("Resolving url for: %s", dependencyCopy.Name)
 
-		url, err := resolver(ctx, dependency.Name)
-		if err != nil {
-			log.Printf("Error resolving URL for %s: %v", dependency.Name, err)
-			failureReasons[dependency.ID] = fmt.Sprintf("resolver error: %v", err)
-			continue
-		}
+			resolver, ok := Resolvers[ecosystem]
 
-		if url == "" {
-			log.Printf("No URL found for %s", dependency.Name)
-			failureReasons[dependency.ID] = "empty URL"
-			continue
-		}
+			if !ok {
+				log.Printf("No resolver found for ecosystem: %s", ecosystem)
 
-		resolvedURLs[dependency.ID] = url
-		urlsSet[url] = struct{}{}
-		resolvedDependencies = append(resolvedDependencies, dependency)
+				mu.Lock()
+				failureReasons[dependencyCopy.ID] = "unsupported ecosystem"
+				mu.Unlock()
+				return
+			}
+
+			if err := utils.WaitUntilAllowed(ctx, ecosystem); err != nil {
+				log.Printf("Rate limiter error for %s: %v", dependencyCopy.Name, err)
+				return
+			}
+
+			url, err := resolver(ctx, dependencyCopy.Name)
+			if err != nil {
+				log.Printf("Error resolving URL for %s: %v", dependencyCopy.Name, err)
+
+				mu.Lock()
+				failureReasons[dependencyCopy.ID] = fmt.Sprintf("resolver error: %v", err)
+				mu.Unlock()
+				return
+			}
+
+			if url == "" {
+				log.Printf("No URL found for %s", dependencyCopy.Name)
+
+				mu.Lock()
+				failureReasons[dependencyCopy.ID] = "empty URL"
+				mu.Unlock()
+				return
+			}
+
+			mu.Lock()
+			resolvedURLs[dependencyCopy.ID] = url
+			urlsSet[url] = struct{}{}
+			resolvedDependencies = append(resolvedDependencies, dependencyCopy)
+			mu.Unlock()
+		}()
+
 	}
+
+	wg.Wait()
 
 	if len(resolvedDependencies) == 0 && len(failureReasons) == 0 {
 		log.Println("No dependencies resolved or failed")
