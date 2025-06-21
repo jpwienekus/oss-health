@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/oss-health/background-worker/fetcher"
-	"github.com/oss-health/background-worker/utils"
+	"github.com/oss-health/background-worker/pkg/fetcher"
+	"github.com/oss-health/background-worker/internal/utils"
 	"github.com/robfig/cron/v3"
 	"golang.org/x/time/rate"
 )

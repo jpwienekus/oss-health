@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/oss-health/background-worker/db"
-	"github.com/oss-health/background-worker/utils"
+	"github.com/oss-health/background-worker/pkg/db"
+	"github.com/oss-health/background-worker/internal/utils"
 )
 
 var Resolvers = map[string]func(ctx context.Context, name string) (string, error){
