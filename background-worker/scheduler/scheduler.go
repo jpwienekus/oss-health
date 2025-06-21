@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/robfig/cron/v3"
 	"github.com/oss-health/background-worker/fetcher"
+	"github.com/robfig/cron/v3"
 )
 
 func Start() {
@@ -20,7 +20,7 @@ func Start() {
 		defer cancel()
 
 		log.Println("Starting scheduled fetch job: npm")
-		if err := fetcher.ResolvePendingDependencies(ctx, 50, 0, "npm"); err != nil {
+		if err := fetcher.ResolvePendingDependencies(ctx, 110, 0, "npm"); err != nil {
 			log.Printf("Error running npm fetch job: %v", err)
 		} else {
 			log.Printf("Finished batch for npm")

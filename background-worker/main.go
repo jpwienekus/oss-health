@@ -25,9 +25,9 @@ func main() {
 	defer db.Close()
 
 	initRateLimiters()
-	// fetcher.ResolvePendingDependencies(ctx, 120, 0, "npm")
+	// fetcher.ResolvePendingDependencies(ctx, 10, 0, "npm")
+	// log.Println("Done witih batch")
 	scheduler.Start()
-	log.Println("Done witih batch")
 
 	// Graceful shutdown block
 	sigs := make(chan os.Signal, 1)
@@ -37,8 +37,10 @@ func main() {
 }
 
 func initRateLimiters() {
-	// Allow 1 request per second (60/min) with small burst
-	utils.RegisterLimiter("npm", rate.Every(time.Second), 2)
+	npmBurst := 10
+	npmRequestsPerSecond := 10
+	periodPerRequest := time.Second / time.Duration(npmRequestsPerSecond)
+	utils.RegisterLimiter("npm", rate.Every(periodPerRequest), npmBurst)
 
 	// Allow 1 request every 2 seconds (30/min)
 	utils.RegisterLimiter("pypi", rate.Every(2*time.Second), 1)

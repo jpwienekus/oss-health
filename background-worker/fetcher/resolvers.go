@@ -42,7 +42,6 @@ func GetNpmRepoURL(ctx context.Context, name string) (string, error) {
 	return repoURL, nil
 }
 
-
 func GetPypiRepoURL(ctx context.Context, name string) (string, error) {
 	url := fmt.Sprintf("https://pypi.org/pypi/%s/json", name)
 	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
