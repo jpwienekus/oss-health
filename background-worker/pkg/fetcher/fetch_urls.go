@@ -121,7 +121,6 @@ func ResolvePendingDependencies(
 			urls = append(urls, url)
 		}
 
-		log.Printf("test %s", urls)
 		urlToID, err := db.UpsertGithubURLs(ctx, urls)
 		if err != nil {
 			return fmt.Errorf("failed to upsert GitHub URLs: %w", err)

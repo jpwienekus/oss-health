@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-
 func GetNpmRepoURL(ctx context.Context, name string) (string, error) {
 	url := fmt.Sprintf("https://registry.npmjs.org/%s", name)
 	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
