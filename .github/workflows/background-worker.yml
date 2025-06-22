@@ -10,11 +10,7 @@ jobs:
     name: Lint and Test (background-worker)
     runs-on: ubuntu-latest
 
-  defaults:
-      run:
-        working-directory: background-worker
-
-  steps:
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -38,7 +34,11 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.58.2
 
       - name: Run Linter
-        run: golangci-lint run ./...
+        run: |
+          cd background-worker/
+          golangci-lint run ./...
 
       - name: Run Tests
-        run: go test -v ./...
+        run: |
+          cd background-worker/
+          go test -v ./...
