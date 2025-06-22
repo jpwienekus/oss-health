@@ -17,9 +17,6 @@ var Resolvers = map[string]func(ctx context.Context, name string) (string, error
 }
 
 func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) error {
-	// requestCtx, cancel := context.WithTimeout(ctxX, 2*time.Minute)
-	// defer cancel()
-
 	dependencies, err := db.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
@@ -31,28 +28,28 @@ func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecos
 		return nil
 	}
 
+	var resolvedDependencies []db.Dependency
 	resolvedURLs := make(map[int64]string)
 	urlsSet := make(map[string]struct{})
-	var resolvedDependencies []db.Dependency
 	failureReasons := make(map[int64]string)
 
 	concurrency := 10
-	sem := make(chan struct{}, concurrency)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, concurrency)
+	var mutex sync.Mutex
+	var waitGroup sync.WaitGroup
 
 	for _, dependency := range dependencies {
 		// NOTE: In Go, the range loop reuses the same dependency variable each time.
 		// So if you spin up goroutines in a loop, they all reference the same variable
 		// Thus need to make a copy.
 		dependencyCopy := dependency
-		sem <- struct{}{}
-		wg.Add(1)
+		semaphore <- struct{}{}
+		waitGroup.Add(1)
 
 		go func() {
 			defer func() { 
-				<-sem 
-				wg.Done()
+				<-semaphore 
+				waitGroup.Done()
 			}()
 
 			ecosystem := strings.ToLower(dependencyCopy.Ecosystem)
@@ -63,9 +60,9 @@ func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecos
 			if !ok {
 				log.Printf("No resolver found for ecosystem: %s", ecosystem)
 
-				mu.Lock()
+				mutex.Lock()
 				failureReasons[dependencyCopy.ID] = "unsupported ecosystem"
-				mu.Unlock()
+				mutex.Unlock()
 				return
 			}
 
@@ -78,31 +75,31 @@ func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecos
 			if err != nil {
 				log.Printf("Error resolving URL for %s: %v", dependencyCopy.Name, err)
 
-				mu.Lock()
+				mutex.Lock()
 				failureReasons[dependencyCopy.ID] = fmt.Sprintf("resolver error: %v", err)
-				mu.Unlock()
+				mutex.Unlock()
 				return
 			}
 
 			if url == "" {
 				log.Printf("No URL found for %s", dependencyCopy.Name)
 
-				mu.Lock()
+				mutex.Lock()
 				failureReasons[dependencyCopy.ID] = "empty URL"
-				mu.Unlock()
+				mutex.Unlock()
 				return
 			}
 
-			mu.Lock()
+			mutex.Lock()
 			resolvedURLs[dependencyCopy.ID] = url
 			urlsSet[url] = struct{}{}
 			resolvedDependencies = append(resolvedDependencies, dependencyCopy)
-			mu.Unlock()
+			mutex.Unlock()
 		}()
 
 	}
 
-	wg.Wait()
+	waitGroup.Wait()
 
 	if len(resolvedDependencies) == 0 && len(failureReasons) == 0 {
 		log.Println("No dependencies resolved or failed")

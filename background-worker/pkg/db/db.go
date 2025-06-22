@@ -40,6 +40,7 @@ func GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosyste
 		AND github_url_resolve_failed = false
 		OFFSET $2 LIMIT $3
 	`, ecosystem, offset, batchSize)
+
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +51,8 @@ func GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosyste
 
 	for rows.Next() {
 		var dep Dependency
-
 		err := rows.Scan(&dep.ID, &dep.Name, &dep.Ecosystem)
+
 		if err != nil {
 			return nil, err
 		}
@@ -67,9 +68,8 @@ func UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, err
 		return nil, nil
 	}
 
-	// Prepare batch insert query
 	valueStrings := make([]string, 0, len(urls))
-	valueArgs := make([]interface{}, 0, len(urls))
+	valueArgs := make([]any, 0, len(urls))
 
 	for i, url := range urls {
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d)", i+1))
@@ -84,10 +84,12 @@ func UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, err
 	`, strings.Join(valueStrings, ","))
 
 	rows, err := Pool.Query(ctx, query, valueArgs...)
+
 	if err != nil {
 		log.Printf("Could not insert url")
 		return nil, err
 	}
+
 	defer rows.Close()
 
 	urlToID := make(map[string]int64)
@@ -95,13 +97,14 @@ func UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, err
 	for rows.Next() {
 		var id int64
 		var url string
+
 		if err := rows.Scan(&id, &url); err != nil {
 			return nil, err
 		}
+
 		urlToID[url] = id
 	}
 
-	// Find URLs not returned by insert (already existed)
 	missingURLs := []string{}
 
 	for _, url := range urls {
@@ -113,18 +116,22 @@ func UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, err
 	if len(missingURLs) > 0 {
 		query = `SELECT id, github_url FROM dependency_repository WHERE github_url = ANY($1)`
 		rows, err = Pool.Query(ctx, query, missingURLs)
+
 		if err != nil {
 			log.Printf("Could not read github urls: %s", err)
 			return nil, err
 		}
+
 		defer rows.Close()
 
 		for rows.Next() {
 			var id int64
 			var url string
+
 			if err := rows.Scan(&id, &url); err != nil {
 				return nil, err
 			}
+
 			urlToID[url] = id
 		}
 	}
@@ -134,15 +141,18 @@ func UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, err
 
 func BatchUpdateDependencies(ctx context.Context, deps []Dependency, urlToID map[string]int64, resolvedURLs map[int64]string) error {
 	tx, err := Pool.Begin(ctx)
+
 	if err != nil {
 		return err
 	}
+
 	defer tx.Rollback(ctx)
 
 	for _, dep := range deps {
 		url, ok := resolvedURLs[dep.ID]
+
 		if !ok {
-			continue // no URL resolved
+			continue
 		}
 
 		githubURLID, ok := urlToID[url]
@@ -170,7 +180,6 @@ func MarkDependenciesAsFailed(ctx context.Context, failureReasons map[int64]stri
 		return nil
 	}
 
-	// Build arrays of IDs and corresponding reasons
 	ids := make([]int64, 0, len(failureReasons))
 	reasons := make([]string, 0, len(failureReasons))
 
@@ -179,7 +188,6 @@ func MarkDependenciesAsFailed(ctx context.Context, failureReasons map[int64]stri
 		reasons = append(reasons, reason)
 	}
 
-	// Update in batch using unnest
 	_, err := Pool.Exec(ctx, `
 		UPDATE dependencies
 		SET github_url_resolve_failed = true,
