@@ -134,18 +134,3 @@ The GNU Affero General Public License is a free, copyleft license for software a
 ## Author
 
 JP Wienekus (jpwienekus@gmail.com)
-
-
-
-## New Notes
-celery:
-current queues:
-    npm
-    pypi
-
-to run celery worker for queues
-poetry run celery -A worker.celery_worker worker --loglevel=info --pidfile=/tmp/celery_worker.pid -Q npm,pypi
-
-to have a look at what is going on with celery:
-poetry run celery -A worker.celery_worker flower --port=5555
-and go to localhost:5555 
