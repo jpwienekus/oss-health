@@ -4,16 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/oss-health/background-worker/internal/utils"
 	"github.com/oss-health/background-worker/pkg/db"
 )
 
+var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
 var Resolvers = map[string]func(ctx context.Context, name string) (string, error){
-	"npm":  GetNpmRepoURL,
-	"pypi": GetPypiRepoURL,
+	"npm":  GetNpmRepoURL(defaultHTTPClient, "https://registry.npmjs.org"),
+	"pypi": GetPypiRepoURL(defaultHTTPClient, "https://pypi.org/pypi"),
 }
 
 func ResolvePendingDependencies(
