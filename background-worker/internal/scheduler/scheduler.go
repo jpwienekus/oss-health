@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/oss-health/background-worker/pkg/fetcher"
 	"github.com/oss-health/background-worker/internal/utils"
+	"github.com/oss-health/background-worker/pkg/fetcher"
 	"github.com/robfig/cron/v3"
 	"golang.org/x/time/rate"
 )
@@ -19,7 +19,8 @@ const (
 )
 
 func Start() {
-	initRateLimiters()
+	rateLimiter := utils.NewDefaultRateLimiter()
+	initRateLimiters(rateLimiter)
 
 	c := cron.New(
 		cron.WithSeconds(),
@@ -34,7 +35,7 @@ func Start() {
 		defer cancel()
 
 		log.Println("Starting scheduled fetch job: npm")
-		if err := fetcher.ResolvePendingDependencies(ctx, npmRequestCapability, 0, "npm"); err != nil {
+		if err := fetcher.ResolvePendingDependencies(ctx, npmRequestCapability, 0, "npm", rateLimiter, fetcher.Resolvers); err != nil {
 			log.Printf("Error running npm fetch job: %v", err)
 		} else {
 			log.Printf("Finished batch for npm")
@@ -46,7 +47,7 @@ func Start() {
 		defer cancel()
 
 		log.Println("Starting scheduled fetch job: pypi")
-		if err := fetcher.ResolvePendingDependencies(ctx, pypiRequestCapability, 0, "pypi"); err != nil {
+		if err := fetcher.ResolvePendingDependencies(ctx, pypiRequestCapability, 0, "pypi", rateLimiter, fetcher.Resolvers); err != nil {
 			log.Printf("Error running pypi fetch job: %v", err)
 		}
 	})
@@ -59,12 +60,12 @@ func Start() {
 	c.Start()
 }
 
-func initRateLimiters() {
-	registerRateLimter("npm", NpmRps, NpmBurst)
-	registerRateLimter("pypi", PypiRps, PypiBurst)
+func initRateLimiters(rateLimiter *utils.DefaultRateLimiter) {
+	registerRateLimter(rateLimiter, "npm", NpmRps, NpmBurst)
+	registerRateLimter(rateLimiter, "pypi", PypiRps, PypiBurst)
 }
 
-func registerRateLimter(registry string, rps int, burst int) {
+func registerRateLimter(rateLimiter *utils.DefaultRateLimiter, registry string, rps int, burst int) {
 	periodPerRequest := time.Second / time.Duration(rps)
-	utils.RegisterLimiter(registry, rate.Every(periodPerRequest), burst)
+	rateLimiter.RegisterLimiter(registry, rate.Every(periodPerRequest), burst)
 }

@@ -31,7 +31,7 @@ func Close() {
 	}
 }
 
-func GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) ([]Dependency, error) {
+var GetPendingDependencies = func(ctx context.Context, batchSize, offset int, ecosystem string) ([]Dependency, error) {
 	rows, err := Pool.Query(ctx, `
 		SELECT id, name, ecosystem
 		FROM dependencies
@@ -63,7 +63,7 @@ func GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosyste
 	return dependencies, nil
 }
 
-func UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, error) {
+var UpsertGithubURLs = func(ctx context.Context, urls []string) (map[string]int64, error) {
 	if len(urls) == 0 {
 		return nil, nil
 	}
@@ -139,7 +139,7 @@ func UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, err
 	return urlToID, nil
 }
 
-func BatchUpdateDependencies(ctx context.Context, deps []Dependency, urlToID map[string]int64, resolvedURLs map[int64]string) error {
+var BatchUpdateDependencies = func(ctx context.Context, deps []Dependency, urlToID map[string]int64, resolvedURLs map[int64]string) error {
 	tx, err := Pool.Begin(ctx)
 
 	if err != nil {
@@ -175,7 +175,7 @@ func BatchUpdateDependencies(ctx context.Context, deps []Dependency, urlToID map
 	return tx.Commit(ctx)
 }
 
-func MarkDependenciesAsFailed(ctx context.Context, failureReasons map[int64]string) error {
+var MarkDependenciesAsFailed = func(ctx context.Context, failureReasons map[int64]string) error {
 	if len(failureReasons) == 0 {
 		return nil
 	}

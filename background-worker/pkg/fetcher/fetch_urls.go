@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/oss-health/background-worker/pkg/db"
 	"github.com/oss-health/background-worker/internal/utils"
+	"github.com/oss-health/background-worker/pkg/db"
 )
 
 var Resolvers = map[string]func(ctx context.Context, name string) (string, error){
@@ -16,8 +16,16 @@ var Resolvers = map[string]func(ctx context.Context, name string) (string, error
 	"pypi": GetPypiRepoURL,
 }
 
-func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) error {
+func ResolvePendingDependencies(
+	ctx context.Context,
+	batchSize int,
+	offset int,
+	ecosystem string,
+	rateLimiter utils.RateLimiter,
+	resolvers map[string]func(ctx context.Context, name string) (string, error),
+) error {
 	dependencies, err := db.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
+
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
 	}
@@ -47,15 +55,15 @@ func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecos
 		waitGroup.Add(1)
 
 		go func() {
-			defer func() { 
-				<-semaphore 
+			defer func() {
+				<-semaphore
 				waitGroup.Done()
 			}()
 
 			ecosystem := strings.ToLower(dependencyCopy.Ecosystem)
 			log.Printf("Resolving url for: %s", dependencyCopy.Name)
 
-			resolver, ok := Resolvers[ecosystem]
+			resolver, ok := resolvers[ecosystem]
 
 			if !ok {
 				log.Printf("No resolver found for ecosystem: %s", ecosystem)
@@ -66,7 +74,7 @@ func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecos
 				return
 			}
 
-			if err := utils.WaitUntilAllowed(ctx, ecosystem); err != nil {
+			if err := rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
 				log.Printf("Rate limiter error for %s: %v", dependencyCopy.Name, err)
 				return
 			}
@@ -113,6 +121,7 @@ func ResolvePendingDependencies(ctx context.Context, batchSize, offset int, ecos
 			urls = append(urls, url)
 		}
 
+		log.Printf("test %s", urls)
 		urlToID, err := db.UpsertGithubURLs(ctx, urls)
 		if err != nil {
 			return fmt.Errorf("failed to upsert GitHub URLs: %w", err)
