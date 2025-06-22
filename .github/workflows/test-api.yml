@@ -1,4 +1,4 @@
-name: Lint and Test (api)
+name: api
 
 on:
   pull_request:

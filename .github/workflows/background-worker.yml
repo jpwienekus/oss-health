@@ -1,4 +1,4 @@
-name: Lint and Test (background-worker)
+name: background-worker
 
 on:
   pull_request:
