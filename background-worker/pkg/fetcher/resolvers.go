@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -17,7 +18,12 @@ func GetNpmRepoURL(client *http.Client, baseURL string) func(ctx context.Context
 		if err != nil {
 			return "", err
 		}
-		defer resp.Body.Close()
+
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("failed to close response body: %v", err)
+			}
+		}()
 
 		if resp.StatusCode != 200 {
 			return "", nil
@@ -51,7 +57,12 @@ func GetPypiRepoURL(client *http.Client, baseURL string) func(ctx context.Contex
 		if err != nil {
 			return "", err
 		}
-		defer resp.Body.Close()
+
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("failed to close response body: %v", err)
+			}
+		}()
 
 		if resp.StatusCode != 200 {
 			return "", nil

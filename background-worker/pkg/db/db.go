@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -146,7 +147,11 @@ var BatchUpdateDependencies = func(ctx context.Context, deps []Dependency, urlTo
 		return err
 	}
 
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+			log.Printf("rollback failed: %v", err)
+		}
+	}()
 
 	for _, dep := range deps {
 		url, ok := resolvedURLs[dep.ID]
