@@ -1,6 +1,8 @@
 import logging
 import time
+
 import redis
+
 from config.settings import settings
 
 logger = logging.getLogger(__name__)

@@ -26,4 +26,4 @@ class Dependency(Base):
     )
 
     versions: Mapped[List["Version"]] = relationship(back_populates="dependency")  # type: ignore # noqa: F821
-    dependency_repository: Mapped[Optional["DependencyRepository"]] = relationship(back_populates="dependencies")  # type: ignore # noqa: F821
+    dependency_repository: Mapped[Optional["DependencyRepository"]] = relationship(back_populates="dependencies")  # type: ignore # noqa: F821, E501

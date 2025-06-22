@@ -20,6 +20,7 @@ class ColoredLoggerFormatter(logging.Formatter):
         timestamp = datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S")
         level = f"{level_color}{record.levelname:<8}{RESET}"
 
+        # ruff: noqa: E501
         return f"{level}{DIM}{timestamp}{RESET} {BOLD} {record.name}:{RESET} {record.getMessage()}"
 
 
