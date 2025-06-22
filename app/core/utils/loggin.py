@@ -13,6 +13,7 @@ COLORS = {
     "CRITICAL": "\x1b[31m",
 }
 
+
 class ColoredLoggerFormatter(logging.Formatter):
     def format(self, record):
         level_color = COLORS.get(record.levelname, "")

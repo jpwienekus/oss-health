@@ -35,6 +35,8 @@ def event_loop():
 def run_migrations(connection: Connection):
     config = Config("./alembic.ini")
     config.set_main_option("sqlalchemy.url", settings.database_url)
+    print('%' * 100)
+    print(settings.database_url)
     script = ScriptDirectory.from_config(config)
 
     def upgrade(rev, _):

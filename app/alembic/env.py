@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from alembic import context
-from api.configuration import settings
+from config.settings import settings
 from core.models import Base
 
 config = context.config

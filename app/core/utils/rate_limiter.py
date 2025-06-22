@@ -5,6 +5,7 @@ from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
+
 class RedisRateLimiter:
     def __init__(self, name: str, limit: int, period: int = 60) -> None:
         self.name = name
@@ -21,7 +22,7 @@ class RedisRateLimiter:
 
         pipeline = self.redis.pipeline()
         pipeline.zremrangebyscore(key, 0, now - self.period)
-        pipeline.zadd(key, { str(now): now})
+        pipeline.zadd(key, {str(now): now})
         pipeline.zcard(key)
         pipeline.expire(key, self.period)
         _, _, count, _ = pipeline.execute()
@@ -37,4 +38,3 @@ class RedisRateLimiter:
             # TODO: change to debug
             logger.info(f"[{self.name}] rate limit hit")
             time.sleep(1)
-

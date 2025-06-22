@@ -7,3 +7,4 @@ from .repository import Repository as Repository
 from .user import User as User
 from .version import Version as Version
 from .vulnerability import Vulnerability as Vulnerability
+from .dependency_repository import DependencyRepository as DependencyRepository
