@@ -3,8 +3,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from api.auth.jwt_utils import create_token_pair
-from api.configuration import settings
 from api.dependencies.core import DBSessionDep
+from config.settings import settings
 from core.crud.user import add_user, get_user_by_github_id, update_access_token
 
 router = APIRouter()

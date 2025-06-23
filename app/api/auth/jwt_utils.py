@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 from jose import JWTError, jwt
 
-from api.configuration import settings
+from config.settings import settings
 
 
 def create_token_pair(user_id: int):

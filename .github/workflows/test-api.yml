@@ -1,5 +1,4 @@
-
-name: Lint and Test API
+name: api
 
 on:
   pull_request:
@@ -7,6 +6,7 @@ on:
 
 jobs:
   lint-and-test:
+    name: Lint and Test (api)
     runs-on: ubuntu-latest
 
     services:

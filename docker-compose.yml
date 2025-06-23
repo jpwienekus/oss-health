@@ -62,7 +62,18 @@ services:
       - postgres
     restart: unless-stopped
 
+  valkey:
+    image: valkey/valkey:8.1.2
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey-data:/data
+    command: ["valkey-server", "--save", "900", "1", "--loglevel", "notice", "--dir", "/data"]
+    restart: unless-stopped
+
 volumes:
   db-data:
   pgadmin-data:
   test-db-data:
+  valkey-data:

@@ -38,7 +38,9 @@ description = ""
 authors = [
     {name = "JP Wienekus",email = "jpwienekus@gmail.com"}
 ]
-packages = [{ include = "api" }]
+packages = [
+    { include = "api" },
+]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [

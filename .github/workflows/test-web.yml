@@ -1,6 +1,4 @@
-
-
-name: Lint and Test Web
+name: web
 
 on:
   pull_request:
@@ -8,6 +6,7 @@ on:
 
 jobs:
   lint-and-test:
+    name: Lint and Test (web)
     runs-on: ubuntu-latest
 
     steps:
