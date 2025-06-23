@@ -44,9 +44,9 @@ packages = [
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
-    "pydantic-settings (==2.9.1)",
+    "pydantic-settings (==2.10.0)",
     "fastapi[standard] (==0.115.13)",
-    "strawberry-graphql[fastapi] (==0.274.0)",
+    "strawberry-graphql[fastapi] (==0.275.2)",
     "alembic (==1.16.2)",
     "sqlalchemy (==2.0.41)",
     "asyncpg (==0.30.0)",
