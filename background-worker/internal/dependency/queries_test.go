@@ -1,7 +1,6 @@
-package db_test
+package dependency_test
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -9,55 +8,29 @@ import (
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/dependency"
+	"github.com/oss-health/background-worker/internal/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
-var testCtx = context.Background()
-
 func TestMain(m *testing.M) {
 	connStr := "postgres://test-user:password@localhost:5434/test_db"
-	err := db.Connect(testCtx, connStr)
+	err := db.Connect(testutil.TestCtx, connStr)
 	if err != nil {
 		log.Fatalf("failed to connect to test db: %v", err)
 	}
 
-	clearTables()
+	testutil.ClearTables()
 
 	code := m.Run()
 	db.Close()
 	os.Exit(code)
 }
 
-func clearTables() {
-	_, err := db.Pool.Exec(testCtx, "TRUNCATE TABLE dependencies RESTART IDENTITY CASCADE")
-	if err != nil {
-		log.Fatalf("failed to truncate dependencies: %v", err)
-	}
-
-	_, err = db.Pool.Exec(testCtx, "TRUNCATE TABLE dependency_repository RESTART IDENTITY CASCADE")
-	if err != nil {
-		log.Fatalf("failed to truncate dependency_repository: %v", err)
-	}
-}
-
-func seedDependencies() {
-	_, err := db.Pool.Exec(testCtx, `
-		INSERT INTO dependencies (name, ecosystem, github_url_resolved, github_url_resolve_failed)
-		VALUES
-		('react', 'npm', false, false),
-		('express', 'npm', false, false),
-		('flask', 'pypi', false, false)
-	`)
-	if err != nil {
-		log.Fatalf("failed to seed dependencies: %v", err)
-	}
-}
-
 func TestGetPendingDependencies(t *testing.T) {
-	clearTables()
-	seedDependencies()
+	testutil.ClearTables()
+	testutil.SeedDependencies()
 
-	dependencies, err := dependency.GetPendingDependencies(testCtx, 10, 0, "npm")
+	dependencies, err := dependency.GetPendingDependencies(testutil.TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 	assert.Len(t, dependencies, 2)
 
@@ -66,16 +39,15 @@ func TestGetPendingDependencies(t *testing.T) {
 	assert.Contains(t, names, "express")
 }
 
-
 func TestUpsertGithubURLs(t *testing.T) {
-	clearTables()
+	testutil.ClearTables()
 
 	urls := []string{
 		"https://github.com/facebook/react",
 		"https://github.com/expressjs/express",
 	}
 
-	urlToID, err := dependency.UpsertGithubURLs(testCtx, urls)
+	urlToID, err := dependency.UpsertGithubURLs(testutil.TestCtx, urls)
 	assert.NoError(t, err)
 	assert.Len(t, urlToID, 2)
 
@@ -86,20 +58,20 @@ func TestUpsertGithubURLs(t *testing.T) {
 	}
 
 	// Insert duplicates again, expect same IDs returned (no duplicates)
-	urlToID2, err := dependency.UpsertGithubURLs(testCtx, urls)
+	urlToID2, err := dependency.UpsertGithubURLs(testutil.TestCtx, urls)
 	assert.NoError(t, err)
 	assert.Equal(t, urlToID, urlToID2)
 }
 
 func TestBatchUpdateDependencies(t *testing.T) {
-	clearTables()
-	seedDependencies()
+	testutil.ClearTables()
+	testutil.SeedDependencies()
 
 	urls := []string{"https://github.com/facebook/react"}
-	urlToID, err := dependency.UpsertGithubURLs(testCtx, urls)
+	urlToID, err := dependency.UpsertGithubURLs(testutil.TestCtx, urls)
 	assert.NoError(t, err)
 
-	deps, err := dependency.GetPendingDependencies(testCtx, 10, 0, "npm")
+	deps, err := dependency.GetPendingDependencies(testutil.TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 
 	resolvedURLs := map[int64]string{}
@@ -110,21 +82,21 @@ func TestBatchUpdateDependencies(t *testing.T) {
 		}
 	}
 
-	err = dependency.BatchUpdateDependencies(testCtx, deps, urlToID, resolvedURLs)
+	err = dependency.BatchUpdateDependencies(testutil.TestCtx, deps, urlToID, resolvedURLs)
 	assert.NoError(t, err)
 
 	var resolved bool
-	err = db.Pool.QueryRow(testCtx, `SELECT github_url_resolved FROM dependencies WHERE name='react'`).Scan(&resolved)
+	err = db.Pool.QueryRow(testutil.TestCtx, `SELECT github_url_resolved FROM dependencies WHERE name='react'`).Scan(&resolved)
 
 	assert.NoError(t, err)
 	assert.True(t, resolved)
 }
 
 func TestMarkDependenciesAsFailed(t *testing.T) {
-	clearTables()
-	seedDependencies()
+	testutil.ClearTables()
+	testutil.SeedDependencies()
 
-	deps, err := dependency.GetPendingDependencies(testCtx, 10, 0, "npm")
+	deps, err := dependency.GetPendingDependencies(testutil.TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 
 	failureReasons := map[int64]string{}
@@ -133,12 +105,12 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 		failureReasons[d.ID] = "Failed to resolve URL"
 	}
 
-	err = dependency.MarkDependenciesAsFailed(testCtx, failureReasons)
+	err = dependency.MarkDependenciesAsFailed(testutil.TestCtx, failureReasons)
 	assert.NoError(t, err)
 
 	var failed bool
 	var reason string
-	err = db.Pool.QueryRow(testCtx, `SELECT github_url_resolve_failed, github_url_resolve_failed_reason FROM dependencies WHERE id=$1`, deps[0].ID).Scan(&failed, &reason)
+	err = db.Pool.QueryRow(testutil.TestCtx, `SELECT github_url_resolve_failed, github_url_resolve_failed_reason FROM dependencies WHERE id=$1`, deps[0].ID).Scan(&failed, &reason)
 
 	assert.NoError(t, err)
 	assert.True(t, failed)
