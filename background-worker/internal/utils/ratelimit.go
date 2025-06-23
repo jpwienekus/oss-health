@@ -34,34 +34,3 @@ func (r *DefaultRateLimiter) WaitUntilAllowed(ctx context.Context, ecosystem str
 	}
 	return limiter.Wait(ctx)
 }
-// package utils
-//
-// import (
-// 	"context"
-// 	"sync"
-//
-// 	"golang.org/x/time/rate"
-// )
-//
-// var (
-// 	limiters = make(map[string]*rate.Limiter)
-// 	mutex    sync.Mutex
-// )
-//
-// func RegisterLimiter(ecosystem string, limit rate.Limit, burst int) {
-// 	mutex.Lock()
-// 	defer mutex.Unlock()
-// 	limiters[ecosystem] = rate.NewLimiter(limit, burst)
-// }
-//
-// var WaitUntilAllowed = func(ctx context.Context, ecosystem string) error {
-// 	mutex.Lock()
-// 	limiter, ok := limiters[ecosystem]
-// 	mutex.Unlock()
-//
-// 	if !ok {
-// 		return nil
-// 	}
-//
-// 	return limiter.Wait(ctx)
-// }
