@@ -42,6 +42,10 @@ func Start() {
 		}
 	})
 
+	if err != nil {
+		log.Fatalf("failed to schedule tasks: %v", err)
+	}
+
 	_, err = c.AddFunc("0 */1 * * * *", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
