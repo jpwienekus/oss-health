@@ -28,7 +28,7 @@ func Start() {
 
 	buffer := 10
 	npmRequestCapability := (NpmRps * 60) - buffer
-	// pypiRequestCapability := (PypiRps * 60) - buffer
+	pypiRequestCapability := (PypiRps * 60) - buffer
 
 	_, err := c.AddFunc("0 */1 * * * *", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -42,15 +42,15 @@ func Start() {
 		}
 	})
 
-	// _, err = c.AddFunc("0 */1 * * * *", func() {
-	// 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	// 	defer cancel()
-	//
-	// 	log.Println("Starting scheduled fetch job: pypi")
-	// 	if err := fetcher.ResolvePendingDependencies(ctx, pypiRequestCapability, 0, "pypi", rateLimiter, fetcher.Resolvers); err != nil {
-	// 		log.Printf("Error running pypi fetch job: %v", err)
-	// 	}
-	// })
+	_, err = c.AddFunc("0 */1 * * * *", func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+
+		log.Println("Starting scheduled fetch job: pypi")
+		if err := fetcher.ResolvePendingDependencies(ctx, pypiRequestCapability, 0, "pypi", rateLimiter, fetcher.Resolvers); err != nil {
+			log.Printf("Error running pypi fetch job: %v", err)
+		}
+	})
 
 	if err != nil {
 		log.Fatalf("failed to schedule tasks: %v", err)
