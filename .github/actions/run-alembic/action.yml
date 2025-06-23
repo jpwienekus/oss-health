@@ -23,16 +23,19 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - name: Install Poetry
+      shell: bash
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Install Python dependencies
+      shell: bash
       run: |
         cd ${{ inputs.app-dir }}
         poetry install
 
     - name: Run Alembic migrations
+      shell: bash
       run: |
         cd ${{ inputs.app-dir }}
         export DATABASE_URL=${{ inputs.database-url }}
