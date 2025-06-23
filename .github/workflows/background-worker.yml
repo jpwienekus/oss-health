@@ -10,9 +10,25 @@ jobs:
     name: Lint and Test (background-worker)
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: background-worker
+    # defaults:
+    #   run:
+    #     working-directory: background-worker
+
+    services:
+      test-postgres:
+        image: postgres:17
+        ports:
+          - 5434:5432
+        env:
+          POSTGRES_USER: test-user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
 
     steps:
       - name: Checkout code
@@ -36,18 +52,27 @@ jobs:
       #       ${{ runner.os }}-go-
 
       - name: Download Go Modules
+        working-directory: background-worker
         run: |
           go mod tidy
           go mod download
 
       - name: Install golangci-lint
+        working-directory: background-worker
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
 
       - name: Run Linter
+        working-directory: background-worker
         run: |
           golangci-lint run ./...
 
+      - name: Run Alembic Migrations
+        uses: ./.github/actions/run-alembic
+        with:
+          database-url: postgresql://test-user:password@localhost:5434/test_db
+
       - name: Run Tests
+        working-directory: background-worker
         run: |
           go test -v ./...
