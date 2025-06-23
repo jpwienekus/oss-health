@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/oss-health/background-worker/internal/db"
+	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/oss-health/background-worker/pkg/fetcher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -16,17 +16,17 @@ func TestResolvePendingDependencies_Success(t *testing.T) {
 	mockDB := new(MockDB)
 	mockLimiter := new(MockRateLimiter)
 
-	db.GetPendingDependencies = mockDB.GetPendingDependencies
-	db.UpsertGithubURLs = mockDB.UpsertGithubURLs
-	db.BatchUpdateDependencies = mockDB.BatchUpdateDependencies
-	db.MarkDependenciesAsFailed = mockDB.MarkDependenciesAsFailed
+	dependency.GetPendingDependencies = mockDB.GetPendingDependencies
+	dependency.UpsertGithubURLs = mockDB.UpsertGithubURLs
+	dependency.BatchUpdateDependencies = mockDB.BatchUpdateDependencies
+	dependency.MarkDependenciesAsFailed = mockDB.MarkDependenciesAsFailed
 
 	mockLimiter.On("WaitUntilAllowed", mock.Anything, "npm").Return(nil)
 	mockResolvers := map[string]func(ctx context.Context, name string) (string, error){
 		"npm": MockResolver,
 	}
 
-	dependencies := []db.Dependency{
+	dependencies := []dependency.Dependency{
 		{ID: 1, Name: "package-one", Ecosystem: "npm"},
 	}
 
@@ -49,15 +49,15 @@ func TestResolvePendingDependencies_ResolverFailure(t *testing.T) {
 	mockDB := new(MockDB)
 	mockLimiter := new(MockRateLimiter)
 
-	db.GetPendingDependencies = mockDB.GetPendingDependencies
-	db.MarkDependenciesAsFailed = mockDB.MarkDependenciesAsFailed
+	dependency.GetPendingDependencies = mockDB.GetPendingDependencies
+	dependency.MarkDependenciesAsFailed = mockDB.MarkDependenciesAsFailed
 
 	mockLimiter.On("WaitUntilAllowed", mock.Anything, "npm").Return(nil)
 	mockResolvers := map[string]func(ctx context.Context, name string) (string, error){
 		"npm": MockResolver,
 	}
 
-	dependencies := []db.Dependency{
+	dependencies := []dependency.Dependency{
 		{ID: 1, Name: "fail", Ecosystem: "npm"},
 	}
 
@@ -81,13 +81,13 @@ func TestResolvePendingDependencies_UnsupportedEcosystem(t *testing.T) {
 	mockDB := new(MockDB)
 	mockLimiter := new(MockRateLimiter)
 
-	db.GetPendingDependencies = mockDB.GetPendingDependencies
-	db.MarkDependenciesAsFailed = mockDB.MarkDependenciesAsFailed
+	dependency.GetPendingDependencies = mockDB.GetPendingDependencies
+	dependency.MarkDependenciesAsFailed = mockDB.MarkDependenciesAsFailed
 
 	mockResolvers := map[string]func(ctx context.Context, name string) (string, error){
 		"npm": MockResolver,
 	}
-	dependencies := []db.Dependency{
+	dependencies := []dependency.Dependency{
 		{ID: 1, Name: "foo", Ecosystem: "unknown"},
 	}
 

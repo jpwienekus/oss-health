@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/oss-health/background-worker/internal/db"
+	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,7 +57,7 @@ func TestGetPendingDependencies(t *testing.T) {
 	clearTables()
 	seedDependencies()
 
-	dependencies, err := db.GetPendingDependencies(testCtx, 10, 0, "npm")
+	dependencies, err := dependency.GetPendingDependencies(testCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 	assert.Len(t, dependencies, 2)
 
@@ -74,7 +75,7 @@ func TestUpsertGithubURLs(t *testing.T) {
 		"https://github.com/expressjs/express",
 	}
 
-	urlToID, err := db.UpsertGithubURLs(testCtx, urls)
+	urlToID, err := dependency.UpsertGithubURLs(testCtx, urls)
 	assert.NoError(t, err)
 	assert.Len(t, urlToID, 2)
 
@@ -85,7 +86,7 @@ func TestUpsertGithubURLs(t *testing.T) {
 	}
 
 	// Insert duplicates again, expect same IDs returned (no duplicates)
-	urlToID2, err := db.UpsertGithubURLs(testCtx, urls)
+	urlToID2, err := dependency.UpsertGithubURLs(testCtx, urls)
 	assert.NoError(t, err)
 	assert.Equal(t, urlToID, urlToID2)
 }
@@ -95,10 +96,10 @@ func TestBatchUpdateDependencies(t *testing.T) {
 	seedDependencies()
 
 	urls := []string{"https://github.com/facebook/react"}
-	urlToID, err := db.UpsertGithubURLs(testCtx, urls)
+	urlToID, err := dependency.UpsertGithubURLs(testCtx, urls)
 	assert.NoError(t, err)
 
-	deps, err := db.GetPendingDependencies(testCtx, 10, 0, "npm")
+	deps, err := dependency.GetPendingDependencies(testCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 
 	resolvedURLs := map[int64]string{}
@@ -109,7 +110,7 @@ func TestBatchUpdateDependencies(t *testing.T) {
 		}
 	}
 
-	err = db.BatchUpdateDependencies(testCtx, deps, urlToID, resolvedURLs)
+	err = dependency.BatchUpdateDependencies(testCtx, deps, urlToID, resolvedURLs)
 	assert.NoError(t, err)
 
 	var resolved bool
@@ -123,7 +124,7 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 	clearTables()
 	seedDependencies()
 
-	deps, err := db.GetPendingDependencies(testCtx, 10, 0, "npm")
+	deps, err := dependency.GetPendingDependencies(testCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 
 	failureReasons := map[int64]string{}
@@ -132,7 +133,7 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 		failureReasons[d.ID] = "Failed to resolve URL"
 	}
 
-	err = db.MarkDependenciesAsFailed(testCtx, failureReasons)
+	err = dependency.MarkDependenciesAsFailed(testCtx, failureReasons)
 	assert.NoError(t, err)
 
 	var failed bool

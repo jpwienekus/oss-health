@@ -5,22 +5,22 @@ import (
 	"errors"
 
 	"github.com/stretchr/testify/mock"
-	"github.com/oss-health/background-worker/internal/db"
+	"github.com/oss-health/background-worker/internal/dependency"
 )
 
 type MockDB struct {
 	mock.Mock
 }
 
-func (m *MockDB) GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) ([]db.Dependency, error) {
+func (m *MockDB) GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) ([]dependency.Dependency, error) {
 	args := m.Called(ctx, batchSize, offset, ecosystem)
-	return args.Get(0).([]db.Dependency), args.Error(1)
+	return args.Get(0).([]dependency.Dependency), args.Error(1)
 }
 func (m *MockDB) UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, error) {
 	args := m.Called(ctx, urls)
 	return args.Get(0).(map[string]int64), args.Error(1)
 }
-func (m *MockDB) BatchUpdateDependencies(ctx context.Context, deps []db.Dependency, urlToID map[string]int64, resolved map[int64]string) error {
+func (m *MockDB) BatchUpdateDependencies(ctx context.Context, deps []dependency.Dependency, urlToID map[string]int64, resolved map[int64]string) error {
 	args := m.Called(ctx, deps, urlToID, resolved)
 	return args.Error(0)
 }

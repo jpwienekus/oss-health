@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/oss-health/background-worker/internal/utils"
-	"github.com/oss-health/background-worker/internal/db"
+	"github.com/oss-health/background-worker/internal/dependency"
 )
 
 var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
@@ -27,7 +27,7 @@ func ResolvePendingDependencies(
 	rateLimiter utils.RateLimiter,
 	resolvers map[string]func(ctx context.Context, name string) (string, error),
 ) error {
-	dependencies, err := db.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
+	dependencies, err := dependency.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
 
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
@@ -39,7 +39,7 @@ func ResolvePendingDependencies(
 		return nil
 	}
 
-	var resolvedDependencies []db.Dependency
+	var resolvedDependencies []dependency.Dependency
 	resolvedURLs := make(map[int64]string)
 	urlsSet := make(map[string]struct{})
 	failureReasons := make(map[int64]string)
@@ -124,12 +124,12 @@ func ResolvePendingDependencies(
 			urls = append(urls, url)
 		}
 
-		urlToID, err := db.UpsertGithubURLs(ctx, urls)
+		urlToID, err := dependency.UpsertGithubURLs(ctx, urls)
 		if err != nil {
 			return fmt.Errorf("failed to upsert GitHub URLs: %w", err)
 		}
 
-		err = db.BatchUpdateDependencies(ctx, resolvedDependencies, urlToID, resolvedURLs)
+		err = dependency.BatchUpdateDependencies(ctx, resolvedDependencies, urlToID, resolvedURLs)
 		if err != nil {
 			return fmt.Errorf("failed to update dependencies: %w", err)
 		}
@@ -138,7 +138,7 @@ func ResolvePendingDependencies(
 	}
 
 	if len(failureReasons) > 0 {
-		err := db.MarkDependenciesAsFailed(ctx, failureReasons)
+		err := dependency.MarkDependenciesAsFailed(ctx, failureReasons)
 		if err != nil {
 			return fmt.Errorf("failed to mark failed dependencies: %w", err)
 		}
