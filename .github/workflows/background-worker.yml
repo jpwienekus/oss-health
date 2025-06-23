@@ -23,7 +23,7 @@ jobs:
         with:
           go-version: '1.24'
       - name: List files for debug
-        run: ls -l background-worker/
+        run: ls -l
 
       # - name: Cache Go modules
       #   uses: actions/cache@v4
