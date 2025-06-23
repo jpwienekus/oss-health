@@ -10,6 +10,10 @@ jobs:
     name: Lint and Test (background-worker)
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: background-worker
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,7 +37,6 @@ jobs:
 
       - name: Download Go Modules
         run: |
-          cd background-worker/
           go mod tidy
           go mod download
 
@@ -43,10 +46,8 @@ jobs:
 
       - name: Run Linter
         run: |
-          cd background-worker/
           golangci-lint run ./...
 
       - name: Run Tests
         run: |
-          cd background-worker/
           go test -v ./...
