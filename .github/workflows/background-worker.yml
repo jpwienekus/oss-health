@@ -70,7 +70,8 @@ jobs:
       - name: Run Alembic Migrations
         uses: ./.github/actions/run-alembic
         with:
-          database-url: postgresql://test-user:password@localhost:5434/test_db
+          database-url: postgresql+asyncpg://test-user:password@localhost:5434/test_db
+
 
       - name: Run Tests
         working-directory: background-worker
