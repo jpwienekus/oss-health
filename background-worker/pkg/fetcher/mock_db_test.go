@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/stretchr/testify/mock"
-	"github.com/oss-health/background-worker/pkg/db"
+	"github.com/oss-health/background-worker/internal/db"
 )
 
 type MockDB struct {

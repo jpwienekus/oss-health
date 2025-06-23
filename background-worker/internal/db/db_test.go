@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/oss-health/background-worker/pkg/db"
+	"github.com/oss-health/background-worker/internal/db"
 	"github.com/stretchr/testify/assert"
 )
 

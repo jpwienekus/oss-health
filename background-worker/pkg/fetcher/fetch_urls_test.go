@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/oss-health/background-worker/pkg/db"
+	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/pkg/fetcher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

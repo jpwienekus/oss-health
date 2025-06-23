@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/oss-health/background-worker/pkg/db"
+	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/scheduler"
 )
 

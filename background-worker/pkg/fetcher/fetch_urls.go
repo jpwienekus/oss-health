@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/oss-health/background-worker/internal/utils"
-	"github.com/oss-health/background-worker/pkg/db"
+	"github.com/oss-health/background-worker/internal/db"
 )
 
 var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
