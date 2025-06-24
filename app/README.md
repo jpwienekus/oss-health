@@ -134,3 +134,12 @@ The GNU Affero General Public License is a free, copyleft license for software a
 ## Author
 
 JP Wienekus (jpwienekus@gmail.com)
+
+
+
+
+## NEW NOTES
+ - for dev we use postgres with alembic
+    - alembic upgrade head
+ - when ready to merge, update the ../supabase/migrations/{date}_migrations.sql file
+    - alembic upgrade head --sql > alembic upgrade head --sql > ../supabase/migrations/$(date +%s)_migrations.sql

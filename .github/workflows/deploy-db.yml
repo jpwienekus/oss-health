@@ -1,4 +1,4 @@
-name: Deploy Db
+name: Run DB Migration
 
 on:
   workflow_dispatch:
@@ -10,27 +10,24 @@ on:
         type: choice
         options:
           - production
+    branches:
+      - main
 
 jobs:
   migrate:
     name: Migrate Database
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
         with:
-          python-version: "3.13"
+          version: latest
 
-      - name: Install dependencies
-        run: |
-          pip install alembic asyncpg
-
-      - name: Run alembic migrations
-        run: alembic upgrade head
-        working-directory: app
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+      - name: Run migrations
+        run: supabase db push --db-url ${{ secrets.SUPABASE_MIGRATION_URL }}
