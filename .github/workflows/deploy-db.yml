@@ -1,0 +1,36 @@
+name: Deploy Db
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment to deploy to?"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+
+jobs:
+  migrate:
+    name: Migrate Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install alembic asyncpg
+
+      - name: Run alembic migrations
+        run: alembic upgrade head
+        working-directory: app
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
