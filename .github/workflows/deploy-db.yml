@@ -22,17 +22,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.13"
+          node-version: 20
 
-      - name: Install dependencies
-        run: |
-          pip install alembic asyncpg pydantic_settings
+      - name: Install Supabase CLI
+        run: npm install -g supabase
 
-      - name: Run alembic migrations
-        run: alembic upgrade head
-        working-directory: app
+      - name: Link Supabase project
         env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: Update Database
+        run: supabase db push
