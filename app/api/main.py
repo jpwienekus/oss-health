@@ -28,8 +28,6 @@ allowed_origins = [
     origin.strip() for origin in settings.allowed_origins.split(",") if origin
 ]
 
-print("🚀 Allowed Origins in Render:", allowed_origins)
-
 app = FastAPI(lifespan=lifespan, title=settings.project_name)
 app.include_router(auth_router)
 app.include_router(graphql_app, prefix="/graphql")
