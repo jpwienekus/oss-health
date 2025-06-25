@@ -40,9 +40,10 @@ services:
     environment:
       ENVIRONMENT: production
       DATABASE_URL: "postgresql+asyncpg://dev-user:password@postgres:5432/dev_db"
-      GITHUB_CLIENT_ID: 
-      GITHUB_CLIENT_SECRET: 
-      SECRET_KEY: 
+      GITHUB_CLIENT_ID:
+      GITHUB_CLIENT_SECRET:
+      SECRET_KEY:
+      ALLOWED_ORIGINS: http://localhost:5173
 
     depends_on:
       - "postgres"

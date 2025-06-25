@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     secret_key: str = ""
     algorithm: str = "HS256"
     environment: str = "development"
+    allowed_origins: str = "http://localhost:5173"
 
     model_config = {
         "env_file": os.getenv("ENV_FILE", ".env"),
