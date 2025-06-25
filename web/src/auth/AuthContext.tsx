@@ -11,7 +11,7 @@ import { jwtDecode } from 'jwt-decode'
 const AuthContext = createContext<{
   jwt: string | null
   loginWithGitHub: () => void
-}>({ jwt: null, loginWithGitHub: () => {} })
+}>({ jwt: null, loginWithGitHub: () => { } })
 
 type AuthProviderProps = {
   children: ReactNode
@@ -23,7 +23,7 @@ interface JwtPayload {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const BACKEND_URL = 'http://localhost:8000'
+  const API_URL = import.meta.env.VITE_API_URL
   const [jwt, setJwt] = useState<string | null>(null)
 
   useEffect(() => {
@@ -63,14 +63,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (type === 'github-oauth-code' && code) {
         const verifier = localStorage.getItem('pkce_verifier')
-        const res = await fetch(`${BACKEND_URL}/auth/github/token`, {
+        const res = await fetch(`${API_URL}/auth/github/token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, code_verifier: verifier }),
         })
         const data = await res.json()
-        localStorage.setItem('jwt', data.access_token)
-        setJwt(data.access_token)
+
+        if (data.access_token) {
+          localStorage.setItem('jwt', data.access_token)
+          setJwt(data.access_token)
+        }
       }
     }
 
@@ -84,7 +87,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const challenge = await generateCodeChallenge(verifier)
     localStorage.setItem('pkce_verifier', verifier)
 
-    const authUrl = `${BACKEND_URL}/auth/github/login?code_challenge=${challenge}`
+    const authUrl = `${API_URL}/auth/github/login?code_challenge=${challenge}`
 
     window.open(authUrl, '_blank', 'popup,width=500,height=600')
   }
