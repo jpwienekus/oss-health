@@ -24,14 +24,16 @@ async def lifespan(app: FastAPI):
         await sessionmanager.close()
 
 
-origins = ["http://localhost:5173"]
+allowed_origins = [
+    origin.strip() for origin in settings.allowed_origins.split(",") if origin
+]
 
 app = FastAPI(lifespan=lifespan, title=settings.project_name)
 app.include_router(auth_router)
 app.include_router(graphql_app, prefix="/graphql")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

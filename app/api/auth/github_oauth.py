@@ -1,3 +1,5 @@
+import logging
+
 import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,6 +9,7 @@ from api.dependencies.core import DBSessionDep
 from config.settings import settings
 from core.crud.user import add_user, get_user_by_github_id, update_access_token
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -65,13 +68,21 @@ async def github_token_exchange(payload: dict, db_session: DBSessionDep):
     if not github_id:
         raise HTTPException(status_code=404, detail="Invalid user")
 
-    user = await get_user_by_github_id(db_session, github_id)
+    try:
+        user = await get_user_by_github_id(db_session, github_id)
 
-    if not user:
-        user = await add_user(db_session, github_id, username, access_token)
-    else:
-        await update_access_token(db_session, github_id, access_token)
+        if not user:
+            user = await add_user(db_session, github_id, username, access_token)
+        else:
+            await update_access_token(db_session, github_id, access_token)
 
-    jwt_token = create_token_pair(user.id)
+        jwt_token = create_token_pair(user.id)
 
-    return {"access_token": jwt_token}
+        return {"access_token": jwt_token}
+    except Exception as e:
+        logger.error(
+            f"Error handling user DB operations for github_id={github_id}: {e}",
+            exc_info=True,
+        )
+
+    return {"access_token": None}

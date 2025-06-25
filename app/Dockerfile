@@ -1,12 +1,14 @@
 FROM python:3.13.5
 
-RUN mkdir /api
-WORKDIR /api
+RUN pip install poetry
 
-RUN apt update && \
-    apt install -y postgresql-client
+WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml poetry.lock* ./
+
+RUN poetry config virtualenvs.create false \
+  && poetry install --no-root --only main
 
 COPY . .
+
+CMD ["poetry", "run", "uvicorn", "api.main:app", "--host", "0.0.0.0"]

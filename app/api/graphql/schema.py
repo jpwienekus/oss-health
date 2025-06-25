@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.fastapi import GraphQLRouter
 
 from api.graphql.resolvers import Mutation, Query
+from config.settings import settings
 from core.database import get_db_session
 
 
@@ -14,4 +15,6 @@ async def get_context(
 
 
 schema = strawberry.Schema(Query, Mutation)
-graphql_app = GraphQLRouter(schema, context_getter=get_context)
+graphql_app = GraphQLRouter(
+    schema, context_getter=get_context, graphiql=settings.environment != "production"
+)
