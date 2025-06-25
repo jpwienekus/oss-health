@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     github_client_secret: str = ""
     secret_key: str = ""
     algorithm: str = "HS256"
+    environment: str = "development"
 
     model_config = {
         "env_file": os.getenv("ENV_FILE", ".env"),

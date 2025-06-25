@@ -30,19 +30,20 @@ services:
 
   api:
     build:
-      context: api
+      context: app
       dockerfile: Dockerfile
-    command: fastapi run main.py
+    command: poetry run uvicorn api.main:app --host 0.0.0.0
     tty: true
     volumes:
-      - ./api:/api/:cached
-      - ./.docker/.ipython:/root/.ipython:cached
+      - ./app:/app
+    working_dir: /app
     environment:
-      PYTHONPATH: .
-      DATABASE_USER: "dev-user"
-      DATABASE_PASSWORD: "password"
-      DATABASE_URL: "postgres"
-      DATABASE_NAME: "dev-db"
+      ENVIRONMENT: production
+      DATABASE_URL: "postgresql+asyncpg://dev-user:password@postgres:5432/dev_db"
+      GITHUB_CLIENT_ID: 
+      GITHUB_CLIENT_SECRET: 
+      SECRET_KEY: 
+
     depends_on:
       - "postgres"
     ports:

@@ -24,6 +24,7 @@ async def lifespan(app: FastAPI):
         await sessionmanager.close()
 
 
+# TODO: make this an env var in settings
 origins = ["http://localhost:5173"]
 
 app = FastAPI(lifespan=lifespan, title=settings.project_name)
