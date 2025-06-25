@@ -1,0 +1,47 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment to deploy to?"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+    branches:
+      - main
+
+jobs:
+  migrate:
+    name: Migrate Database
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Run migrations
+        run: supabase db push --db-url ${{ secrets.SUPABASE_MIGRATION_URL }}
+
+  deploy:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    needs: migrate
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - name: Deploy
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
