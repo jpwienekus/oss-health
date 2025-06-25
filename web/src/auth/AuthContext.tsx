@@ -11,7 +11,7 @@ import { jwtDecode } from 'jwt-decode'
 const AuthContext = createContext<{
   jwt: string | null
   loginWithGitHub: () => void
-}>({ jwt: null, loginWithGitHub: () => { } })
+}>({ jwt: null, loginWithGitHub: () => {} })
 
 type AuthProviderProps = {
   children: ReactNode
