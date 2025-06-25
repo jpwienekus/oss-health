@@ -20,6 +20,8 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
 
+    if: github.ref == 'refs/heads/main'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
