@@ -1,12 +1,9 @@
 import type { GitHubRepository } from '@/types'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import {
   AlertTriangle,
   CheckCircle,
   Package,
   XCircle,
-  RefreshCw,
   CalendarClock,
 } from 'lucide-react'
 import {
@@ -16,37 +13,37 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useAuth } from '@/auth/AuthContext'
-import { getClient } from '@/graphql/client'
-import { MANUAL_SCAN_DEBUG } from '@/graphql/queries'
+// import { useAuth } from '@/auth/AuthContext'
+// import { getClient } from '@/graphql/client'
+// import { MANUAL_SCAN_DEBUG } from '@/graphql/queries'
 import { formatDate } from '@/utils'
 
 type RepositoryOverviewParams = {
   repository: GitHubRepository
-  onUpdate: (result: GitHubRepository[]) => void
+  // onUpdate: (result: GitHubRepository[]) => void
 }
 
 export const RepositoryOverview = ({
   repository,
-  onUpdate,
+  // onUpdate,
 }: RepositoryOverviewParams) => {
-  const { jwt } = useAuth()
-  const [loading, setLoading] = useState(false)
+  // const { jwt } = useAuth()
+  // const [loading, setLoading] = useState(false)
 
-  const manualScanForDebug = async (repositoryId: number) => {
-    if (!jwt) {
-      return
-    }
-    const client = getClient(jwt)
-    setLoading(true)
-    const response = await client.request<{
-      manualScanDebug: GitHubRepository[]
-    }>(MANUAL_SCAN_DEBUG, {
-      repositoryId,
-    })
-    setLoading(false)
-    onUpdate(response.manualScanDebug)
-  }
+  // const manualScanForDebug = async (repositoryId: number) => {
+  //   if (!jwt) {
+  //     return
+  //   }
+  //   const client = getClient(jwt)
+  //   // setLoading(true)
+  //   const response = await client.request<{
+  //     manualScanDebug: GitHubRepository[]
+  //   }>(MANUAL_SCAN_DEBUG, {
+  //     repositoryId,
+  //   })
+  //   // setLoading(false)
+  //   onUpdate(response.manualScanDebug)
+  // }
 
   const getHealthIcon = (score: number) => {
     if (score >= 80) {
@@ -90,7 +87,7 @@ export const RepositoryOverview = ({
                   Not scanned yet
                 </span>
               )}
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => manualScanForDebug(repository.id)}
@@ -100,7 +97,7 @@ export const RepositoryOverview = ({
                 ) : (
                   <RefreshCw className="w-2 h-2" />
                 )}
-              </Button>
+              </Button> */}
               {repository.private && (
                 <Badge variant="secondary" className="text-xs">
                   Private

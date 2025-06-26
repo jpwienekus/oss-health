@@ -60,9 +60,9 @@ export const Repositories = () => {
     fetchRepositories()
   }, [jwt])
 
-  const onManualScan = async (result: GitHubRepository[]) => {
-    setData(result)
-  }
+  // const onManualScan = async (result: GitHubRepository[]) => {
+  //   setData(result)
+  // }
 
   const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
     if (!jwt) {
@@ -183,7 +183,6 @@ export const Repositories = () => {
               <RepositoryOverview
                 key={index}
                 repository={repository}
-                onUpdate={onManualScan}
               />
             ))}
           </div>
