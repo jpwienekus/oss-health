@@ -18,6 +18,7 @@ export const Repositories = () => {
   const [sortBy, setSortBy] = useState<'health' | 'stars' | 'updated' | 'name'>(
     'health',
   )
+  const [isLoading, setIsLoading] = useState(false)
 
   const filteredAndSortedRepositories = data
     .filter(
@@ -48,11 +49,13 @@ export const Repositories = () => {
         return
       }
 
+      setIsLoading(true)
       const client = getClient(jwt)
       const response = await client.request<{
         repositories: GitHubRepository[]
       }>(GET_REPOSITORIES)
       setData(response.repositories)
+      setIsLoading(false)
     }
     fetchRepositories()
   }, [jwt])
@@ -100,14 +103,26 @@ export const Repositories = () => {
                 Manage and monitor your imported repositories
               </p>
             </div>
-            <ImportReposDialog
-              onConfirm={onDialogConfirm}
-              alreadyTracked={data.map((e) => e.githubId)}
-            />
+            {!isLoading && (
+              <ImportReposDialog
+                onConfirm={onDialogConfirm}
+                alreadyTracked={data.map((e) => e.githubId)}
+              />
+            )}
           </div>
         </div>
       )}
-      {jwt && data.length === 0 && (
+
+      {jwt && isLoading && (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-500">
+            Loading repositories...
+          </p>
+        </div>
+      )}
+
+      {jwt && !isLoading && data.length === 0 && (
         <div className="text-center py-12">
           <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -120,7 +135,7 @@ export const Repositories = () => {
         </div>
       )}
 
-      {jwt && data.length > 0 && (
+      {jwt && !isLoading && data.length > 0 && (
         <div>
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1">
