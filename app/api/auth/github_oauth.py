@@ -8,7 +8,6 @@ from api.auth.jwt_utils import create_token_pair
 from api.dependencies.core import DBSessionDep
 from config.settings import settings
 from core.crud.user import add_user, get_user_by_github_id, update_access_token
-from config.settings import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
