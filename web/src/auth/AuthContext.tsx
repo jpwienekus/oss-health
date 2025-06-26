@@ -52,13 +52,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const handler = async (event: MessageEvent) => {
-      if (
-        process.env.NODE_ENV !== 'development' &&
-        event.origin !== window.location.origin
-      ) {
-        return
-      }
-
       const { type, code } = event.data
 
       if (type === 'github-oauth-code' && code) {
