@@ -7,7 +7,7 @@ export const GET_REPOSITORIES_FROM_GITHUB = gql`
       description
       githubId
       private
-      scannedDate
+      lastScannedAt
       updatedAt
       stars
       watchers
@@ -26,7 +26,7 @@ export const GET_REPOSITORIES = gql`
       score
       vulnerabilities
       dependencies
-      scannedDate
+      lastScannedAt
       updatedAt
       stars
       watchers
@@ -52,7 +52,7 @@ export const MANUAL_SCAN_DEBUG = gql`
       score
       vulnerabilities
       dependencies
-      scannedDate
+      lastScannedAt
       updatedAt
       stars
       watchers

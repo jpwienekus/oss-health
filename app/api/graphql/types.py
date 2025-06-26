@@ -24,7 +24,7 @@ class GitHubRepository:
     vulnerabilities: int | None
     dependencies: int | None
     clone_url: str
-    scanned_date: datetime | None
+    last_scanned_at: datetime | None
     updated_at: datetime | None
 
     @classmethod
@@ -35,7 +35,7 @@ class GitHubRepository:
         score: int | None = None,
         number_of_dependencies: int | None = None,
         number_of_vulnerabilities: int | None = None,
-        scanned_date: datetime | None = None,
+        last_scanned_at: datetime | None = None,
     ) -> "GitHubRepository":
         updated_at = datetime.fromisoformat(
             model.get("updated_at").replace("Z", "+00:00")
@@ -54,7 +54,7 @@ class GitHubRepository:
             vulnerabilities=number_of_vulnerabilities,
             dependencies=number_of_dependencies,
             clone_url=model.get("clone_url"),
-            scanned_date=scanned_date,
+            last_scanned_at=last_scanned_at,
             updated_at=datetime.fromisoformat(
                 model.get("updated_at").replace("Z", "+00:00")
             ),

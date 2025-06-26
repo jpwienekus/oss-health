@@ -68,7 +68,7 @@ async def get_repositories_for_user(
                     score=repository.score,
                     number_of_dependencies=len(repository.dependency_versions),
                     number_of_vulnerabilities=total_vulnerabilities,
-                    scanned_date=repository.scanned_date,
+                    last_scanned_at=repository.last_scanned_at,
                 )
             )
 
