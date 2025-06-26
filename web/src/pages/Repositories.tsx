@@ -116,9 +116,7 @@ export const Repositories = () => {
       {jwt && isLoading && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-500">
-            Loading repositories...
-          </p>
+          <p className="text-gray-500">Loading repositories...</p>
         </div>
       )}
 
@@ -180,10 +178,7 @@ export const Repositories = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredAndSortedRepositories.map((repository, index) => (
-              <RepositoryOverview
-                key={index}
-                repository={repository}
-              />
+              <RepositoryOverview key={index} repository={repository} />
             ))}
           </div>
         </div>
