@@ -8,6 +8,7 @@ from api.auth.jwt_utils import create_token_pair
 from api.dependencies.core import DBSessionDep
 from config.settings import settings
 from core.crud.user import add_user, get_user_by_github_id, update_access_token
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -28,10 +29,9 @@ async def login(code_challenge: str):
 # ruff: noqa: E501
 @router.get("/auth/github/callback", response_class=HTMLResponse)
 async def callback_html(code: str):
-    frontend_url = "http://localhost:5173"
     return f"""
     <script>
-        window.opener.postMessage({{"type": "github-oauth-code", "code": "{code}"}}, "{frontend_url}") 
+        window.opener.postMessage({{"type": "github-oauth-code", "code": "{code}"}}, "{settings.frontend_url}") 
         window.close()
     </script>
     """
