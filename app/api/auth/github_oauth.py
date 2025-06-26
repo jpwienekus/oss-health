@@ -28,10 +28,9 @@ async def login(code_challenge: str):
 # ruff: noqa: E501
 @router.get("/auth/github/callback", response_class=HTMLResponse)
 async def callback_html(code: str):
-    frontend_url = "http://localhost:5173"
     return f"""
     <script>
-        window.opener.postMessage({{"type": "github-oauth-code", "code": "{code}"}}, "{frontend_url}") 
+        window.opener.postMessage({{"type": "github-oauth-code", "code": "{code}"}}, "{settings.frontend_url}") 
         window.close()
     </script>
     """

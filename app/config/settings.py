@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     environment: str = "development"
     allowed_origins: str = "http://localhost:5173"
+    frontend_url: str = "http://localhost:5173"
 
     model_config = {
         "env_file": os.getenv("ENV_FILE", ".env"),

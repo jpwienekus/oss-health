@@ -1,8 +1,7 @@
 import { GraphQLClient } from 'graphql-request'
 
 export const getClient = (jwt: string) => {
-  const url = 'http://localhost:8000'
-  return new GraphQLClient(`${url}/graphql`, {
+  return new GraphQLClient(`${import.meta.env.VITE_API_URL}/graphql`, {
     headers: {
       Authorization: `Bearer ${jwt}`,
     },

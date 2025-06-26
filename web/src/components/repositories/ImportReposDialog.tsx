@@ -27,6 +27,8 @@ export const ImportReposDialog = ({
   alreadyTracked,
   onConfirm,
 }: ImportReposDialogParams) => {
+  // TODO: Fetch with account info
+  const MAX_REPOSITORIES = 2
   const { jwt } = useAuth()
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -81,10 +83,17 @@ export const ImportReposDialog = ({
 
   return (
     <div>
-      <Button onClick={fetchGitHubRepos} disabled={isImporting}>
-        <Import className="w-4 h-4" />
-        <span>{isImporting ? 'Loading...' : 'Import from GitHub'}</span>
-      </Button>
+      {alreadyTracked.length < MAX_REPOSITORIES && (
+        <Button onClick={fetchGitHubRepos} disabled={isImporting}>
+          <Import className="w-4 h-4" />
+          <span>{isImporting ? 'Loading...' : 'Import from GitHub'}</span>
+        </Button>
+      )}
+      {alreadyTracked.length >= MAX_REPOSITORIES && (
+        <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">
+          Maximum number of repositories ({MAX_REPOSITORIES}) reached
+        </div>
+      )}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
