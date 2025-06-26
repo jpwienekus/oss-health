@@ -6,5 +6,5 @@ type Repository struct {
 	ID            int
 	URL           string
 	LastScannedAt *time.Time
-	ScanStatus    time.Time
+	ScanStatus    string
 }

@@ -4,9 +4,11 @@ go 1.24.4
 
 require (
 	github.com/jackc/pgx/v5 v5.7.5
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/time v0.12.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -21,5 +23,4 @@ require (
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/oss-health/background-worker/internal/db"
+	// "github.com/oss-health/background-worker/internal/scanner"
 	"github.com/oss-health/background-worker/internal/scheduler"
 )
 
@@ -19,6 +20,9 @@ func main() {
 		log.Fatalf("Database connection failed: %v", err)
 	}
 	defer db.Close()
+
+	// scanner.RunDailyScan(ctx, 4, 3)
+	// scanner.RunDailyScan(ctx, 6, 9)
 
 	scheduler.Start()
 
