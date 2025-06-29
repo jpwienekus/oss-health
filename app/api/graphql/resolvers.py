@@ -10,13 +10,8 @@ from api.graphql.types import GitHubRepository
 from core.crud.repository import (
     add_repository_ids,
     get_repositories,
-    get_repository,
-    update_scanned_date,
 )
 from core.crud.user import get_access_token, get_user
-from core.crud.vulnerability import replace_version_vulnerabilities
-from core.services.osv_api import get_dependency_version_vulnerability
-from core.services.scanner import get_repository_dependencies
 
 
 def get_user_id(info: Info) -> int:
