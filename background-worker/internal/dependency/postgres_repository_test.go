@@ -17,16 +17,21 @@ var TestDB *pgxpool.Pool
 var TestCtx = context.Background()
 
 func ClearTables(pool *pgxpool.Pool) {
-	_, err := pool.Exec(TestCtx, "TRUNCATE TABLE dependencies RESTART IDENTITY CASCADE")
-
-	if err != nil {
-		log.Fatalf("failed to truncate dependencies: %v", err)
+tables := []string{
+		"repository_dependency_version",
+		"dependency_repository",
+		"versions",
+		"dependencies",
+		"repositories",
+		`"user"`,
 	}
 
-	_, err = pool.Exec(TestCtx, "TRUNCATE TABLE dependency_repository RESTART IDENTITY CASCADE")
+	for _, table := range tables {
+		_, err := pool.Exec(TestCtx, fmt.Sprintf(`TRUNCATE TABLE %s CASCADE`, table))
 
-	if err != nil {
-		log.Fatalf("failed to truncate dependency_repository: %v", err)
+		if err != nil {
+			log.Fatalf("failed to truncate %s: %v", table, err)
+		}
 	}
 }
 
@@ -34,9 +39,33 @@ func SeedDependencies(pool *pgxpool.Pool) {
 	_, err := pool.Exec(TestCtx, `
 		INSERT INTO dependencies (name, ecosystem, github_url_resolved, github_url_resolve_failed)
 		VALUES
-		('react', 'npm', false, false),
-		('express', 'npm', false, false),
-		('flask', 'pypi', false, false)
+			('react', 'npm', false, false),
+			('express', 'npm', false, false),
+			('flask', 'pypi', false, false)
+	`)
+
+	if err != nil {
+		log.Fatalf("failed to seed dependencies: %v", err)
+	}
+}
+
+func SeedUsers(pool *pgxpool.Pool) {
+	_, err := pool.Exec(TestCtx, `
+		INSERT INTO "user" (id, github_id, github_username, access_token)
+		VALUES 
+			(1, 101, 'user101', 'token1')
+	`)
+
+	if err != nil {
+		log.Fatalf("failed to seed dependencies: %v", err)
+	}
+}
+
+func SeedRepositories(pool *pgxpool.Pool) {
+	_, err := pool.Exec(TestCtx, `
+		INSERT INTO repositories (url, github_id, last_scanned_at, scan_status)
+		VALUES ('https://github.com/test/repo', 123456, now(), 'pending')
+		RETURNING id
 	`)
 
 	if err != nil {
@@ -153,4 +182,85 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, failed)
 	assert.Equal(t, "Failed to resolve URL", reason)
+}
+
+func TestReplaceRepositoryDependencyVersions(t *testing.T) {
+	ClearTables(TestDB)
+	SeedUsers(TestDB)
+	// SeedRepositories(TestDB)
+
+	// Insert a test repository
+	var repositoryID int
+	err := TestDB.QueryRow(TestCtx, `
+		INSERT INTO repositories (url, github_id, user_id, last_scanned_at, scan_status)
+		VALUES ('https://github.com/test/repo', 123456, 1, now(), 'pending')
+		RETURNING id
+	`).Scan(&repositoryID)
+	assert.NoError(t, err)
+
+	repo := dependency.NewPostgresRepository(TestDB)
+
+	pairs := []dependency.DependencyVersionPair{
+		{
+			Name:      "express",
+			Version:   "4.18.2",
+			Ecosystem: "npm",
+		},
+		{
+			Name:      "flask",
+			Version:   "2.1.0",
+			Ecosystem: "pypi",
+		},
+	}
+
+	// Run the method
+	results, err := repo.ReplaceRepositoryDependencyVersions(TestCtx, repositoryID, pairs)
+	assert.NoError(t, err)
+	assert.Len(t, results, 2)
+
+	// Validate associations
+	rows, err := TestDB.Query(TestCtx, `
+		SELECT d.name, v.version, d.ecosystem
+		FROM repository_dependency_version rdv
+		JOIN dependencies d ON d.id = rdv.dependency_id
+		JOIN versions v ON v.id = rdv.version_id
+		WHERE rdv.repository_id = $1
+	`, repositoryID)
+	assert.NoError(t, err)
+
+	var found []dependency.DependencyVersionPair
+	for rows.Next() {
+		var name, version, ecosystem string
+		err := rows.Scan(&name, &version, &ecosystem)
+		assert.NoError(t, err)
+		found = append(found, dependency.DependencyVersionPair{
+			Name:      name,
+			Version:   version,
+			Ecosystem: ecosystem,
+		})
+	}
+	assert.ElementsMatch(t, pairs, found)
+
+	// Call again with a mix of existing and new data
+	morePairs := []dependency.DependencyVersionPair{
+		{
+			Name:      "express",
+			Version:   "4.18.2", // same as before
+			Ecosystem: "npm",
+		},
+		{
+			Name:      "requests",
+			Version:   "2.31.0", // new
+			Ecosystem: "pypi",
+		},
+	}
+	results2, err := repo.ReplaceRepositoryDependencyVersions(TestCtx, repositoryID, morePairs)
+	assert.NoError(t, err)
+	assert.Len(t, results2, 2)
+
+	// Confirm old association was replaced
+	var count int
+	err = TestDB.QueryRow(TestCtx, `SELECT COUNT(*) FROM repository_dependency_version WHERE repository_id = $1`, repositoryID).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, count)
 }
