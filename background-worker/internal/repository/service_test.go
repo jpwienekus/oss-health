@@ -104,7 +104,8 @@ func TestCloneAndParse_LogsError(t *testing.T) {
 	mockCloner.On("CloneRepository", repo.URL).Return("", errors.New("mock failure"))
 	mockRepo.On("MarkFailed", ctx, repo.ID, "mock failure").Return(nil)
 
-	service.CloneAndParse(ctx, repo)
+	_, err := service.CloneAndParse(ctx, repo)
+	assert.Error(t, err)
 
 	mockCloner.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)

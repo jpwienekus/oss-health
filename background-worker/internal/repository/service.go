@@ -64,10 +64,19 @@ func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Reposito
 
 	if err != nil {
 		log.Printf("Failed to process %s: %v", repo.URL, err)
-		s.repository.MarkFailed(ctx, repo.ID, err.Error())
+		markErr := s.repository.MarkFailed(ctx, repo.ID, err.Error())
+
+		if markErr != nil {
+			log.Printf("Failed to mark error %s: %v", repo.URL, markErr)
+		}
+
 		return nil, err
 	} else {
-		s.repository.MarkScanned(ctx, repo.ID)
+		err = s.repository.MarkScanned(ctx, repo.ID)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	dependencies, err := s.extractor.ExtractDependencies(tempDir)

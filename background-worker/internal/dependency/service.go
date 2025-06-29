@@ -58,7 +58,7 @@ func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batc
 	for _, dependency := range dependencies {
 		select {
 		case <-ctx.Done():
-			break
+			return ctx.Err()
 		case semaphore <- struct{}{}:
 		}
 

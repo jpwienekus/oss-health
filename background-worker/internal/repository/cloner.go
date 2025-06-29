@@ -22,8 +22,15 @@ func (g *GitCloner) CloneRepository(url string) (string, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
-		os.RemoveAll(tempDir)
+	err = cmd.Run()
+
+	if err != nil {
+		removeErr := os.RemoveAll(tempDir)
+
+		if removeErr != nil {
+			fmt.Printf("warning: failed to remove temp dir %s: %v\n", tempDir, removeErr)
+		}
+
 		return "", fmt.Errorf("git clone failed: %w", err)
 	}
 
