@@ -109,7 +109,7 @@ async def test_repository(
         url="https://github.com/example/repo",
         scan_day=0,
         scan_hour=0,
-        scan_status="pending"
+        scan_status="pending",
     )
     db_session.add(repo)
     await db_session.flush()

@@ -41,7 +41,7 @@ async def add_repository_ids(
                 url=repository.get("url"),
                 scan_day=random.randint(1, 7),
                 scan_hour=random.randint(1, 24),
-                scan_status="pending"
+                scan_status="pending",
             )
             for repository in tracked_repositories
         ]
