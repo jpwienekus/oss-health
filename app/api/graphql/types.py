@@ -23,7 +23,7 @@ class GitHubRepository:
     score: int | None
     vulnerabilities: int | None
     dependencies: int | None
-    clone_url: str
+    url: str
     last_scanned_at: datetime | None
     updated_at: datetime | None
 
@@ -53,7 +53,7 @@ class GitHubRepository:
             forks=model.get("forks_count"),
             vulnerabilities=number_of_vulnerabilities,
             dependencies=number_of_dependencies,
-            clone_url=model.get("clone_url"),
+            url=model.get("url"),
             last_scanned_at=last_scanned_at,
             updated_at=datetime.fromisoformat(
                 model.get("updated_at").replace("Z", "+00:00")

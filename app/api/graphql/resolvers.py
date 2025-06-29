@@ -105,7 +105,7 @@ class Query:
         if not repository:
             return []
 
-        dependencies = get_repository_dependencies(repository.clone_url)
+        dependencies = get_repository_dependencies(repository.url)
         dependency_versions_to_check = await replace_repository_dependency_versions(
             db, repository_id, dependencies
         )
