@@ -7,15 +7,16 @@ import (
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/repository"
-	"github.com/oss-health/background-worker/internal/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var TestCtx = context.Background()
+
 func TestGetRepositoriesForDay(t *testing.T) {
 	connStr := "postgres://test-user:password@localhost:5434/test_db"
-	pool, err := db.Connect(testutil.TestCtx, connStr)
+	pool, err := db.Connect(TestCtx, connStr)
 	require.NoError(t, err)
 	defer pool.Close()
 
