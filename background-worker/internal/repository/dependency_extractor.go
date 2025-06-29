@@ -34,6 +34,11 @@ func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]depe
 		}
 
 		parser := d.Provider.GetParser(path)
+
+		if parser == nil {
+			return nil
+		}
+
 		deps, err := parser.Parse(path)
 
 		if err != nil {

@@ -25,5 +25,6 @@ func (p *ParserProviderImpl) GetParser(path string) interfaces.Parser {
 			return &adapter{fn: entry.Parser}
 		}
 	}
+
 	return nil
 }
