@@ -8,6 +8,7 @@ import (
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/oss-health/background-worker/internal/utils"
+	"github.com/oss-health/background-worker/internal/dependency/resolvers"
 
 	"github.com/robfig/cron/v3"
 )
@@ -29,7 +30,7 @@ func Start() {
 	dependency.InitRateLimiters(rateLimiter)
 
 	repository := dependency.NewPostgresRepository(db)
-	service := dependency.NewDependencyService(repository, rateLimiter, dependency.Resolvers)
+	service := dependency.NewDependencyService(repository, rateLimiter, resolvers.Resolvers)
 
 	buffer := 10
 	npmRequestCapability := (dependency.NpmRps * 60) - buffer
