@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-
-	"github.com/oss-health/background-worker/internal/repository"
 )
 
 func init() {
-	repository.RegisterParser("package-lock.json", "npm", ParsePackageLock)
+	RegisterParser("package-lock.json", "npm", ParsePackageLock)
 }
 
-func ParsePackageLock(path string) ([]repository.DependencyParsed, error) {
+func ParsePackageLock(path string) ([]DependencyParsed, error) {
 	file, err := os.Open(path)
 
 	if err != nil {
@@ -31,7 +29,7 @@ func ParsePackageLock(path string) ([]repository.DependencyParsed, error) {
 		return nil, err
 	}
 
-	deps := []repository.DependencyParsed{}
+	deps := []DependencyParsed{}
 
 	if dependencies, ok := raw["dependencies"].(map[string]any); ok {
 		for name, val := range dependencies {
@@ -42,7 +40,7 @@ func ParsePackageLock(path string) ([]repository.DependencyParsed, error) {
 					version = v
 				}
 
-				deps = append(deps, repository.DependencyParsed{
+				deps = append(deps, DependencyParsed{
 					Name:      name,
 					Version:   version,
 					Ecosystem: "npm",

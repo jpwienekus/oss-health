@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
+
+	"github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 type RepositoryService struct {
@@ -53,7 +55,7 @@ func (s *RepositoryService) CloneAndParse(ctx context.Context, repository Reposi
 	print(len(dependencies))
 }
 
-func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Repository) ([]DependencyParsed, error) {
+func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Repository) ([]parsers.DependencyParsed, error) {
 	tempDir, err := s.cloner.CloneRepository(repo.URL)
 
 	if err != nil {
@@ -77,5 +79,3 @@ func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Reposito
 
 	return dependencies, nil
 }
-
-

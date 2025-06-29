@@ -5,16 +5,18 @@ import (
 
 	"io/fs"
 	"path/filepath"
+
+	"github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 type Extractor interface {
-	ExtractDependencies(repositoryPath string) ([]DependencyParsed, error)
+	ExtractDependencies(repositoryPath string) ([]parsers.DependencyParsed, error)
 }
 
 type DependencyExtractor struct{}
 
-func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]DependencyParsed, error) {
-	var allDependencies []DependencyParsed
+func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]parsers.DependencyParsed, error) {
+	var allDependencies []parsers.DependencyParsed
 
 	err := filepath.WalkDir(repositoryPath, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
@@ -23,7 +25,7 @@ func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]Depe
 
 		filename := filepath.Base(path)
 
-		for _, parser := range DependencyParsers {
+		for _, parser := range parsers.DependencyParsers {
 			match, err := filepath.Match(parser.Pattern, filename)
 			if err != nil {
 				continue

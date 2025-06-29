@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/oss-health/background-worker/internal/repository"
+	"github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 func TestProcessRepository_Success(t *testing.T) {
@@ -26,7 +27,7 @@ func TestProcessRepository_Success(t *testing.T) {
 
 	mockCloner.On("CloneRepository", repo.URL).Return("/tmp/fakepath", nil)
 	mockRepo.On("MarkScanned", ctx, repo.ID).Return(nil)
-	mockExtractor.On("ExtractDependencies", "/tmp/fakepath").Return([]repository.DependencyParsed{
+	mockExtractor.On("ExtractDependencies", "/tmp/fakepath").Return([]parsers.DependencyParsed{
 		{Name: "dep1", Version: "1.0"},
 	}, nil)
 
@@ -122,7 +123,7 @@ func TestRunDailyScan_CallsGetRepositories(t *testing.T) {
 	mockCloner.On("CloneRepository", mock.Anything).Return("/tmp/fake", nil)
 	mockRepo.On("MarkScanned", ctx, 1).Return(nil)
 	mockRepo.On("MarkScanned", ctx, 2).Return(nil)
-	mockExtractor.On("ExtractDependencies", mock.Anything).Return([]repository.DependencyParsed{}, nil)
+	mockExtractor.On("ExtractDependencies", mock.Anything).Return([]parsers.DependencyParsed{}, nil)
 
 	service.RunDailyScan(ctx, 5, 15)
 

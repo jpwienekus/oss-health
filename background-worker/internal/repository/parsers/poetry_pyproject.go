@@ -6,15 +6,13 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-
-	"github.com/oss-health/background-worker/internal/repository"
 )
 
 func init() {
-	repository.RegisterParser("pyproject.toml", "pypi", ParsePoetryPyproject)
+	RegisterParser("pyproject.toml", "pypi", ParsePoetryPyproject)
 }
 
-func ParsePoetryPyproject(path string) ([]repository.DependencyParsed, error) {
+func ParsePoetryPyproject(path string) ([]DependencyParsed, error) {
 	content, err := os.ReadFile(path)
 
 	if err != nil {
@@ -41,7 +39,7 @@ func ParsePoetryPyproject(path string) ([]repository.DependencyParsed, error) {
 		return section
 	}
 
-	deps := []repository.DependencyParsed{}
+	deps := []DependencyParsed{}
 	mainDeps := getToolSection("tool", "poetry", "dependencies")
 	devDeps := getToolSection("tool", "poetry", "group", "dev", "dependencies")
 
@@ -51,7 +49,7 @@ func ParsePoetryPyproject(path string) ([]repository.DependencyParsed, error) {
 		}
 
 		name, versionStr := normalizeNameVersion(name, version)
-		deps = append(deps, repository.DependencyParsed{name, versionStr, "PyPI"})
+		deps = append(deps, DependencyParsed{name, versionStr, "PyPI"})
 	}
 
 	return deps, nil

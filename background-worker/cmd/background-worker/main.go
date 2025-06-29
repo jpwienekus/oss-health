@@ -9,8 +9,6 @@ import (
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/repository"
-
-	_ "github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 func main() {
