@@ -143,3 +143,6 @@ JP Wienekus (jpwienekus@gmail.com)
     - alembic upgrade head
  - when ready to merge, update the ../supabase/migrations/{date}_migrations.sql file
     - alembic upgrade head --sql > alembic upgrade head --sql > ../supabase/migrations/$(date +%s)_migrations.sql
+    - to generate latest migration:
+    - alembic upgrade $(alembic history | awk 'NR==2{print $1}'):head --sql > ../supabase/migrations/$(date +%s)_migration.sql
+
