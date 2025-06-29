@@ -166,3 +166,97 @@ func (r *PostgresRepository) MarkDependenciesAsFailed(ctx context.Context, failu
 
 	return err
 }
+
+func (r *PostgresRepository) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryID int, pairs []DependencyVersionPair) ([]DependencyVersionResult, error) {
+	var results []DependencyVersionResult
+	_, err := r.db.Exec(ctx, DeleteRepositoryDependencyVersionsQuery, repositoryID)
+
+	if err != nil {
+		return nil, fmt.Errorf("delete existing links: %w", err)
+	}
+
+	var insertedDeps, existingDeps, insertedVers, existingVers int
+
+	for _, pair := range pairs {
+		dependencyID, isNewDep, err := r.getOrCreateDependency(ctx, pair.Name, pair.Ecosystem)
+
+		if err != nil {
+			return nil, err
+		}
+		if isNewDep {
+			insertedDeps++
+		} else {
+			existingDeps++
+		}
+
+		versionID, isNewVer, err := r.getOrCreateVersion(ctx, pair.Version, dependencyID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if isNewVer {
+			insertedVers++
+		} else {
+			existingVers++
+		}
+
+		// Create the association
+		_, err = r.db.Exec(ctx, InsertRepositoryDependencyVersionsQuery, repositoryID, dependencyID, versionID)
+		if err != nil {
+			return nil, fmt.Errorf("link repository-dependency-version: %w", err)
+		}
+
+		results = append(results, DependencyVersionResult{
+			VersionID: versionID,
+			Name:      pair.Name,
+			Version:   pair.Version,
+			Ecosystem: pair.Ecosystem,
+		})
+	}
+
+	log.Printf(
+		"Dependencies: %d inserted, %d existing; Versions: %d inserted, %d existing",
+		insertedDeps, existingDeps, insertedVers, existingVers,
+	)
+
+	return results, nil
+}
+
+func (r *PostgresRepository) getOrCreateDependency(ctx context.Context, name, ecosystem string) (int, bool, error) {
+	var id int
+	err := r.db.QueryRow(ctx, GetDependencyIdByNameAndEcosystemQuery, name, ecosystem).Scan(&id)
+
+	if err == pgx.ErrNoRows {
+		err = r.db.QueryRow(ctx, InsertDependencyQuery, name, ecosystem).Scan(&id)
+
+		if err != nil {
+			return 0, false, fmt.Errorf("insert dependency %q (%s): %w", name, ecosystem, err)
+		}
+
+		return id, true, nil
+	} else if err != nil {
+		return 0, false, fmt.Errorf("query dependency %q (%s): %w", name, ecosystem, err)
+	}
+
+	return id, false, nil
+}
+
+func (r *PostgresRepository) getOrCreateVersion(ctx context.Context, version string, dependencyID int) (int, bool, error) {
+	var id int
+	err := r.db.QueryRow(ctx, GetSpecificVersionForDependencyQuery, version, dependencyID).Scan(&id)
+
+	if err == pgx.ErrNoRows {
+		err = r.db.QueryRow(ctx, InsertVersionQuery, version, dependencyID).Scan(&id)
+
+		if err != nil {
+			return 0, false, fmt.Errorf("insert version %q: %w", version, err)
+		}
+
+		return id, true, nil
+	} else if err != nil {
+		return 0, false, fmt.Errorf("query version %q: %w", version, err)
+	}
+
+	return id, false, nil
+}

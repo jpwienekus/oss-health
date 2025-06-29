@@ -25,3 +25,9 @@ func (m *MockDependencyRepository) MarkDependenciesAsFailed(ctx context.Context,
     args := m.Called(ctx, failures)
     return args.Error(0)
 }
+
+func (m *MockDependencyRepository) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryID int, pairs []DependencyVersionPair) ([]DependencyVersionResult, error) {
+    args := m.Called(ctx, repositoryID, pairs)
+    return args.Get(0).([]DependencyVersionResult), args.Error(1)
+}
+

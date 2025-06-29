@@ -2,13 +2,9 @@ package parsers
 
 import (
 	"path/filepath"
-)
 
-type DependencyParsed struct {
-	Name      string
-	Version   string
-	Ecosystem string
-}
+	"github.com/oss-health/background-worker/internal/dependency"
+)
 
 type Parser struct {
 	Pattern   string
@@ -16,7 +12,7 @@ type Parser struct {
 	Parse     ParserFunc
 }
 
-type ParserFunc func(path string) ([]DependencyParsed, error)
+type ParserFunc func(path string) ([]dependency.DependencyVersionPair, error)
 
 var DependencyParsers []Parser
 

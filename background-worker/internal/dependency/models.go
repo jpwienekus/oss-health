@@ -10,3 +10,16 @@ type Dependency struct {
 	GithubURLResolved  bool
 	GithubURLCheckedAt *time.Time
 }
+
+type DependencyVersionPair struct {
+	Name      string
+	Version   string
+	Ecosystem string
+}
+
+type DependencyVersionResult struct {
+	VersionID int
+	Name      string
+	Version   string
+	Ecosystem string
+}

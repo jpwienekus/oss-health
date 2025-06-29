@@ -6,13 +6,15 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+
+	"github.com/oss-health/background-worker/internal/dependency"
 )
 
 func init() {
 	RegisterParser("pyproject.toml", "pypi", ParsePep621Pyproject)
 }
 
-func ParsePep621Pyproject(path string) ([]DependencyParsed, error) {
+func ParsePep621Pyproject(path string) ([]dependency.DependencyVersionPair, error) {
 	content, err := os.ReadFile(path)
 
 	if err != nil {
@@ -27,7 +29,7 @@ func ParsePep621Pyproject(path string) ([]DependencyParsed, error) {
 
 	project, _ := data["project"].(map[string]any)
 	rawDeps, _ := project["dependencies"].([]any)
-	deps := []DependencyParsed{}
+	deps := []dependency.DependencyVersionPair{}
 
 	reBracket := regexp.MustCompile(`\[.*?\]`)
 	rePrefix := regexp.MustCompile(`^[~^<>=!]+`)
@@ -47,7 +49,11 @@ func ParsePep621Pyproject(path string) ([]DependencyParsed, error) {
 
 			name = strings.TrimSpace(reBracket.ReplaceAllString(name, ""))
 			version = strings.TrimSpace(rePrefix.ReplaceAllString(version, ""))
-			deps = append(deps, DependencyParsed{name, version, "PyPI"})
+			deps = append(deps, dependency.DependencyVersionPair{
+				Name:      name,
+				Version:   version,
+				Ecosystem: "PyPI",
+			})
 		}
 	}
 

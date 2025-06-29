@@ -1,52 +1,66 @@
 package repository
 
 import (
-	"log"
-
+	"fmt"
 	"io/fs"
+	"log"
 	"path/filepath"
 
+	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 type Extractor interface {
-	ExtractDependencies(repositoryPath string) ([]parsers.DependencyParsed, error)
+	ExtractDependencies(repositoryPath string) ([]dependency.DependencyVersionPair, error)
 }
 
 type DependencyExtractor struct{}
 
-func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]parsers.DependencyParsed, error) {
-	var allDependencies []parsers.DependencyParsed
-
+func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]dependency.DependencyVersionPair, error) {
+	depMap := make(map[string]dependency.DependencyVersionPair)
 	err := filepath.WalkDir(repositoryPath, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() {
+		if err != nil {
 			return nil
 		}
 
-		filename := filepath.Base(path)
+		if entry.IsDir() {
+			switch entry.Name() {
+			case ".git", "node_modules", "venv":
+				return filepath.SkipDir
+			}
+			return nil
+		}
 
-		for _, parser := range parsers.DependencyParsers {
-			match, err := filepath.Match(parser.Pattern, filename)
-			if err != nil {
-				continue
-			}
-			if !match {
-				match, _ = filepath.Match(parser.Pattern, path)
-			}
-			if match {
-				deps, err := parser.Parse(path)
-				if err != nil {
-					log.Printf("Failed to parse %s: %v\n", path, err)
-					continue
-				}
-				allDependencies = append(allDependencies, deps...)
+		parser := parsers.GetParserForFile(path)
+
+		if parser == nil {
+			return nil
+		}
+
+		deps, err := parser.Parse(path)
+
+		if err != nil {
+			log.Printf("Failed to parse %s: %v", path, err)
+			return nil
+		}
+
+		for _, d := range deps {
+			key := fmt.Sprintf("%s@%s", d.Name, d.Version)
+			if _, exists := depMap[key]; !exists {
+				depMap[key] = d
 			}
 		}
+
 		return nil
 	})
 
 	if err != nil {
 		return nil, err
+	}
+
+	allDependencies := make([]dependency.DependencyVersionPair, 0, len(depMap))
+	for _, d := range depMap {
+		allDependencies = append(allDependencies, d)
 	}
 
 	return allDependencies, nil

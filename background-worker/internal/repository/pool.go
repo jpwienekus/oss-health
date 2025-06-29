@@ -41,7 +41,14 @@ func (workerPool *WorkerPool) worker(id int, ctx context.Context) {
 		}
 
 		log.Printf("[worker %d] processing %s", id, r.URL)
-		workerPool.s.CloneAndParse(ctx, r)
+
+		pairs, err := workerPool.s.CloneAndParse(ctx, r)
+
+		if err != nil {
+			log.Printf("Could not parse dependencies for %s: %v", r.URL, err)
+		}
+
+		workerPool.s.ReplaceRepositoryDependencyVersions(ctx, r.ID, pairs)
 
 		workerPool.waitGroup.Done()
 

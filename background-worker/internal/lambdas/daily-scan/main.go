@@ -6,6 +6,7 @@ import (
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/repository"
+	"github.com/oss-health/background-worker/internal/dependency"
 )
 
 func main() {
@@ -18,9 +19,10 @@ func main() {
 	}
 
 	repo := repository.NewRepositoryRepository(db)
+	dependencyRepository := dependency.NewPostgresRepository(db)
 	cloner := &repository.GitCloner{}
 	extractor := &repository.DependencyExtractor{}
-	service := repository.NewRepositoryService(repo, cloner, extractor)
+	service := repository.NewRepositoryService(repo, dependencyRepository, cloner, extractor)
 	// service.RunDailyScan(ctx, 4, 3)
 	service.RunDailyScan(ctx, 6, 9)
 }

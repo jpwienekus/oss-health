@@ -1,12 +1,12 @@
 package parsers_test
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
@@ -23,7 +23,7 @@ func writeTempFile(t *testing.T, filename, content string) string {
 	return fullPath
 }
 
-func findDep(deps []parsers.DependencyParsed, name, version, ecosystem string) bool {
+func findDep(deps []dependency.DependencyVersionPair, name, version, ecosystem string) bool {
 	for _, dep := range deps {
 		if dep.Name == name && dep.Version == version && dep.Ecosystem == ecosystem {
 			return true
@@ -36,7 +36,6 @@ func TestParsePackageLock(t *testing.T) {
 	path := writeTempFile(t, "package-lock.json", `{"dependencies": {"lodash": {"version": "4.17.21"}}}`)
 
 	deps, err := parsers.ParsePackageLock(path)
-	log.Print(deps)
 
 	if err != nil {
 		t.Fatal(err)
@@ -97,11 +96,11 @@ dependencies = [
 		t.Fatal(err)
 	}
 
-	cases := []parsers.DependencyParsed{
-		{"requests", "2.25", "PyPI"},
-		{"httpx", "0.27.0", "PyPI"},
-		{"custom-lib", "unknown", "PyPI"},
-		{"fastapi", "0.115.13", "PyPI"},
+	cases := []dependency.DependencyVersionPair{
+		{Name: "requests", Version: "2.25", Ecosystem: "PyPI"},
+		{Name: "httpx", Version: "0.27.0", Ecosystem: "PyPI"},
+		{Name: "custom-lib", Version: "unknown", Ecosystem: "PyPI"},
+		{Name: "fastapi", Version: "0.115.13", Ecosystem: "PyPI"},
 	}
 
 	for _, expected := range cases {
@@ -135,13 +134,13 @@ mypy = { some_other_field = "irrelevant" }
 		t.Fatal(err)
 	}
 
-	expected := []parsers.DependencyParsed{
-		{"requests", "2.31.0", "PyPI"},
-		{"httpx", "0.27.0", "PyPI"},
-		{"custom", "unknown", "PyPI"},
-		{"pytest", "8.0.0", "PyPI"},
-		{"black", "24.3.0", "PyPI"},
-		{"mypy", "unknown", "PyPI"},
+	expected := []dependency.DependencyVersionPair{
+		{Name: "requests", Version: "2.31.0", Ecosystem: "PyPI"},
+		{Name: "httpx", Version: "0.27.0", Ecosystem: "PyPI"},
+		{Name: "custom", Version: "unknown", Ecosystem: "PyPI"},
+		{Name: "pytest", Version: "8.0.0", Ecosystem: "PyPI"},
+		{Name: "black", Version: "24.3.0", Ecosystem: "PyPI"},
+		{Name: "mypy", Version: "unknown", Ecosystem: "PyPI"},
 	}
 
 	for _, exp := range expected {
@@ -170,9 +169,9 @@ numpy
 		t.Fatal(err)
 	}
 
-	expected := []parsers.DependencyParsed{
-		{"requests", "2.25.1", "PyPI"},
-		{"numpy", "unknown", "PyPI"},
+	expected := []dependency.DependencyVersionPair{
+		{Name: "requests", Version: "2.25.1", Ecosystem: "PyPI"},
+		{Name: "numpy", Version: "unknown", Ecosystem: "PyPI"},
 	}
 
 	if len(deps) != 2 {

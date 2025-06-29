@@ -8,17 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/oss-health/background-worker/internal/repository"
-	"github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 func TestProcessRepository_Success(t *testing.T) {
 	ctx := context.Background()
 	mockRepo := new(repository.MockRepository)
+	mockDependencyRepo := new(dependency.MockDependencyRepository)
 	mockCloner := new(repository.MockCloner)
 	mockExtractor := new(repository.MockExtractor)
 
-	service := repository.NewRepositoryService(mockRepo, mockCloner, mockExtractor)
+	service := repository.NewRepositoryService(mockRepo, mockDependencyRepo, mockCloner, mockExtractor)
 
 	repo := repository.Repository{
 		ID:  1,
@@ -27,7 +28,7 @@ func TestProcessRepository_Success(t *testing.T) {
 
 	mockCloner.On("CloneRepository", repo.URL).Return("/tmp/fakepath", nil)
 	mockRepo.On("MarkScanned", ctx, repo.ID).Return(nil)
-	mockExtractor.On("ExtractDependencies", "/tmp/fakepath").Return([]parsers.DependencyParsed{
+	mockExtractor.On("ExtractDependencies", "/tmp/fakepath").Return([]dependency.DependencyVersionPair{
 		{Name: "dep1", Version: "1.0"},
 	}, nil)
 
@@ -45,10 +46,11 @@ func TestProcessRepository_Success(t *testing.T) {
 func TestProcessRepository_CloneFails(t *testing.T) {
 	ctx := context.Background()
 	mockRepo := new(repository.MockRepository)
+	mockDependencyRepo := new(dependency.MockDependencyRepository)
 	mockCloner := new(repository.MockCloner)
 	mockExtractor := new(repository.MockExtractor)
 
-	service := repository.NewRepositoryService(mockRepo, mockCloner, mockExtractor)
+	service := repository.NewRepositoryService(mockRepo, mockDependencyRepo, mockCloner, mockExtractor)
 
 	repo := repository.Repository{ID: 1, URL: "invalid-url"}
 
@@ -67,10 +69,11 @@ func TestProcessRepository_CloneFails(t *testing.T) {
 func TestProcessRepository_ExtractFails(t *testing.T) {
 	ctx := context.Background()
 	mockRepo := new(repository.MockRepository)
+	mockDependencyRepo := new(dependency.MockDependencyRepository)
 	mockCloner := new(repository.MockCloner)
 	mockExtractor := new(repository.MockExtractor)
 
-	service := repository.NewRepositoryService(mockRepo, mockCloner, mockExtractor)
+	service := repository.NewRepositoryService(mockRepo, mockDependencyRepo, mockCloner, mockExtractor)
 
 	repo := repository.Repository{ID: 1, URL: "https://github.com/example/repo"}
 
@@ -90,10 +93,11 @@ func TestProcessRepository_ExtractFails(t *testing.T) {
 func TestCloneAndParse_LogsError(t *testing.T) {
 	ctx := context.Background()
 	mockRepo := new(repository.MockRepository)
+	mockDependencyRepo := new(dependency.MockDependencyRepository)
 	mockCloner := new(repository.MockCloner)
 	mockExtractor := new(repository.MockExtractor)
 
-	service := repository.NewRepositoryService(mockRepo, mockCloner, mockExtractor)
+	service := repository.NewRepositoryService(mockRepo, mockDependencyRepo, mockCloner, mockExtractor)
 
 	repo := repository.Repository{ID: 1, URL: "bad-url"}
 
@@ -109,10 +113,11 @@ func TestCloneAndParse_LogsError(t *testing.T) {
 func TestRunDailyScan_CallsGetRepositories(t *testing.T) {
 	ctx := context.Background()
 	mockRepo := new(repository.MockRepository)
+	mockDependencyRepo := new(dependency.MockDependencyRepository)
 	mockCloner := new(repository.MockCloner)
 	mockExtractor := new(repository.MockExtractor)
 
-	service := repository.NewRepositoryService(mockRepo, mockCloner, mockExtractor)
+	service := repository.NewRepositoryService(mockRepo, mockDependencyRepo, mockCloner, mockExtractor)
 
 	repos := []repository.Repository{
 		{ID: 1, URL: "https://github.com/a"},
@@ -123,7 +128,8 @@ func TestRunDailyScan_CallsGetRepositories(t *testing.T) {
 	mockCloner.On("CloneRepository", mock.Anything).Return("/tmp/fake", nil)
 	mockRepo.On("MarkScanned", ctx, 1).Return(nil)
 	mockRepo.On("MarkScanned", ctx, 2).Return(nil)
-	mockExtractor.On("ExtractDependencies", mock.Anything).Return([]parsers.DependencyParsed{}, nil)
+	mockExtractor.On("ExtractDependencies", mock.Anything).Return([]dependency.DependencyVersionPair{}, nil)
+  mockDependencyRepo.On("ReplaceRepositoryDependencyVersions", mock.Anything, mock.Anything, mock.Anything).Return([]dependency.DependencyVersionResult{}, nil)
 
 	service.RunDailyScan(ctx, 5, 15)
 

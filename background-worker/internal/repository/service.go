@@ -2,27 +2,31 @@ package repository
 
 import (
 	"context"
+	// "fmt"
 	"log"
 	"os"
 
-	"github.com/oss-health/background-worker/internal/repository/parsers"
+	"github.com/oss-health/background-worker/internal/dependency"
 )
 
 type RepositoryService struct {
-	repository RepositoryRepository
-	cloner     Cloner
-	extractor  Extractor
+	repository           RepositoryRepository
+	dependencyRepository dependency.DependencyRepository
+	cloner               Cloner
+	extractor            Extractor
 }
 
 func NewRepositoryService(
 	repository RepositoryRepository,
+	dependencyRepository dependency.DependencyRepository,
 	cloner Cloner,
 	extractor Extractor,
 ) *RepositoryService {
 	return &RepositoryService{
-		repository: repository,
-		cloner:     cloner,
-		extractor:  extractor,
+		repository:           repository,
+		dependencyRepository: dependencyRepository,
+		cloner:               cloner,
+		extractor:            extractor,
 	}
 }
 
@@ -34,7 +38,7 @@ func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int)
 	}
 
 	totalRepositories := len(repositories)
-	log.Printf("Scanning %d repositories for day %d hour %d", totalRepositories, day, hour)
+	// TODO: make env var
 	maxParallel := 16
 	totalParallel := min(maxParallel, totalRepositories)
 
@@ -49,18 +53,13 @@ func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int)
 	log.Printf("Scanning complete")
 }
 
-func (s *RepositoryService) CloneAndParse(ctx context.Context, repository Repository) {
+func (s *RepositoryService) CloneAndParse(ctx context.Context, repository Repository) ([]dependency.DependencyVersionPair, error) {
 	dependencies, err := s.ProcessRepository(ctx, repository)
 
-	if err != nil {
-		log.Printf("Could not parse dependencies for %s: %v", repository.URL, err)
-	}
-
-	print("Dependencies:")
-	print(dependencies)
+	return dependencies, err
 }
 
-func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Repository) ([]parsers.DependencyParsed, error) {
+func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Repository) ([]dependency.DependencyVersionPair, error) {
 	tempDir, err := s.cloner.CloneRepository(repo.URL)
 
 	if err != nil {
@@ -83,4 +82,13 @@ func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Reposito
 	}
 
 	return dependencies, nil
+}
+
+func (s *RepositoryService) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryId int, pairs []dependency.DependencyVersionPair) {
+	_, err := s.dependencyRepository.ReplaceRepositoryDependencyVersions(ctx, repositoryId, pairs)
+
+	if err != nil {
+		log.Print(err)
+	}
+
 }

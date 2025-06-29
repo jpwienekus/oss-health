@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
-)
 
+	"github.com/oss-health/background-worker/internal/dependency"
+)
 
 func init() {
 	RegisterParser("requirements.txt", "pypi", ParseRequirementsTxt)
@@ -14,7 +15,7 @@ func init() {
 	RegisterParser("requirements/*.txt", "pypi", ParseRequirementsTxt)
 }
 
-func ParseRequirementsTxt(path string) ([]DependencyParsed, error) {
+func ParseRequirementsTxt(path string) ([]dependency.DependencyVersionPair, error) {
 	file, err := os.Open(path)
 
 	if err != nil {
@@ -27,7 +28,7 @@ func ParseRequirementsTxt(path string) ([]DependencyParsed, error) {
 		}
 	}()
 
-	deps := []DependencyParsed{}
+	deps := []dependency.DependencyVersionPair{}
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
@@ -46,7 +47,11 @@ func ParseRequirementsTxt(path string) ([]DependencyParsed, error) {
 			version = parts[1]
 		}
 
-		deps = append(deps, DependencyParsed{name, version, "PyPI"})
+		deps = append(deps, dependency.DependencyVersionPair{
+			Name:      name,
+			Version:   version,
+			Ecosystem: "PyPI",
+		})
 	}
 
 	return deps, scanner.Err()
