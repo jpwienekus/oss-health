@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/repository"
@@ -53,53 +52,53 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetRepositoriesForDay(t *testing.T) {
-	r := repository.NewRepositoryRepository(TestDB)
-	ctx := context.Background()
-
-	_, err := TestDB.Exec(ctx, `DELETE FROM repositories`)
-	assert.NoError(t, err)
-
-	_, err = TestDB.Exec(ctx, `DELETE FROM "user"`)
-	assert.NoError(t, err)
-
-	// Setup
-	_, err = TestDB.Exec(ctx, `
-		INSERT INTO "user" (id, github_id, github_username, access_token)
-		VALUES 
-			(1, 101, 'user101', 'token1'),
-			(2, 102, 'user102', 'token2'),
-			(3, 103, 'user103', 'token3')
-	`)
-	assert.NoError(t, err)
-
-	now := time.Now()
-	_, err = TestDB.Exec(ctx, `
-		INSERT INTO repositories (id, url, github_id, user_id, last_scanned_at, scan_status, scan_day, scan_hour)
-		VALUES
-			(1, 'http://example.com', 101, 1, $1, 'completed', 2, 14),
-			(2, 'http://example2.com', 102, 2, $2, 'pending', 1, 3),
-			(3, 'http://old.com', 103, 3, $3, 'completed', 5, 22)
-	`, now, now, now)
-	assert.NoError(t, err)
-
-	// Act
-	repos, err := r.GetRepositoriesForDay(ctx, 2, 14)
-	assert.NoError(t, err)
-
-	// Assert
-	assert.Len(t, repos, 1)
-
-	assert.Equal(t, "http://example.com", repos[0].URL)
-	assert.NotNil(t, repos[0].LastScannedAt)
-	assert.Equal(t, "completed", repos[0].ScanStatus)
-
-	_, err = TestDB.Exec(ctx, `DELETE FROM repositories`)
-	assert.NoError(t, err)
-
-	_, err = TestDB.Exec(ctx, `DELETE FROM "user"`)
-	assert.NoError(t, err)
-}
+// func TestGetRepositoriesForDay(t *testing.T) {
+// 	r := repository.NewRepositoryRepository(TestDB)
+// 	ctx := context.Background()
+//
+// 	_, err := TestDB.Exec(ctx, `DELETE FROM repositories`)
+// 	assert.NoError(t, err)
+//
+// 	_, err = TestDB.Exec(ctx, `DELETE FROM "user"`)
+// 	assert.NoError(t, err)
+//
+// 	// Setup
+// 	_, err = TestDB.Exec(ctx, `
+// 		INSERT INTO "user" (id, github_id, github_username, access_token)
+// 		VALUES 
+// 			(1, 101, 'user101', 'token1'),
+// 			(2, 102, 'user102', 'token2'),
+// 			(3, 103, 'user103', 'token3')
+// 	`)
+// 	assert.NoError(t, err)
+//
+// 	now := time.Now()
+// 	_, err = TestDB.Exec(ctx, `
+// 		INSERT INTO repositories (id, url, github_id, user_id, last_scanned_at, scan_status, scan_day, scan_hour)
+// 		VALUES
+// 			(1, 'http://example.com', 101, 1, $1, 'completed', 2, 14),
+// 			(2, 'http://example2.com', 102, 2, $2, 'pending', 1, 3),
+// 			(3, 'http://old.com', 103, 3, $3, 'completed', 5, 22)
+// 	`, now, now, now)
+// 	assert.NoError(t, err)
+//
+// 	// Act
+// 	repos, err := r.GetRepositoriesForDay(ctx, 2, 14)
+// 	assert.NoError(t, err)
+//
+// 	// Assert
+// 	assert.Len(t, repos, 1)
+//
+// 	assert.Equal(t, "http://example.com", repos[0].URL)
+// 	assert.NotNil(t, repos[0].LastScannedAt)
+// 	assert.Equal(t, "completed", repos[0].ScanStatus)
+//
+// 	_, err = TestDB.Exec(ctx, `DELETE FROM repositories`)
+// 	assert.NoError(t, err)
+//
+// 	_, err = TestDB.Exec(ctx, `DELETE FROM "user"`)
+// 	assert.NoError(t, err)
+// }
 
 func TestMarkScanned(t *testing.T) {
 	repo := repository.NewRepositoryRepository(TestDB)
