@@ -6,13 +6,16 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/oss-health/background-worker/internal/repository"
 )
 
+
 func init() {
-	RegisterParser("pnpm-lock.yaml", "npm", ParsePnpmLock)
+	repository.RegisterParser("pnpm-lock.yaml", "npm", ParsePnpmLock)
 }
 
-func ParsePnpmLock(path string) ([]Dependency, error) {
+func ParsePnpmLock(path string) ([]repository.DependencyParsed, error) {
 	file, err := os.Open(path)
 
 	if err != nil {
@@ -37,7 +40,7 @@ func ParsePnpmLock(path string) ([]Dependency, error) {
 		return nil, nil
 	}
 
-	deps := []Dependency{}
+	deps := []repository.DependencyParsed{}
 
 	for pkgRef := range packages {
 		ref := pkgRef
@@ -56,7 +59,7 @@ func ParsePnpmLock(path string) ([]Dependency, error) {
 				name := strings.Join(parts[:len(parts)-1], "@")
 
 				if name != "" {
-					deps = append(deps, Dependency{
+					deps = append(deps, repository.DependencyParsed{
 						Name:      name,
 						Version:   version,
 						Ecosystem: "npm",

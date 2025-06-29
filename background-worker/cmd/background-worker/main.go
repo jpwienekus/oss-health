@@ -8,21 +8,29 @@ import (
 	"syscall"
 
 	"github.com/oss-health/background-worker/internal/db"
-	"github.com/oss-health/background-worker/internal/scanner"
-	// "github.com/oss-health/background-worker/internal/scheduler"
+	"github.com/oss-health/background-worker/internal/repository"
+
+	_ "github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 func main() {
-	ctx := context.Background()
-	connStr := "postgres://dev-user:password@localhost:5432/dev_db"
+	// TODO: env var
+	connectionString := "postgres://dev-user:password@localhost:5432/dev_db"
 
-	if err := db.Connect(ctx, connStr); err != nil {
+	ctx := context.Background()
+	db, err := db.Connect(ctx, connectionString)
+
+	if err != nil {
 		log.Fatalf("Database connection failed: %v", err)
 	}
 	defer db.Close()
 
-	// scanner.RunDailyScan(ctx, 4, 3)
-	scanner.RunDailyScan(ctx, 6, 9)
+	repo := repository.NewRepositoryRepository(db)
+	cloner := &repository.GitCloner{}
+	extractor := &repository.DependencyExtractor{}
+	service := repository.NewRepositoryService(repo, cloner, extractor)
+	// service.RunDailyScan(ctx, 4, 3)
+	service.RunDailyScan(ctx, 6, 9)
 
 	// scheduler.Start()
 
@@ -32,4 +40,3 @@ func main() {
 	<-sigs
 	log.Println("Shutting down gracefully.")
 }
-

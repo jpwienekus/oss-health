@@ -1,10 +1,10 @@
-package parsers
+package repository
 
 import (
 	"path/filepath"
 )
 
-type Dependency struct {
+type DependencyParsed struct {
 	Name      string
 	Version   string
 	Ecosystem string
@@ -16,7 +16,7 @@ type Parser struct {
 	Parse     ParserFunc
 }
 
-type ParserFunc func(path string) ([]Dependency, error)
+type ParserFunc func(path string) ([]DependencyParsed, error)
 
 var DependencyParsers []Parser
 

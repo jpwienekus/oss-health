@@ -1,33 +1,42 @@
-package fetcher
+package dependency
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/oss-health/background-worker/internal/utils"
-	"github.com/oss-health/background-worker/internal/dependency"
 )
 
-var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
-var Resolvers = map[string]func(ctx context.Context, name string) (string, error){
-	"npm":  GetNpmRepoURL(defaultHTTPClient, "https://registry.npmjs.org"),
-	"pypi": GetPypiRepoURL(defaultHTTPClient, "https://pypi.org/pypi"),
+type DependencyService struct {
+	repository DependencyRepository
+
+	rateLimiter utils.RateLimiter
+	resolvers   map[string]func(ctx context.Context, name string) (string, error)
 }
 
-func ResolvePendingDependencies(
+func NewDependencyService(
+	repository DependencyRepository,
+	limiters utils.RateLimiter,
+	resolvers map[string]func(ctx context.Context, name string) (string, error),
+) *DependencyService {
+	return &DependencyService{
+		repository:  repository,
+		rateLimiter: limiters,
+		resolvers:   resolvers,
+	}
+}
+
+func (s *DependencyService) ResolvePendingDependencies(
 	ctx context.Context,
 	batchSize int,
 	offset int,
 	ecosystem string,
-	rateLimiter utils.RateLimiter,
-	resolvers map[string]func(ctx context.Context, name string) (string, error),
 ) error {
-	dependencies, err := dependency.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
+
+	dependencies, err := s.repository.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
 
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
@@ -39,7 +48,7 @@ func ResolvePendingDependencies(
 		return nil
 	}
 
-	var resolvedDependencies []dependency.Dependency
+	var resolvedDependencies []Dependency
 	resolvedURLs := make(map[int64]string)
 	urlsSet := make(map[string]struct{})
 	failureReasons := make(map[int64]string)
@@ -66,7 +75,7 @@ func ResolvePendingDependencies(
 			ecosystem := strings.ToLower(dependencyCopy.Ecosystem)
 			log.Printf("Resolving url for: %s", dependencyCopy.Name)
 
-			resolver, ok := resolvers[ecosystem]
+			resolver, ok := s.resolvers[ecosystem]
 
 			if !ok {
 				log.Printf("No resolver found for ecosystem: %s", ecosystem)
@@ -77,7 +86,7 @@ func ResolvePendingDependencies(
 				return
 			}
 
-			if err := rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
+			if err := s.rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
 				log.Printf("Rate limiter error for %s: %v", dependencyCopy.Name, err)
 				return
 			}
@@ -124,12 +133,12 @@ func ResolvePendingDependencies(
 			urls = append(urls, url)
 		}
 
-		urlToID, err := dependency.UpsertGithubURLs(ctx, urls)
+		urlToID, err := s.repository.UpsertGithubURLs(ctx, urls)
 		if err != nil {
 			return fmt.Errorf("failed to upsert GitHub URLs: %w", err)
 		}
 
-		err = dependency.BatchUpdateDependencies(ctx, resolvedDependencies, urlToID, resolvedURLs)
+		err = s.repository.BatchUpdateDependencies(ctx, resolvedDependencies, urlToID, resolvedURLs)
 		if err != nil {
 			return fmt.Errorf("failed to update dependencies: %w", err)
 		}
@@ -138,7 +147,7 @@ func ResolvePendingDependencies(
 	}
 
 	if len(failureReasons) > 0 {
-		err := dependency.MarkDependenciesAsFailed(ctx, failureReasons)
+		err := s.repository.MarkDependenciesAsFailed(ctx, failureReasons)
 		if err != nil {
 			return fmt.Errorf("failed to mark failed dependencies: %w", err)
 		}
@@ -146,4 +155,5 @@ func ResolvePendingDependencies(
 	}
 
 	return nil
+
 }

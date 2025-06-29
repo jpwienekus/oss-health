@@ -1,4 +1,4 @@
-package fetcher_test
+package dependency_test
 
 import (
 	"context"
@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/oss-health/background-worker/pkg/fetcher"
+
+	"github.com/oss-health/background-worker/internal/dependency/resolvers"
 )
 
 func TestNpmResolver_Success(t *testing.T) {
@@ -24,7 +25,7 @@ func TestNpmResolver_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resolver := fetcher.GetNpmRepoURL(&http.Client{Timeout: 2 * time.Second}, ts.URL)
+	resolver := resolvers.GetNpmRepoURL(&http.Client{Timeout: 2 * time.Second}, ts.URL)
 	url, err := resolver(context.Background(), "example")
 
 	require.NoError(t, err)
@@ -46,7 +47,7 @@ func TestPypiResolver_SourcePriority(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resolver := fetcher.GetPypiRepoURL(&http.Client{Timeout: 2 * time.Second}, ts.URL)
+	resolver := resolvers.GetPypiRepoURL(&http.Client{Timeout: 2 * time.Second}, ts.URL)
 	url, err := resolver(context.Background(), "example")
 
 	require.NoError(t, err)

@@ -1,4 +1,4 @@
-package parsers_test
+package repository_test
 
 import (
 	"log"
@@ -7,7 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/oss-health/background-worker/internal/parsers"
+	"github.com/oss-health/background-worker/internal/repository"
+	"github.com/oss-health/background-worker/internal/repository/parsers"
 )
 
 func writeTempFile(t *testing.T, filename, content string) string {
@@ -23,7 +24,7 @@ func writeTempFile(t *testing.T, filename, content string) string {
 	return fullPath
 }
 
-func findDep(deps []parsers.Dependency, name, version, ecosystem string) bool {
+func findDep(deps []repository.DependencyParsed, name, version, ecosystem string) bool {
 	for _, dep := range deps {
 		if dep.Name == name && dep.Version == version && dep.Ecosystem == ecosystem {
 			return true
@@ -97,7 +98,7 @@ dependencies = [
 		t.Fatal(err)
 	}
 
-	cases := []parsers.Dependency{
+	cases := []repository.DependencyParsed{
 		{"requests", "2.25", "PyPI"},
 		{"httpx", "0.27.0", "PyPI"},
 		{"custom-lib", "unknown", "PyPI"},
@@ -135,7 +136,7 @@ mypy = { some_other_field = "irrelevant" }
 		t.Fatal(err)
 	}
 
-	expected := []parsers.Dependency{
+	expected := []repository.DependencyParsed{
 		{"requests", "2.31.0", "PyPI"},
 		{"httpx", "0.27.0", "PyPI"},
 		{"custom", "unknown", "PyPI"},
@@ -170,7 +171,7 @@ numpy
 		t.Fatal(err)
 	}
 
-	expected := []parsers.Dependency{
+	expected := []repository.DependencyParsed{
 		{"requests", "2.25.1", "PyPI"},
 		{"numpy", "unknown", "PyPI"},
 	}
