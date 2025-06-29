@@ -29,107 +29,98 @@ func NewDependencyService(
 	}
 }
 
-func (s *DependencyService) ResolvePendingDependencies(
-	ctx context.Context,
-	batchSize int,
-	offset int,
-	ecosystem string,
-) error {
+type resolveResult struct {
+	id            int64
+	url           string
+	failureReason string
+	dependency    Dependency
+}
 
+func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batchSize int, offset int, ecosystem string) error {
 	dependencies, err := s.repository.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
 
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
 	}
 
-	log.Printf("Fetching %d pending dependencies", len(dependencies))
+	log.Printf("Resolving urls for %d dependencies", len(dependencies))
 
 	if len(dependencies) == 0 {
 		return nil
 	}
 
-	var resolvedDependencies []Dependency
-	resolvedURLs := make(map[int64]string)
-	urlsSet := make(map[string]struct{})
-	failureReasons := make(map[int64]string)
-
 	concurrency := 10
 	semaphore := make(chan struct{}, concurrency)
-	var mutex sync.Mutex
-	var waitGroup sync.WaitGroup
+	resultsCh := make(chan resolveResult, len(dependencies))
+
+	var wg sync.WaitGroup
 
 	for _, dependency := range dependencies {
+		select {
+		case <-ctx.Done():
+			break
+		case semaphore <- struct{}{}:
+		}
+
+		wg.Add(1)
 		// NOTE: In Go, the range loop reuses the same dependency variable each time.
 		// So if you spin up goroutines in a loop, they all reference the same variable
 		// Thus need to make a copy.
 		dependencyCopy := dependency
-		semaphore <- struct{}{}
-		waitGroup.Add(1)
 
 		go func() {
-			defer func() {
-				<-semaphore
-				waitGroup.Done()
-			}()
+			defer wg.Done()
+			defer func() { <-semaphore }()
 
 			ecosystem := strings.ToLower(dependencyCopy.Ecosystem)
-			log.Printf("Resolving url for: %s", dependencyCopy.Name)
-
 			resolver, ok := s.resolvers[ecosystem]
 
-			if !ok {
-				log.Printf("No resolver found for ecosystem: %s", ecosystem)
-
-				mutex.Lock()
-				failureReasons[dependencyCopy.ID] = "unsupported ecosystem"
-				mutex.Unlock()
+			if !ok || resolver == nil {
+				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: "unsupported ecosystem"}
 				return
 			}
 
 			if err := s.rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
-				log.Printf("Rate limiter error for %s: %v", dependencyCopy.Name, err)
+				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: fmt.Sprintf("rate limiter error: %v", err)}
 				return
 			}
 
 			url, err := resolver(ctx, dependencyCopy.Name)
+
 			if err != nil {
-				log.Printf("Error resolving URL for %s: %v", dependencyCopy.Name, err)
-
-				mutex.Lock()
-				failureReasons[dependencyCopy.ID] = fmt.Sprintf("resolver error: %v", err)
-				mutex.Unlock()
+				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: fmt.Sprintf("resolver error: %v", err)}
 				return
 			}
-
 			if url == "" {
-				log.Printf("No URL found for %s", dependencyCopy.Name)
-
-				mutex.Lock()
-				failureReasons[dependencyCopy.ID] = "empty URL"
-				mutex.Unlock()
+				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: "empty URL"}
 				return
 			}
 
-			mutex.Lock()
-			resolvedURLs[dependencyCopy.ID] = url
-			urlsSet[url] = struct{}{}
-			resolvedDependencies = append(resolvedDependencies, dependencyCopy)
-			mutex.Unlock()
+			resultsCh <- resolveResult{id: dependencyCopy.ID, url: url, dependency: dependencyCopy}
 		}()
-
 	}
 
-	waitGroup.Wait()
+	wg.Wait()
+	close(resultsCh)
 
-	if len(resolvedDependencies) == 0 && len(failureReasons) == 0 {
-		log.Println("No dependencies resolved or failed")
-		return nil
+	resolvedDeps := make([]Dependency, 0)
+	resolvedURLs := make(map[int64]string)
+	urlSet := make(map[string]struct{})
+	failureReasons := make(map[int64]string)
+
+	for res := range resultsCh {
+		if res.failureReason != "" {
+			failureReasons[res.id] = res.failureReason
+		} else {
+			resolvedURLs[res.id] = res.url
+			urlSet[res.url] = struct{}{}
+			resolvedDeps = append(resolvedDeps, res.dependency)
+		}
 	}
 
-	if len(resolvedDependencies) > 0 {
-		urls := make([]string, 0, len(urlsSet))
-
-		for url := range urlsSet {
+	if len(resolvedDeps) > 0 {
+		urls := make([]string, 0, len(urlSet))
+		for url := range urlSet {
 			urls = append(urls, url)
 		}
 
@@ -138,22 +129,18 @@ func (s *DependencyService) ResolvePendingDependencies(
 			return fmt.Errorf("failed to upsert GitHub URLs: %w", err)
 		}
 
-		err = s.repository.BatchUpdateDependencies(ctx, resolvedDependencies, urlToID, resolvedURLs)
-		if err != nil {
+		if err := s.repository.BatchUpdateDependencies(ctx, resolvedDeps, urlToID, resolvedURLs); err != nil {
 			return fmt.Errorf("failed to update dependencies: %w", err)
 		}
-
 		log.Printf("Processed %d dependencies with GitHub URLs", len(resolvedURLs))
 	}
 
 	if len(failureReasons) > 0 {
-		err := s.repository.MarkDependenciesAsFailed(ctx, failureReasons)
-		if err != nil {
+		if err := s.repository.MarkDependenciesAsFailed(ctx, failureReasons); err != nil {
 			return fmt.Errorf("failed to mark failed dependencies: %w", err)
 		}
 		log.Printf("Marked %d dependencies as failed", len(failureReasons))
 	}
 
 	return nil
-
 }

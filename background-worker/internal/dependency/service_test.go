@@ -75,6 +75,9 @@ func TestResolvePendingDependencies_RateLimiterError(t *testing.T) {
 
 	deps := []dependency.Dependency{{ID: 1, Name: "rate", Ecosystem: "npm"}}
 	repository.On("GetPendingDependencies", ctx, 10, 0, "npm").Return(deps, nil)
+	repository.On("MarkDependenciesAsFailed", ctx, mock.MatchedBy(func(failures map[int64]string) bool {
+		return failures[1] == "rate limiter error: rate limited"
+	})).Return(nil)
 	limiter.On("WaitUntilAllowed", ctx, "npm").Return(errors.New("rate limited"))
 
 	service := dependency.NewDependencyService(repository, limiter, map[string]func(context.Context, string) (string, error){
@@ -183,4 +186,3 @@ func TestResolvePendingDependencies_Concurrency(t *testing.T) {
 	repository.AssertExpectations(t)
 	limiter.AssertExpectations(t)
 }
-
