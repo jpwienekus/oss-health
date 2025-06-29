@@ -64,6 +64,7 @@ export const ImportReposDialog = ({
         (e) => !alreadyTracked.includes(e.githubId),
       ),
     )
+    setSelectedRepositories([])
     setIsImporting(false)
     setIsOpen(true)
   }

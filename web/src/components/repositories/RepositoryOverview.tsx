@@ -49,8 +49,8 @@ export const RepositoryOverview = ({
           <div className="flex-1">
             <CardTitle className="text-lg flex items-center gap-2">
               <span className="text-md font-medium">{repository.name}</span>
-              {repository.scannedDate !== null &&
-              repository.scannedDate !== undefined ? (
+              {repository.lastScannedAt !== null &&
+              repository.lastScannedAt !== undefined ? (
                 <>
                   {getHealthIcon(repository.score)}
                   <span
@@ -80,7 +80,7 @@ export const RepositoryOverview = ({
           <div className="flex items-center gap-1">
             <Package size={12} />
             <span>
-              {repository.scannedDate ? repository.dependencies : '-'}{' '}
+              {repository.lastScannedAt ? repository.dependencies : '-'}{' '}
               dependencies
             </span>
           </div>
@@ -88,20 +88,20 @@ export const RepositoryOverview = ({
             <AlertTriangle size={12} />
             <span
               className={
-                repository.scannedDate && repository.vulnerabilities > 0
+                repository.lastScannedAt && repository.vulnerabilities > 0
                   ? 'text-red-600'
                   : ''
               }
             >
-              {repository.scannedDate ? repository.vulnerabilities : '-'}{' '}
+              {repository.lastScannedAt ? repository.vulnerabilities : '-'}{' '}
               vulnerabilities
             </span>
           </div>
           <div className="flex items-center gap-1">
             <CalendarClock size={12} />
             <span>
-              {repository.scannedDate
-                ? formatDate(repository.scannedDate)
+              {repository.lastScannedAt
+                ? formatDate(repository.lastScannedAt)
                 : '-'}
             </span>
           </div>

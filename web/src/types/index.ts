@@ -10,6 +10,6 @@ export interface GitHubRepository {
   score: number
   vulnerabilities: number
   dependencies: number
-  scannedDate: string
+  lastScannedAt: string
   updatedAt: string
 }

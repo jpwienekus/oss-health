@@ -1,3 +1,4 @@
+import random
 from datetime import datetime, timezone
 from typing import List, Sequence
 
@@ -37,7 +38,10 @@ async def add_repository_ids(
                 github_id=repository.get("id"),
                 user_id=user_id,
                 score=0,
-                clone_url=repository.get("clone_url"),
+                url=repository.get("url"),
+                scan_day=random.randint(1, 7),
+                scan_hour=random.randint(1, 24),
+                scan_status="pending",
             )
             for repository in tracked_repositories
         ]
@@ -63,6 +67,6 @@ async def update_scanned_date(
     repository = await get_repository(db_session, repository_id, user_id)
 
     if repository:
-        repository.scanned_date = datetime.now(timezone.utc)
+        repository.last_scanned_at = datetime.now(timezone.utc)
 
     await db_session.commit()

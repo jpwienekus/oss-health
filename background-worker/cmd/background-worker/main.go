@@ -7,20 +7,22 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/oss-health/background-worker/pkg/db"
-	"github.com/oss-health/background-worker/internal/scheduler"
+	"github.com/oss-health/background-worker/internal/db"
 )
 
 func main() {
-	ctx := context.Background()
-	connStr := "postgres://dev-user:password@localhost:5432/dev_db"
+	// TODO: env var
+	connectionString := "postgres://dev-user:password@localhost:5432/dev_db"
 
-	if err := db.Connect(ctx, connStr); err != nil {
+	ctx := context.Background()
+	db, err := db.Connect(ctx, connectionString)
+
+	if err != nil {
 		log.Fatalf("Database connection failed: %v", err)
 	}
 	defer db.Close()
 
-	scheduler.Start()
+	// scheduler.Start()
 
 	// Graceful shutdown block
 	sigs := make(chan os.Signal, 1)
@@ -28,4 +30,3 @@ func main() {
 	<-sigs
 	log.Println("Shutting down gracefully.")
 }
-

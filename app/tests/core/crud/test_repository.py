@@ -8,8 +8,8 @@ from core.models.user import User as UserDBModel
 @pytest.mark.asyncio
 async def test_add_repository_ids(db_session: AsyncSession, test_user: UserDBModel):
     repos_to_add = [
-        {"id": 1111, "clone_url": "https://github.com/test/repo1"},
-        {"id": 2222, "clone_url": "https://github.com/test/repo2"},
+        {"id": 1111, "url": "https://github.com/test/repo1"},
+        {"id": 2222, "url": "https://github.com/test/repo2"},
     ]
 
     await add_repository_ids(db_session, test_user.id, repos_to_add)
@@ -17,6 +17,6 @@ async def test_add_repository_ids(db_session: AsyncSession, test_user: UserDBMod
 
     assert len(repos) == 2
     assert repos[0].github_id == 1111
-    assert repos[0].clone_url == "https://github.com/test/repo1"
+    assert repos[0].url == "https://github.com/test/repo1"
     assert repos[1].github_id == 2222
-    assert repos[1].clone_url == "https://github.com/test/repo2"
+    assert repos[1].url == "https://github.com/test/repo2"

@@ -106,7 +106,10 @@ async def test_repository(
     repo = RepositoryDBModel(
         github_id=12345,
         user_id=test_user.id,
-        clone_url="https://github.com/example/repo",
+        url="https://github.com/example/repo",
+        scan_day=0,
+        scan_hour=0,
+        scan_status="pending",
     )
     db_session.add(repo)
     await db_session.flush()

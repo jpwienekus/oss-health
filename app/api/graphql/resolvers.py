@@ -10,16 +10,8 @@ from api.graphql.types import GitHubRepository
 from core.crud.repository import (
     add_repository_ids,
     get_repositories,
-    get_repository,
-    update_scanned_date,
-)
-from core.crud.repository_dependency_version import (
-    replace_repository_dependency_versions,
 )
 from core.crud.user import get_access_token, get_user
-from core.crud.vulnerability import replace_version_vulnerabilities
-from core.services.osv_api import get_dependency_version_vulnerability
-from core.services.scanner import get_repository_dependencies
 
 
 def get_user_id(info: Info) -> int:
@@ -68,7 +60,7 @@ async def get_repositories_for_user(
                     score=repository.score,
                     number_of_dependencies=len(repository.dependency_versions),
                     number_of_vulnerabilities=total_vulnerabilities,
-                    scanned_date=repository.scanned_date,
+                    last_scanned_at=repository.last_scanned_at,
                 )
             )
 
@@ -92,32 +84,6 @@ class Query:
         repositories = await get_repository_information_from_github(db, user_id)
 
         return [GitHubRepository.from_model(repo) for repo in repositories]
-
-    @strawberry.field
-    async def manual_scan_debug(
-        self, info: Info, repository_id: int
-    ) -> List[GitHubRepository]:
-        user_id = get_user_id(info)
-        db = info.context["db"]
-
-        repository = await get_repository(db, repository_id, user_id)
-
-        if not repository:
-            return []
-
-        dependencies = get_repository_dependencies(repository.clone_url)
-        dependency_versions_to_check = await replace_repository_dependency_versions(
-            db, repository_id, dependencies
-        )
-        dependency_version_vulnerabilities = await get_dependency_version_vulnerability(
-            dependency_versions_to_check
-        )
-        await replace_version_vulnerabilities(db, dependency_version_vulnerabilities)
-        await update_scanned_date(db, repository_id, user_id)
-
-        # print(test)
-
-        return await get_repositories_for_user(user_id, db)
 
     @strawberry.field
     async def repositories(self, info: Info) -> List[GitHubRepository]:
