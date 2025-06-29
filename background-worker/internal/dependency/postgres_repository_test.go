@@ -187,9 +187,7 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 func TestReplaceRepositoryDependencyVersions(t *testing.T) {
 	ClearTables(TestDB)
 	SeedUsers(TestDB)
-	// SeedRepositories(TestDB)
 
-	// Insert a test repository
 	var repositoryID int
 	err := TestDB.QueryRow(TestCtx, `
 		INSERT INTO repositories (url, github_id, user_id, last_scanned_at, scan_status)
@@ -213,12 +211,10 @@ func TestReplaceRepositoryDependencyVersions(t *testing.T) {
 		},
 	}
 
-	// Run the method
 	results, err := repo.ReplaceRepositoryDependencyVersions(TestCtx, repositoryID, pairs)
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
 
-	// Validate associations
 	rows, err := TestDB.Query(TestCtx, `
 		SELECT d.name, v.version, d.ecosystem
 		FROM repository_dependency_version rdv
@@ -241,7 +237,6 @@ func TestReplaceRepositoryDependencyVersions(t *testing.T) {
 	}
 	assert.ElementsMatch(t, pairs, found)
 
-	// Call again with a mix of existing and new data
 	morePairs := []dependency.DependencyVersionPair{
 		{
 			Name:      "express",

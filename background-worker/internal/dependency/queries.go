@@ -13,6 +13,13 @@ const (
 		AND github_url_resolve_failed = false
 		OFFSET $2 LIMIT $3
 	`
+	GetExistingDependenciesQuery = `
+		SELECT id, name, ecosystem FROM dependencies WHERE 
+	`
+	GetExistingVersionsQuery = `
+		SELECT id, version, dependency_id FROM versions
+		WHERE
+	`
 	GetDependencyIdByNameAndEcosystemQuery = `
 		SELECT id FROM dependencies WHERE name = $1 AND ecosystem = $2
 	`
@@ -26,8 +33,12 @@ const (
 	`
 	InsertDependencyQuery = `
 		INSERT INTO dependencies (name, ecosystem)
-		VALUES ($1, $2)
-		RETURNING id
+		VALUES %s
+		RETURNING id, name, ecosystem
+	`
+	InsertVersionQuery = `
+		INSERT INTO versions (version, dependency_id)
+		VALUES %s
 	`
 	InsertDependencyRepositoryQuery = `
 		INSERT INTO dependency_repository (github_url)
@@ -37,14 +48,8 @@ const (
 	`
 	InsertRepositoryDependencyVersionsQuery = `
 		INSERT INTO repository_dependency_version (repository_id, dependency_id, version_id)
-		VALUES ($1, $2, $3)
+		VALUES %s
 	`
-	InsertVersionQuery = `
-		INSERT INTO versions (version, dependency_id)
-		VALUES ($1, $2)
-		RETURNING id
-	`
-
 	UpdateDependencyScannedQuery = `
     UPDATE dependencies
     SET dependency_repository_id = $1,
