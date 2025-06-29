@@ -28,7 +28,6 @@ func NewWorkerPool(maxParallel int, requestsPerSecond float64, s *RepositoryServ
 func (workerPool *WorkerPool) Start(ctx context.Context) {
 	for i := 0; i < workerPool.MaxParallel; i++ {
 		go workerPool.worker(i, ctx)
-
 	}
 }
 

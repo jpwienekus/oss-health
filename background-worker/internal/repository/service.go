@@ -33,8 +33,12 @@ func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int)
 		log.Printf("Error fetching repositories: %v", err)
 	}
 
-	log.Printf("Scanning %d repositories for day %d hour %d", len(repositories), day, hour)
-	workerPool := NewWorkerPool(16, 2.0, s)
+	totalRepositories := len(repositories)
+	log.Printf("Scanning %d repositories for day %d hour %d", totalRepositories, day, hour)
+	maxParallel := 16
+	totalParallel := min(maxParallel, totalRepositories)
+
+	workerPool := NewWorkerPool(totalParallel, 2.0, s)
 	workerPool.Start(ctx)
 
 	for _, repository := range repositories {
@@ -52,7 +56,8 @@ func (s *RepositoryService) CloneAndParse(ctx context.Context, repository Reposi
 		log.Printf("Could not parse dependencies for %s: %v", repository.URL, err)
 	}
 
-	print(len(dependencies))
+	print("Dependencies:")
+	print(dependencies)
 }
 
 func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Repository) ([]parsers.DependencyParsed, error) {
