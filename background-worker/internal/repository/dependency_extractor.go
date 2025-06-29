@@ -7,14 +7,16 @@ import (
 	"path/filepath"
 
 	"github.com/oss-health/background-worker/internal/dependency"
-	"github.com/oss-health/background-worker/internal/repository/parsers"
+	"github.com/oss-health/background-worker/internal/repository/interfaces"
 )
 
 type Extractor interface {
 	ExtractDependencies(repositoryPath string) ([]dependency.DependencyVersionPair, error)
 }
 
-type DependencyExtractor struct{}
+type DependencyExtractor struct {
+	Provider interfaces.ParserProvider
+}
 
 func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]dependency.DependencyVersionPair, error) {
 	depMap := make(map[string]dependency.DependencyVersionPair)
@@ -31,12 +33,7 @@ func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]depe
 			return nil
 		}
 
-		parser := parsers.GetParserForFile(path)
-
-		if parser == nil {
-			return nil
-		}
-
+		parser := d.Provider.GetParser(path)
 		deps, err := parser.Parse(path)
 
 		if err != nil {
@@ -59,6 +56,7 @@ func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]depe
 	}
 
 	allDependencies := make([]dependency.DependencyVersionPair, 0, len(depMap))
+
 	for _, d := range depMap {
 		allDependencies = append(allDependencies, d)
 	}
