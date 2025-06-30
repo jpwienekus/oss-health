@@ -10,9 +10,9 @@ import (
 	"github.com/oss-health/background-worker/internal/dependency"
 )
 
-func init() {
-	RegisterParser("pyproject.toml", "pypi", ParsePoetryPyproject)
-}
+// func init() {
+// 	RegisterParser("pyproject.toml", "pypi", ParsePoetryPyproject)
+// }
 
 func ParsePoetryPyproject(path string) ([]dependency.DependencyVersionPair, error) {
 	content, err := os.ReadFile(path)

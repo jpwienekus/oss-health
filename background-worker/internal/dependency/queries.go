@@ -57,7 +57,7 @@ const (
 	`
 	UpsertDependencyRepositoryQuery = `
 		INSERT INTO dependency_repository (github_url)
-		VALUES %s
+		VALUES ($1)
 		ON CONFLICT (github_url) DO UPDATE SET github_url = EXCLUDED.github_url
 		RETURNING id, github_url
 	`

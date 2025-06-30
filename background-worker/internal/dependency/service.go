@@ -33,17 +33,19 @@ type resolveResult struct {
 	id            int64
 	url           string
 	failureReason string
-	dependency    Dependency
+	// dependency    Dependency
 }
 
 func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batchSize int, offset int, ecosystem string) error {
+	// TODO: include a date stale check here as part of GetDependenciesPendingUrlResolution
+	// The upsert logic below supports handling existing entries
 	dependencies, err := s.repository.GetDependenciesPendingUrlResolution(ctx, batchSize, offset, ecosystem)
 
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
 	}
 
-	log.Printf("Resolving urls for %d dependencies", len(dependencies))
+	log.Printf("Resolving urls for %d dependencies (%s)", len(dependencies), ecosystem)
 
 	if len(dependencies) == 0 {
 		return nil
@@ -96,49 +98,51 @@ func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batc
 				return
 			}
 
-			resultsCh <- resolveResult{id: dependencyCopy.ID, url: url, dependency: dependencyCopy}
+			resultsCh <- resolveResult{id: dependencyCopy.ID, url: url }
 		}()
 	}
 
 	wg.Wait()
 	close(resultsCh)
 
-	resolvedDeps := make([]Dependency, 0)
-	resolvedURLs := make(map[int64]string)
-	urlSet := make(map[string]struct{})
+	if len(resultsCh) == 0 {
+		return nil
+	}
+
+	resolvedUrlMap := make(map[int64]string)
 	failureReasons := make(map[int64]string)
 
-	for res := range resultsCh {
-		if res.failureReason != "" {
-			failureReasons[res.id] = res.failureReason
+	for result := range resultsCh {
+		if result.failureReason != "" {
+			failureReasons[result.id] = result.failureReason
 		} else {
-			resolvedURLs[res.id] = res.url
-			urlSet[res.url] = struct{}{}
-			resolvedDeps = append(resolvedDeps, res.dependency)
+			resolvedUrlMap[result.id] = result.url
 		}
 	}
 
-	if len(resolvedDeps) > 0 {
-		urls := make([]string, 0, len(urlSet))
-		for url := range urlSet {
-			urls = append(urls, url)
-		}
+	if len(resolvedUrlMap) > 0 {
+		dependencyDependencyRepositoryIdMap, err := s.repository.UpsertGithubURLs(ctx, resolvedUrlMap)
 
-		urlToID, err := s.repository.UpsertGithubURLs(ctx, urls)
 		if err != nil {
 			return fmt.Errorf("failed to upsert GitHub URLs: %w", err)
 		}
 
-		if err := s.repository.BatchUpdateDependencies(ctx, resolvedDeps, urlToID, resolvedURLs); err != nil {
-			return fmt.Errorf("failed to update dependencies: %w", err)
+		err = s.repository.BatchUpdateDependencies(ctx, dependencyDependencyRepositoryIdMap)
+
+		if err != nil {
+			return fmt.Errorf("failed to update dependency with dependency repository link: %w", err)
 		}
-		log.Printf("Processed %d dependencies with GitHub URLs", len(resolvedURLs))
+
+		log.Printf("Processed %d dependencies with GitHub URLs", len(resolvedUrlMap))
 	}
 
 	if len(failureReasons) > 0 {
-		if err := s.repository.MarkDependenciesAsFailed(ctx, failureReasons); err != nil {
+		err := s.repository.MarkDependenciesAsFailed(ctx, failureReasons)
+
+		if err != nil {
 			return fmt.Errorf("failed to mark failed dependencies: %w", err)
 		}
+
 		log.Printf("Marked %d dependencies as failed", len(failureReasons))
 	}
 

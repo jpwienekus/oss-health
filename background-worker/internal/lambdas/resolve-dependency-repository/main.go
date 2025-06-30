@@ -30,7 +30,7 @@ func main() {
 
 	buffer := 10
 	npmRequestCapability := (dependency.NpmRps * 60) - buffer
-	pypiRequestCapability := (dependency.PypiRps * 60) - buffer
+	// pypiRequestCapability := (dependency.PypiRps * 60) - buffer
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -40,10 +40,10 @@ func main() {
 		resolvePendingDependencies("npm", npmRequestCapability, service)
 	}()
 
-	go func() {
-		defer wg.Done()
-		resolvePendingDependencies("pypi", pypiRequestCapability, service)
-	}()
+	// go func() {
+	// 	defer wg.Done()
+	// 	resolvePendingDependencies("pypi", pypiRequestCapability, service)
+	// }()
 
 	wg.Wait()
 }

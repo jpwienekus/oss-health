@@ -45,77 +45,58 @@ func (r *PostgresRepository) GetDependenciesPendingUrlResolution(ctx context.Con
 	return dependencies, nil
 }
 
-func (r *PostgresRepository) UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, error) {
-	if len(urls) == 0 {
+func (r *PostgresRepository) UpsertGithubURLs(ctx context.Context, resolvedUrls map[int64]string) (map[int64]int64, error) {
+	if len(resolvedUrls) == 0 {
 		return nil, nil
 	}
 
-	valueStrings := make([]string, 0, len(urls))
-	valueArgs := make([]any, 0, len(urls))
+	batch := &pgx.Batch{}
 
-	for i, url := range urls {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d)", i+1))
-		valueArgs = append(valueArgs, url)
+	for _, url := range resolvedUrls {
+		batch.Queue(UpsertDependencyRepositoryQuery, url)
 	}
 
-	query := fmt.Sprintf(UpsertDependencyRepositoryQuery, strings.Join(valueStrings, ","))
-	rows, err := r.db.Query(ctx, query, valueArgs...)
+	br := r.db.SendBatch(ctx, batch)
+	defer br.Close()
 
-	if err != nil {
-		return nil, fmt.Errorf("could not upsert resolved dependency urls: %w", err)
-	}
+	dependencyRepositoryIdUrlMap := make(map[string]int64)
 
-	defer rows.Close()
-
-	insertedUrlIdMap := make(map[string]int64)
-
-	for rows.Next() {
+	for i := 0; i < len(resolvedUrls); i++ {
 		var id int64
 		var url string
-		err := rows.Scan(&id, &url)
+		err := br.QueryRow().Scan(&id, &url)
 
 		if err != nil {
 			return nil, err
 		}
 
-		insertedUrlIdMap[url] = id
+		dependencyRepositoryIdUrlMap[url] = id
 	}
 
-	return insertedUrlIdMap, nil
+	dependencyDependencyRepositoryIdMap := make(map[int64]int64)
+
+	for dependencyId, url := range resolvedUrls {
+		dependencyDependencyRepositoryIdMap[dependencyId] = dependencyRepositoryIdUrlMap[url]
+	}
+
+	return dependencyDependencyRepositoryIdMap, nil
 }
 
-func (r *PostgresRepository) BatchUpdateDependencies(ctx context.Context, deps []Dependency, urlToID map[string]int64, resolvedURLs map[int64]string) error {
-	tx, err := r.db.Begin(ctx)
+func (r *PostgresRepository) BatchUpdateDependencies(ctx context.Context, dependencyDependencyRepositoryIdMap map[int64]int64) error {
+	batch := &pgx.Batch{}
 
-	if err != nil {
-		return err
+	if len(dependencyDependencyRepositoryIdMap) == 0 {
+		return nil
 	}
 
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
-			log.Printf("rollback failed: %v", err)
-		}
-	}()
-
-	for _, dep := range deps {
-		url, ok := resolvedURLs[dep.ID]
-
-		if !ok {
-			continue
-		}
-
-		githubURLID, ok := urlToID[url]
-
-		if !ok {
-			return fmt.Errorf("missing github_url_id for url %s", url)
-		}
-
-		if _, err := tx.Exec(ctx, UpdateDependencyScannedQuery, githubURLID, dep.ID); err != nil {
-			return err
-		}
+	for dependencyId, dependencyRepositoryId := range dependencyDependencyRepositoryIdMap {
+		batch.Queue(UpdateDependencyScannedQuery, dependencyRepositoryId, dependencyId)
 	}
 
-	return tx.Commit(ctx)
+	br := r.db.SendBatch(ctx, batch)
+	defer br.Close()
+
+	return nil
 }
 
 func (r *PostgresRepository) MarkDependenciesAsFailed(ctx context.Context, failureReasons map[int64]string) error {
