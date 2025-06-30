@@ -89,12 +89,12 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetPendingDependencies(t *testing.T) {
+func TestGetDependenciesPendingUrlResolution(t *testing.T) {
 	ClearTables(TestDB)
 	SeedDependencies(TestDB)
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	dependencies, err := repository.GetPendingDependencies(TestCtx, 10, 0, "npm")
+	dependencies, err := repository.GetDependenciesPendingUrlResolution(TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 	assert.Len(t, dependencies, 2)
 
@@ -137,7 +137,7 @@ func TestBatchUpdateDependencies(t *testing.T) {
 	urlToID, err := repository.UpsertGithubURLs(TestCtx, urls)
 	assert.NoError(t, err)
 
-	deps, err := repository.GetPendingDependencies(TestCtx, 10, 0, "npm")
+	deps, err := repository.GetDependenciesPendingUrlResolution(TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 
 	resolvedURLs := map[int64]string{}
@@ -163,7 +163,7 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 	SeedDependencies(TestDB)
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	deps, err := repository.GetPendingDependencies(TestCtx, 10, 0, "npm")
+	deps, err := repository.GetDependenciesPendingUrlResolution(TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 
 	failureReasons := map[int64]string{}

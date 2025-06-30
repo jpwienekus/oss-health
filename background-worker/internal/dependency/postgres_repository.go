@@ -20,8 +20,8 @@ func NewPostgresRepository(db *pgxpool.Pool) *PostgresRepository {
 
 var _ DependencyRepository = (*PostgresRepository)(nil)
 
-func (r *PostgresRepository) GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) ([]Dependency, error) {
-	rows, err := r.db.Query(ctx, GetPendingDependenciesQuery, ecosystem, offset, batchSize)
+func (r *PostgresRepository) GetDependenciesPendingUrlResolution(ctx context.Context, batchSize, offset int, ecosystem string) ([]Dependency, error) {
+	rows, err := r.db.Query(ctx, GetDependenciesPendingUrlResolutionQuery, ecosystem, offset, batchSize)
 
 	if err != nil {
 		return nil, err

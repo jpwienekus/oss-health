@@ -5,7 +5,7 @@ const (
 		DELETE FROM repository_dependency_version
 		WHERE repository_id = $1
 	`
-	GetPendingDependenciesQuery = `
+	GetDependenciesPendingUrlResolutionQuery = `
 		SELECT id, name, ecosystem
 		FROM dependencies
 		WHERE github_url_resolved = false

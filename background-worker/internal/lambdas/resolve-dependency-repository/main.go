@@ -13,7 +13,8 @@ import (
 )
 
 func main() {
-	connectionString := "postgres://dev-user:password@localhost:5432/dev_db"
+	// connectionString := "postgres://dev-user:password@localhost:5432/dev_db"
+	connectionString := "postgresql://postgres.gfpivacysduostopkekw:4-dzBCK8Ptyg.FTukiBB@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
 
 	ctx := context.Background()
 	db, err := db.Connect(ctx, connectionString)

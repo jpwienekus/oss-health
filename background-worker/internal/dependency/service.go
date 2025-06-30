@@ -37,7 +37,7 @@ type resolveResult struct {
 }
 
 func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batchSize int, offset int, ecosystem string) error {
-	dependencies, err := s.repository.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
+	dependencies, err := s.repository.GetDependenciesPendingUrlResolution(ctx, batchSize, offset, ecosystem)
 
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending dependencies: %w", err)

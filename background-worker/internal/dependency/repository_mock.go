@@ -9,7 +9,7 @@ import (
 type MockDependencyRepository struct {
     mock.Mock
 }
-func (m *MockDependencyRepository) GetPendingDependencies(ctx context.Context, batchSize, offset int, eco string) ([]Dependency, error) {
+func (m *MockDependencyRepository) GetDependenciesPendingUrlResolution(ctx context.Context, batchSize, offset int, eco string) ([]Dependency, error) {
     args := m.Called(ctx, batchSize, offset, eco)
     return args.Get(0).([]Dependency), args.Error(1)
 }
