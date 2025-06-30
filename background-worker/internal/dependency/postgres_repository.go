@@ -58,61 +58,30 @@ func (r *PostgresRepository) UpsertGithubURLs(ctx context.Context, urls []string
 		valueArgs = append(valueArgs, url)
 	}
 
-	query := fmt.Sprintf(InsertDependencyRepositoryQuery, strings.Join(valueStrings, ","))
-
+	query := fmt.Sprintf(UpsertDependencyRepositoryQuery, strings.Join(valueStrings, ","))
 	rows, err := r.db.Query(ctx, query, valueArgs...)
 
 	if err != nil {
-		log.Printf("Could not insert url")
-		return nil, err
+		return nil, fmt.Errorf("could not upsert resolved dependency urls: %w", err)
 	}
 
 	defer rows.Close()
 
-	urlToID := make(map[string]int64)
+	insertedUrlIdMap := make(map[string]int64)
 
 	for rows.Next() {
 		var id int64
 		var url string
-
-		if err := rows.Scan(&id, &url); err != nil {
-			return nil, err
-		}
-
-		urlToID[url] = id
-	}
-
-	missingURLs := []string{}
-
-	for _, url := range urls {
-		if _, ok := urlToID[url]; !ok {
-			missingURLs = append(missingURLs, url)
-		}
-	}
-
-	if len(missingURLs) > 0 {
-		rows, err = r.db.Query(ctx, GetMissingUrlsQuery, missingURLs)
+		err := rows.Scan(&id, &url)
 
 		if err != nil {
-			log.Printf("Could not read github urls: %s", err)
 			return nil, err
 		}
 
-		defer rows.Close()
-
-		for rows.Next() {
-			var id int64
-			var url string
-
-			if err := rows.Scan(&id, &url); err != nil {
-				return nil, err
-			}
-
-			urlToID[url] = id
-		}
+		insertedUrlIdMap[url] = id
 	}
 
-	return urlToID, nil
+	return insertedUrlIdMap, nil
 }
 
 func (r *PostgresRepository) BatchUpdateDependencies(ctx context.Context, deps []Dependency, urlToID map[string]int64, resolvedURLs map[int64]string) error {

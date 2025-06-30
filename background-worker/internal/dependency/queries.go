@@ -23,11 +23,6 @@ const (
 	GetDependencyIdByNameAndEcosystemQuery = `
 		SELECT id FROM dependencies WHERE name = $1 AND ecosystem = $2
 	`
-	GetMissingUrlsQuery = `
-		SELECT id, github_url 
-		FROM dependency_repository 
-		WHERE github_url = ANY($1)
-	`
 	GetSpecificVersionForDependencyQuery = `
 		SELECT id FROM versions WHERE version = $1 AND dependency_id = $2
 	`
@@ -39,12 +34,6 @@ const (
 	InsertVersionQuery = `
 		INSERT INTO versions (version, dependency_id)
 		VALUES %s
-	`
-	InsertDependencyRepositoryQuery = `
-		INSERT INTO dependency_repository (github_url)
-		VALUES %s
-		ON CONFLICT (github_url) DO NOTHING
-		RETURNING id, github_url
 	`
 	InsertRepositoryDependencyVersionsQuery = `
 		INSERT INTO repository_dependency_version (repository_id, dependency_id, version_id)
@@ -65,5 +54,11 @@ const (
 			SELECT unnest($1::BIGINT[]) AS id, unnest($2::TEXT[]) AS reason
 		) AS updates
 		WHERE dependencies.id = updates.id
+	`
+	UpsertDependencyRepositoryQuery = `
+		INSERT INTO dependency_repository (github_url)
+		VALUES %s
+		ON CONFLICT (github_url) DO UPDATE SET github_url = EXCLUDED.github_url
+		RETURNING id, github_url
 	`
 )
