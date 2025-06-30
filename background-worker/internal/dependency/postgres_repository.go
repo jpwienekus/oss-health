@@ -24,19 +24,19 @@ func (r *PostgresRepository) GetDependenciesPendingUrlResolution(ctx context.Con
 	rows, err := r.db.Query(ctx, GetDependenciesPendingUrlResolutionQuery, ecosystem, offset, batchSize)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying pending dependencies: %w", err)
 	}
 
 	defer rows.Close()
 
-	var dependencies []Dependency
+	dependencies := make([]Dependency, 0, batchSize)
 
 	for rows.Next() {
 		var dep Dependency
-		err := rows.Scan(&dep.ID, &dep.Name, &dep.Ecosystem)
+		err = rows.Scan(&dep.ID, &dep.Name, &dep.Ecosystem)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scanning dependency row: %w", err)
 		}
 
 		dependencies = append(dependencies, dep)
