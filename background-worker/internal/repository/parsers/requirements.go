@@ -19,12 +19,12 @@ func ParseRequirementsTxt(path string) ([]dependency.DependencyVersionPair, erro
 	file, err := os.Open(path)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open requirements file %q: %w", path, err)
 	}
 
 	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", err)
+		if cerr := file.Close(); cerr != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to close file %q: %v\n", path, cerr)
 		}
 	}()
 
@@ -43,8 +43,11 @@ func ParseRequirementsTxt(path string) ([]dependency.DependencyVersionPair, erro
 
 		if strings.Contains(line, "==") {
 			parts := strings.SplitN(line, "==", 2)
-			name = parts[0]
-			version = parts[1]
+
+			if len(parts) == 2 {
+				name = strings.TrimSpace(parts[0])
+				version = strings.TrimSpace(parts[1])
+			}
 		}
 
 		deps = append(deps, dependency.DependencyVersionPair{

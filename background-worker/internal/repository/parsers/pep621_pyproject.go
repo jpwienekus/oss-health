@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -16,45 +17,62 @@ func init() {
 
 func ParsePep621Pyproject(path string) ([]dependency.DependencyVersionPair, error) {
 	content, err := os.ReadFile(path)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read pyproject.toml at %q: %w", path, err)
 	}
 
 	var data map[string]any
-
 	if err := toml.Unmarshal(content, &data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshal TOML in %q: %w", path, err)
 	}
 
-	project, _ := data["project"].(map[string]any)
-	rawDeps, _ := project["dependencies"].([]any)
-	deps := []dependency.DependencyVersionPair{}
+	projectSection, ok := data["project"].(map[string]any)
+	if !ok {
+		// not an error, just missing 'project' section
+		return nil, nil
+	}
 
+	rawDeps, ok := projectSection["dependencies"].([]any)
+	if !ok {
+		return nil, nil // no dependencies defined
+	}
+
+	var deps []dependency.DependencyVersionPair
 	reBracket := regexp.MustCompile(`\[.*?\]`)
 	rePrefix := regexp.MustCompile(`^[~^<>=!]+`)
 
-	for _, item := range rawDeps {
-		if depStr, ok := item.(string); ok {
-			var name, version string
+	// project, _ := data["project"].(map[string]any)
+	// rawDeps, _ := project["dependencies"].([]any)
+	// deps := []dependency.DependencyVersionPair{}
+	//
+	// reBracket := regexp.MustCompile(`\[.*?\]`)
+	// rePrefix := regexp.MustCompile(`^[~^<>=!]+`)
 
-			if strings.Contains(depStr, " (") && strings.HasSuffix(depStr, ")") {
-				parts := strings.SplitN(depStr[:len(depStr)-1], " (", 2)
+	for _, item := range rawDeps {
+		depStr, ok := item.(string)
+		if !ok {
+			continue
+		}
+
+		name := depStr
+		version := "unknown"
+
+		if strings.Contains(depStr, " (") && strings.HasSuffix(depStr, ")") {
+			parts := strings.SplitN(depStr[:len(depStr)-1], " (", 2)
+			if len(parts) == 2 {
 				name = parts[0]
 				version = parts[1]
-			} else {
-				name = depStr
-				version = "unknown"
 			}
-
-			name = strings.TrimSpace(reBracket.ReplaceAllString(name, ""))
-			version = strings.TrimSpace(rePrefix.ReplaceAllString(version, ""))
-			deps = append(deps, dependency.DependencyVersionPair{
-				Name:      name,
-				Version:   version,
-				Ecosystem: "PyPI",
-			})
 		}
+
+		name = strings.TrimSpace(reBracket.ReplaceAllString(name, ""))
+		version = strings.TrimSpace(rePrefix.ReplaceAllString(version, ""))
+
+		deps = append(deps, dependency.DependencyVersionPair{
+			Name:      name,
+			Version:   version,
+			Ecosystem: "PyPI",
+		})
 	}
 
 	return deps, nil

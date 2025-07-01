@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -10,42 +11,43 @@ import (
 	"github.com/oss-health/background-worker/internal/dependency"
 )
 
-// func init() {
-// 	RegisterParser("pyproject.toml", "pypi", ParsePoetryPyproject)
-// }
+func init() {
+	RegisterParser("pyproject.toml", "pypi", ParsePoetryPyproject)
+}
 
 func ParsePoetryPyproject(path string) ([]dependency.DependencyVersionPair, error) {
 	content, err := os.ReadFile(path)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read pyproject.toml at %q: %w", path, err)
 	}
 
 	var data map[string]any
-
 	if err := toml.Unmarshal(content, &data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshal TOML in %q: %w", path, err)
 	}
 
 	getToolSection := func(keys ...string) map[string]any {
 		section := data
 
 		for _, key := range keys {
-			if val, ok := section[key].(map[string]any); ok {
-				section = val
-			} else {
+			val, ok := section[key].(map[string]any)
+			if !ok {
 				return nil
 			}
+
+			section = val
 		}
 
 		return section
 	}
 
-	deps := []dependency.DependencyVersionPair{}
 	mainDeps := getToolSection("tool", "poetry", "dependencies")
 	devDeps := getToolSection("tool", "poetry", "group", "dev", "dependencies")
 
-	for name, version := range mergeMaps(mainDeps, devDeps) {
+	mergedDeps := mergeMaps(mainDeps, devDeps)
+	var deps []dependency.DependencyVersionPair
+
+	for name, version := range mergedDeps {
 		if strings.ToLower(name) == "python" {
 			continue
 		}
@@ -61,13 +63,15 @@ func ParsePoetryPyproject(path string) ([]dependency.DependencyVersionPair, erro
 	return deps, nil
 }
 
-func mergeMaps(maps ...map[string]any) map[string]interface{} {
+func mergeMaps(maps ...map[string]any) map[string]any {
 	merged := make(map[string]any)
+
 	for _, m := range maps {
 		for k, v := range m {
 			merged[k] = v
 		}
 	}
+
 	return merged
 }
 

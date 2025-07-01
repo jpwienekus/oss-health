@@ -20,9 +20,10 @@ type DependencyExtractor struct {
 
 func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]dependency.DependencyVersionPair, error) {
 	depMap := make(map[string]dependency.DependencyVersionPair)
-	err := filepath.WalkDir(repositoryPath, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return nil
+
+	err := filepath.WalkDir(repositoryPath, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return fmt.Errorf("walk error at %s: %w", path, walkErr)
 		}
 
 		if entry.IsDir() {
@@ -34,16 +35,14 @@ func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]depe
 		}
 
 		parser := d.Provider.GetParser(path)
-
 		if parser == nil {
 			return nil
 		}
 
 		deps, err := parser.Parse(path)
-
 		if err != nil {
-			log.Printf("Failed to parse %s: %v", path, err)
-			return nil
+			log.Printf("warning: failed to parse %q: %v", path, err)
+			return nil // continue walking
 		}
 
 		for _, d := range deps {
@@ -57,14 +56,14 @@ func (d *DependencyExtractor) ExtractDependencies(repositoryPath string) ([]depe
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("extract dependencies from %q: %w", repositoryPath, err)
 	}
 
-	allDependencies := make([]dependency.DependencyVersionPair, 0, len(depMap))
+	dependencyList := make([]dependency.DependencyVersionPair, 0, len(depMap))
 
 	for _, d := range depMap {
-		allDependencies = append(allDependencies, d)
+		dependencyList = append(dependencyList, d)
 	}
 
-	return allDependencies, nil
+	return dependencyList, nil
 }
