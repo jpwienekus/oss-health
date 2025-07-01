@@ -56,7 +56,11 @@ func (r *PostgresRepository) UpsertGithubURLs(ctx context.Context, resolvedUrls 
 	}
 
 	br := r.db.SendBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		if err := br.Close(); err != nil {
+			log.Printf("error closing reader: %v", err)
+		}
+	}()
 
 	dependencyRepositoryIdUrlMap := make(map[string]int64)
 
@@ -92,7 +96,11 @@ func (r *PostgresRepository) BatchUpdateDependencies(ctx context.Context, depend
 	}
 
 	br := r.db.SendBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		if err := br.Close(); err != nil {
+			log.Printf("error closing reader: %v", err)
+		}
+	}()
 
 	for i := 0; i < len(dependencyDependencyRepositoryIdMap); i++ {
 		if _, err := br.Exec(); err != nil {

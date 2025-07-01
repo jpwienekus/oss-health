@@ -25,8 +25,8 @@ func TestResolvePendingDependencies_Success(t *testing.T) {
 	repository.On("GetDependenciesPendingUrlResolution", ctx, 10, 0, "npm").Return(deps, nil)
 	limiter.On("WaitUntilAllowed", ctx, "npm").Return(nil)
 	repository.On("UpsertGithubURLs", ctx, map[int64]string{1: "https://github.com/test/repo"}).
-		Return(map[int64]int64{100:10}, nil)
-	repository.On("BatchUpdateDependencies", ctx, map[int64]int64{100:10}).Return(nil)
+		Return(map[int64]int64{100: 10}, nil)
+	repository.On("BatchUpdateDependencies", ctx, map[int64]int64{100: 10}).Return(nil)
 
 	service := dependency.NewDependencyService(repository, limiter, map[string]func(context.Context, string) (string, error){
 		"npm": func(ctx context.Context, name string) (string, error) {
@@ -76,7 +76,7 @@ func TestResolvePendingDependencies_RateLimiterError(t *testing.T) {
 	deps := []dependency.Dependency{{ID: 1, Name: "rate", Ecosystem: "npm"}}
 	repository.On("GetDependenciesPendingUrlResolution", ctx, 10, 0, "npm").Return(deps, nil)
 	repository.On("MarkDependenciesAsFailed", ctx, mock.MatchedBy(func(failures map[int64]string) bool {
-		return failures[1] == "rate limiter error: rate limited"
+		return failures[1] == "rate limit: rate limited"
 	})).Return(nil)
 	limiter.On("WaitUntilAllowed", ctx, "npm").Return(errors.New("rate limited"))
 
@@ -127,7 +127,7 @@ func TestResolvePendingDependencies_UpsertGithubURLsFails(t *testing.T) {
 	})
 
 	err := service.ResolvePendingDependencies(ctx, 10, 0, "npm")
-	assert.ErrorContains(t, err, "failed to upsert GitHub URLs")
+	assert.ErrorContains(t, err, "upsert GitHub URLs: upsert failed")
 }
 
 func TestResolvePendingDependencies_Concurrency(t *testing.T) {
