@@ -3,17 +3,24 @@ package main
 import (
 	"context"
 	"log"
-	"time"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/oss-health/background-worker/internal/dependency/resolvers"
 	"github.com/oss-health/background-worker/internal/utils"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	connectionString := "postgres://dev-user:password@localhost:5432/dev_db"
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	connectionString := os.Getenv("DATABASE_URL")
 
 	ctx := context.Background()
 	db, err := db.Connect(ctx, connectionString)
@@ -29,7 +36,7 @@ func main() {
 
 	buffer := 10
 	npmRequestCapability := (dependency.NpmRps * 60) - buffer
-	pypiRequestCapability := (dependency.PypiRps * 60) - buffer
+	// pypiRequestCapability := (dependency.PypiRps * 60) - buffer
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -39,10 +46,10 @@ func main() {
 		resolvePendingDependencies("npm", npmRequestCapability, service)
 	}()
 
-	go func() {
-		defer wg.Done()
-		resolvePendingDependencies("pypi", pypiRequestCapability, service)
-	}()
+	// go func() {
+	// 	defer wg.Done()
+	// 	resolvePendingDependencies("pypi", pypiRequestCapability, service)
+	// }()
 
 	wg.Wait()
 }

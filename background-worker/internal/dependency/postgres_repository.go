@@ -20,23 +20,22 @@ func NewPostgresRepository(db *pgxpool.Pool) *PostgresRepository {
 
 var _ DependencyRepository = (*PostgresRepository)(nil)
 
-func (r *PostgresRepository) GetPendingDependencies(ctx context.Context, batchSize, offset int, ecosystem string) ([]Dependency, error) {
-	rows, err := r.db.Query(ctx, GetPendingDependenciesQuery, ecosystem, offset, batchSize)
+func (r *PostgresRepository) GetDependenciesPendingUrlResolution(ctx context.Context, batchSize, offset int, ecosystem string) ([]Dependency, error) {
+	rows, err := r.db.Query(ctx, GetDependenciesPendingUrlResolutionQuery, ecosystem, offset, batchSize)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query pending dependencies: %w", err)
 	}
 
 	defer rows.Close()
 
-	var dependencies []Dependency
+	dependencies := make([]Dependency, 0, batchSize)
 
 	for rows.Next() {
 		var dep Dependency
-		err := rows.Scan(&dep.ID, &dep.Name, &dep.Ecosystem)
 
-		if err != nil {
-			return nil, err
+		if err := rows.Scan(&dep.ID, &dep.Name, &dep.Ecosystem); err != nil {
+			return nil, fmt.Errorf("scan dependency row: %w", err)
 		}
 
 		dependencies = append(dependencies, dep)
@@ -45,108 +44,71 @@ func (r *PostgresRepository) GetPendingDependencies(ctx context.Context, batchSi
 	return dependencies, nil
 }
 
-func (r *PostgresRepository) UpsertGithubURLs(ctx context.Context, urls []string) (map[string]int64, error) {
-	if len(urls) == 0 {
+func (r *PostgresRepository) UpsertGithubURLs(ctx context.Context, resolvedUrls map[int64]string) (map[int64]int64, error) {
+	if len(resolvedUrls) == 0 {
 		return nil, nil
 	}
 
-	valueStrings := make([]string, 0, len(urls))
-	valueArgs := make([]any, 0, len(urls))
+	batch := &pgx.Batch{}
 
-	for i, url := range urls {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d)", i+1))
-		valueArgs = append(valueArgs, url)
+	for _, url := range resolvedUrls {
+		batch.Queue(UpsertDependencyRepositoryQuery, url)
 	}
 
-	query := fmt.Sprintf(InsertDependencyRepositoryQuery, strings.Join(valueStrings, ","))
-
-	rows, err := r.db.Query(ctx, query, valueArgs...)
-
-	if err != nil {
-		log.Printf("Could not insert url")
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	urlToID := make(map[string]int64)
-
-	for rows.Next() {
-		var id int64
-		var url string
-
-		if err := rows.Scan(&id, &url); err != nil {
-			return nil, err
-		}
-
-		urlToID[url] = id
-	}
-
-	missingURLs := []string{}
-
-	for _, url := range urls {
-		if _, ok := urlToID[url]; !ok {
-			missingURLs = append(missingURLs, url)
-		}
-	}
-
-	if len(missingURLs) > 0 {
-		rows, err = r.db.Query(ctx, GetMissingUrlsQuery, missingURLs)
-
-		if err != nil {
-			log.Printf("Could not read github urls: %s", err)
-			return nil, err
-		}
-
-		defer rows.Close()
-
-		for rows.Next() {
-			var id int64
-			var url string
-
-			if err := rows.Scan(&id, &url); err != nil {
-				return nil, err
-			}
-
-			urlToID[url] = id
-		}
-	}
-
-	return urlToID, nil
-}
-
-func (r *PostgresRepository) BatchUpdateDependencies(ctx context.Context, deps []Dependency, urlToID map[string]int64, resolvedURLs map[int64]string) error {
-	tx, err := r.db.Begin(ctx)
-
-	if err != nil {
-		return err
-	}
-
+	br := r.db.SendBatch(ctx, batch)
 	defer func() {
-		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
-			log.Printf("rollback failed: %v", err)
+		if err := br.Close(); err != nil {
+			log.Printf("error closing reader: %v", err)
 		}
 	}()
 
-	for _, dep := range deps {
-		url, ok := resolvedURLs[dep.ID]
+	dependencyRepositoryIdUrlMap := make(map[string]int64)
 
-		if !ok {
-			continue
+	for i := 0; i < len(resolvedUrls); i++ {
+		var id int64
+		var url string
+
+		if err := br.QueryRow().Scan(&id, &url); err != nil {
+			return nil, fmt.Errorf("query dependency repository: %w", err)
 		}
 
-		githubURLID, ok := urlToID[url]
+		dependencyRepositoryIdUrlMap[url] = id
+	}
 
-		if !ok {
-			return fmt.Errorf("missing github_url_id for url %s", url)
+	dependencyDependencyRepositoryIdMap := make(map[int64]int64)
+
+	for dependencyId, url := range resolvedUrls {
+		dependencyDependencyRepositoryIdMap[dependencyId] = dependencyRepositoryIdUrlMap[url]
+	}
+
+	return dependencyDependencyRepositoryIdMap, nil
+}
+
+func (r *PostgresRepository) BatchUpdateDependencies(ctx context.Context, dependencyDependencyRepositoryIdMap map[int64]int64) error {
+	batch := &pgx.Batch{}
+
+	if len(dependencyDependencyRepositoryIdMap) == 0 {
+		return nil
+	}
+
+	for dependencyId, dependencyRepositoryId := range dependencyDependencyRepositoryIdMap {
+		batch.Queue(UpdateDependencyScannedQuery, dependencyRepositoryId, dependencyId)
+	}
+
+	br := r.db.SendBatch(ctx, batch)
+	defer func() {
+		if err := br.Close(); err != nil {
+			log.Printf("error closing reader: %v", err)
 		}
+	}()
 
-		if _, err := tx.Exec(ctx, UpdateDependencyScannedQuery, githubURLID, dep.ID); err != nil {
-			return err
+	for i := 0; i < len(dependencyDependencyRepositoryIdMap); i++ {
+		if _, err := br.Exec(); err != nil {
+			return fmt.Errorf("batch update index %d: %w", i, err)
 		}
 	}
 
-	return tx.Commit(ctx)
+	return nil
 }
 
 func (r *PostgresRepository) MarkDependenciesAsFailed(ctx context.Context, failureReasons map[int64]string) error {
@@ -162,29 +124,30 @@ func (r *PostgresRepository) MarkDependenciesAsFailed(ctx context.Context, failu
 		reasons = append(reasons, reason)
 	}
 
-	_, err := r.db.Exec(ctx, UpdateDependencyScannedFailedQuery, ids, reasons)
+	if _, err := r.db.Exec(ctx, UpdateDependencyScannedFailedQuery, ids, reasons); err != nil {
+		return fmt.Errorf("mark dependencies failed: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func (r *PostgresRepository) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryID int, pairs []DependencyVersionPair) ([]DependencyVersionResult, error) {
 	var results []DependencyVersionResult
-	_, err := r.db.Exec(ctx, DeleteRepositoryDependencyVersionsQuery, repositoryID)
 
-	if err != nil {
-		return nil, fmt.Errorf("delete existing links: %w", err)
+	if _, err := r.db.Exec(ctx, DeleteRepositoryDependencyVersionsQuery, repositoryID); err != nil {
+		return nil, fmt.Errorf("delete repository dependency versions: %w", err)
 	}
 
 	dependenciesByKey, err := r.GetOrCreateDependencies(ctx, pairs)
 
 	if err != nil {
-		return nil, fmt.Errorf("get/create dependencies: %w", err)
+		return nil, fmt.Errorf("get or create dependencies: %w", err)
 	}
 
 	versionIds, err := r.GetOrCreateVersions(ctx, pairs, dependenciesByKey)
 
 	if err != nil {
-		return nil, fmt.Errorf("get/create versions: %w", err)
+		return nil, fmt.Errorf("get or create versions: %w", err)
 	}
 
 	var triplets [][2]int
@@ -194,14 +157,14 @@ func (r *PostgresRepository) ReplaceRepositoryDependencyVersions(ctx context.Con
 		depID, ok := dependenciesByKey[depKey]
 
 		if !ok {
-			return nil, fmt.Errorf("dependency not found for %s", depKey)
+			return nil, fmt.Errorf("dependency not found: %s", depKey)
 		}
 
 		versionKey := fmt.Sprintf("%d|%s", depID, pair.Version)
 		verID, ok := versionIds[versionKey]
 
 		if !ok {
-			return nil, fmt.Errorf("version not found for %s", versionKey)
+			return nil, fmt.Errorf("version not found: %s", versionKey)
 		}
 
 		triplets = append(triplets, [2]int{depID, verID})
@@ -213,10 +176,8 @@ func (r *PostgresRepository) ReplaceRepositoryDependencyVersions(ctx context.Con
 		})
 	}
 
-	err = insertRepositoryDependencyVersions(ctx, r.db, repositoryID, triplets)
-
-	if err != nil {
-		return nil, fmt.Errorf("insert repository dependency versions: %w", err)
+	if err := insertRepositoryDependencyVersions(ctx, r.db, repositoryID, triplets); err != nil {
+		return nil, fmt.Errorf("insert repository versions: %w", err)
 	}
 
 	return results, nil
@@ -250,10 +211,10 @@ func (r *PostgresRepository) GetOrCreateDependencies(ctx context.Context, pairs 
 	}
 
 	query += strings.Join(clauses, " OR ")
-	rows, err := r.db.Query(ctx, query, args...)
 
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("batch query dependencies: %w", err)
+		return nil, fmt.Errorf("query dependencies: %w", err)
 	}
 
 	defer rows.Close()
@@ -265,8 +226,9 @@ func (r *PostgresRepository) GetOrCreateDependencies(ctx context.Context, pairs 
 		var id int
 		var name, ecosystem string
 		if err := rows.Scan(&id, &name, &ecosystem); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan dependency: %w", err)
 		}
+
 		k := key{name, ecosystem}
 		existing[k] = true
 		result[name+"|"+ecosystem] = id
@@ -293,10 +255,10 @@ func (r *PostgresRepository) GetOrCreateDependencies(ctx context.Context, pairs 
 		}
 
 		insertQuery := fmt.Sprintf(InsertDependencyQuery, strings.Join(valueStrings, ", "))
-		rows, err := r.db.Query(ctx, insertQuery, valueArgs...)
 
+		rows, err := r.db.Query(ctx, insertQuery, valueArgs...)
 		if err != nil {
-			return nil, fmt.Errorf("batch insert dependencies: %w", err)
+			return nil, fmt.Errorf("insert dependencies: %w", err)
 		}
 
 		defer rows.Close()
@@ -305,8 +267,9 @@ func (r *PostgresRepository) GetOrCreateDependencies(ctx context.Context, pairs 
 			var id int
 			var name, ecosystem string
 			if err := rows.Scan(&id, &name, &ecosystem); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("scanning dependency: %w", err)
 			}
+
 			result[name+"|"+ecosystem] = id
 		}
 	}
@@ -332,7 +295,7 @@ func (r *PostgresRepository) GetOrCreateVersions(ctx context.Context, pairs []De
 		depID, ok := depIDs[depKey]
 
 		if !ok {
-			return nil, fmt.Errorf("missing dependency ID for %s", depKey)
+			return nil, fmt.Errorf("missing dependency ID: %s", depKey)
 		}
 
 		seen[key{depID, p.Version}] = struct{}{}
@@ -360,9 +323,8 @@ func (r *PostgresRepository) GetOrCreateVersions(ctx context.Context, pairs []De
 		query := GetExistingVersionsQuery + strings.Join(clauses, " OR ")
 
 		rows, err := r.db.Query(ctx, query, args...)
-
 		if err != nil {
-			return nil, fmt.Errorf("select existing versions: %w", err)
+			return nil, fmt.Errorf("query existing versions: %w", err)
 		}
 
 		defer rows.Close()
@@ -372,7 +334,7 @@ func (r *PostgresRepository) GetOrCreateVersions(ctx context.Context, pairs []De
 			var ver string
 
 			if err := rows.Scan(&id, &ver, &depID); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("scan version: %w", err)
 			}
 
 			k := key{depID, ver}
@@ -401,9 +363,7 @@ func (r *PostgresRepository) GetOrCreateVersions(ctx context.Context, pairs []De
 
 		insertQuery := fmt.Sprintf(InsertVersionQuery, strings.Join(valueStrings, ", "))
 
-		_, err := r.db.Exec(ctx, insertQuery, valueArgs...)
-
-		if err != nil {
+		if _, err := r.db.Exec(ctx, insertQuery, valueArgs...); err != nil {
 			return nil, fmt.Errorf("insert versions: %w", err)
 		}
 
@@ -421,7 +381,7 @@ func (r *PostgresRepository) GetOrCreateVersions(ctx context.Context, pairs []De
 		rows, err := r.db.Query(ctx, selectQuery, args...)
 
 		if err != nil {
-			return nil, fmt.Errorf("select all versions: %w", err)
+			return nil, fmt.Errorf("query all versions: %w", err)
 		}
 
 		defer rows.Close()
@@ -431,7 +391,7 @@ func (r *PostgresRepository) GetOrCreateVersions(ctx context.Context, pairs []De
 			var ver string
 
 			if err := rows.Scan(&id, &ver, &depID); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("scan inserted version: %w", err)
 			}
 
 			result[fmt.Sprintf("%d|%s", depID, ver)] = id
@@ -464,7 +424,9 @@ func insertRepositoryDependencyVersions(ctx context.Context, db *pgxpool.Pool, r
 
 	query := fmt.Sprintf(InsertRepositoryDependencyVersionsQuery, strings.Join(valueStrings, ", "))
 
-	_, err := db.Exec(ctx, query, valueArgs...)
+	if _, err := db.Exec(ctx, query, valueArgs...); err != nil {
+		return fmt.Errorf("insert repository versions: %w", err)
+	}
 
-	return err
+	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"sync"
 
 	"github.com/oss-health/background-worker/internal/utils"
 )
@@ -29,118 +28,77 @@ func NewDependencyService(
 	}
 }
 
-type resolveResult struct {
-	id            int64
-	url           string
-	failureReason string
-	dependency    Dependency
-}
-
 func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batchSize int, offset int, ecosystem string) error {
-	dependencies, err := s.repository.GetPendingDependencies(ctx, batchSize, offset, ecosystem)
-
+	// TODO: include a date stale check here as part of GetDependenciesPendingUrlResolution
+	// The upsert logic below supports handling existing entries
+	dependencies, err := s.repository.GetDependenciesPendingUrlResolution(ctx, batchSize, offset, ecosystem)
 	if err != nil {
-		return fmt.Errorf("failed to fetch pending dependencies: %w", err)
+		return fmt.Errorf("get pending dependencies: %w", err)
 	}
 
-	log.Printf("Resolving urls for %d dependencies", len(dependencies))
+	log.Printf("Resolving urls for %d dependencies (%s)", len(dependencies), ecosystem)
 
 	if len(dependencies) == 0 {
 		return nil
 	}
 
-	concurrency := 10
-	semaphore := make(chan struct{}, concurrency)
-	resultsCh := make(chan resolveResult, len(dependencies))
+	resolvedUrls, failures := s.resolveURLs(ctx, dependencies)
 
-	var wg sync.WaitGroup
+	if len(resolvedUrls) > 0 {
+		dependencyDependencyRepositoryIdMap, err := s.repository.UpsertGithubURLs(ctx, resolvedUrls)
 
-	for _, dependency := range dependencies {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case semaphore <- struct{}{}:
-		}
-
-		wg.Add(1)
-		// NOTE: In Go, the range loop reuses the same dependency variable each time.
-		// So if you spin up goroutines in a loop, they all reference the same variable
-		// Thus need to make a copy.
-		dependencyCopy := dependency
-
-		go func() {
-			defer wg.Done()
-			defer func() { <-semaphore }()
-
-			ecosystem := strings.ToLower(dependencyCopy.Ecosystem)
-			resolver, ok := s.resolvers[ecosystem]
-
-			if !ok || resolver == nil {
-				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: "unsupported ecosystem"}
-				return
-			}
-
-			if err := s.rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
-				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: fmt.Sprintf("rate limiter error: %v", err)}
-				return
-			}
-
-			url, err := resolver(ctx, dependencyCopy.Name)
-
-			if err != nil {
-				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: fmt.Sprintf("resolver error: %v", err)}
-				return
-			}
-			if url == "" {
-				resultsCh <- resolveResult{id: dependencyCopy.ID, failureReason: "empty URL"}
-				return
-			}
-
-			resultsCh <- resolveResult{id: dependencyCopy.ID, url: url, dependency: dependencyCopy}
-		}()
-	}
-
-	wg.Wait()
-	close(resultsCh)
-
-	resolvedDeps := make([]Dependency, 0)
-	resolvedURLs := make(map[int64]string)
-	urlSet := make(map[string]struct{})
-	failureReasons := make(map[int64]string)
-
-	for res := range resultsCh {
-		if res.failureReason != "" {
-			failureReasons[res.id] = res.failureReason
-		} else {
-			resolvedURLs[res.id] = res.url
-			urlSet[res.url] = struct{}{}
-			resolvedDeps = append(resolvedDeps, res.dependency)
-		}
-	}
-
-	if len(resolvedDeps) > 0 {
-		urls := make([]string, 0, len(urlSet))
-		for url := range urlSet {
-			urls = append(urls, url)
-		}
-
-		urlToID, err := s.repository.UpsertGithubURLs(ctx, urls)
 		if err != nil {
-			return fmt.Errorf("failed to upsert GitHub URLs: %w", err)
+			return fmt.Errorf("upsert GitHub URLs: %w", err)
 		}
 
-		if err := s.repository.BatchUpdateDependencies(ctx, resolvedDeps, urlToID, resolvedURLs); err != nil {
-			return fmt.Errorf("failed to update dependencies: %w", err)
+		if err := s.repository.BatchUpdateDependencies(ctx, dependencyDependencyRepositoryIdMap); err != nil {
+			return fmt.Errorf("update dependencies: %w", err)
 		}
-		log.Printf("Processed %d dependencies with GitHub URLs", len(resolvedURLs))
+
+		log.Printf("Processed %d dependencies with GitHub URLs", len(resolvedUrls))
 	}
 
-	if len(failureReasons) > 0 {
-		if err := s.repository.MarkDependenciesAsFailed(ctx, failureReasons); err != nil {
-			return fmt.Errorf("failed to mark failed dependencies: %w", err)
+	if len(failures) > 0 {
+		err := s.repository.MarkDependenciesAsFailed(ctx, failures)
+
+		if err != nil {
+			return fmt.Errorf("mark failed dependencies: %w", err)
 		}
-		log.Printf("Marked %d dependencies as failed", len(failureReasons))
+
+		log.Printf("Marked %d dependencies as failed", len(failures))
 	}
 
 	return nil
+}
+
+func (s *DependencyService) resolveURLs(ctx context.Context, dependencies []Dependency) (map[int64]string, map[int64]string) {
+	resolved := make(map[int64]string)
+	failures := make(map[int64]string)
+
+	for _, dep := range dependencies {
+		ecosystem := strings.ToLower(dep.Ecosystem)
+		resolver, ok := s.resolvers[ecosystem]
+
+		if !ok || resolver == nil {
+			failures[dep.ID] = "unsupported ecosystem"
+			continue
+		}
+
+		if err := s.rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
+			failures[dep.ID] = fmt.Sprintf("rate limit: %v", err)
+			continue
+		}
+
+		url, err := resolver(ctx, dep.Name)
+		switch {
+		case err != nil:
+			failures[dep.ID] = fmt.Sprintf("resolve: %v", err)
+		case url == "":
+			failures[dep.ID] = "empty URL"
+		default:
+			resolved[dep.ID] = url
+		}
+	}
+
+	return resolved, failures
 }

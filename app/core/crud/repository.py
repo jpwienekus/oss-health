@@ -1,5 +1,4 @@
 import random
-from datetime import datetime, timezone
 from typing import List, Sequence
 
 from sqlalchemy import select
@@ -46,27 +45,5 @@ async def add_repository_ids(
             for repository in tracked_repositories
         ]
     )
-
-    await db_session.commit()
-
-
-async def get_repository(db_session: AsyncSession, repository_id: int, user_id: int):
-    return (
-        await db_session.scalars(
-            select(RepositoryDBModel).where(
-                RepositoryDBModel.id == repository_id,
-                RepositoryDBModel.user_id == user_id,
-            )
-        )
-    ).first()
-
-
-async def update_scanned_date(
-    db_session: AsyncSession, repository_id: int, user_id: int
-):
-    repository = await get_repository(db_session, repository_id, user_id)
-
-    if repository:
-        repository.last_scanned_at = datetime.now(timezone.utc)
 
     await db_session.commit()

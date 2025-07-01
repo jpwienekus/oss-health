@@ -1,6 +1,8 @@
 package parsers
 
 import (
+	"log"
+
 	"github.com/oss-health/background-worker/internal/dependency"
 )
 
@@ -14,6 +16,7 @@ type RegisteredParser struct {
 var registeredParsers []RegisteredParser
 
 func RegisterParser(pattern, ecosystem string, fn ParserFunc) {
+	log.Printf("registering %s", ecosystem)
 	registeredParsers = append(registeredParsers, RegisteredParser{
 		Pattern: pattern,
 		Parser:  fn,

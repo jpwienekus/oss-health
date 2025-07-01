@@ -17,7 +17,7 @@ var TestDB *pgxpool.Pool
 var TestCtx = context.Background()
 
 func ClearTables(pool *pgxpool.Pool) {
-tables := []string{
+	tables := []string{
 		"repository_dependency_version",
 		"dependency_repository",
 		"versions",
@@ -37,11 +37,11 @@ tables := []string{
 
 func SeedDependencies(pool *pgxpool.Pool) {
 	_, err := pool.Exec(TestCtx, `
-		INSERT INTO dependencies (name, ecosystem, github_url_resolved, github_url_resolve_failed)
+		INSERT INTO dependencies (id, name, ecosystem, github_url_resolved, github_url_resolve_failed)
 		VALUES
-			('react', 'npm', false, false),
-			('express', 'npm', false, false),
-			('flask', 'pypi', false, false)
+			(1, 'react', 'npm', false, false),
+			(2, 'express', 'npm', false, false),
+			(3, 'flask', 'pypi', false, false)
 	`)
 
 	if err != nil {
@@ -89,12 +89,12 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetPendingDependencies(t *testing.T) {
+func TestGetDependenciesPendingUrlResolution(t *testing.T) {
 	ClearTables(TestDB)
 	SeedDependencies(TestDB)
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	dependencies, err := repository.GetPendingDependencies(TestCtx, 10, 0, "npm")
+	dependencies, err := repository.GetDependenciesPendingUrlResolution(TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 	assert.Len(t, dependencies, 2)
 
@@ -106,24 +106,24 @@ func TestGetPendingDependencies(t *testing.T) {
 func TestUpsertGithubURLs(t *testing.T) {
 	ClearTables(TestDB)
 
-	urls := []string{
-		"https://github.com/facebook/react",
-		"https://github.com/expressjs/express",
+	urlMap := map[int64]string{
+		1: "https://github.com/facebook/react",
+		2: "https://github.com/expressjs/express",
 	}
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	urlToID, err := repository.UpsertGithubURLs(TestCtx, urls)
+	urlToID, err := repository.UpsertGithubURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 	assert.Len(t, urlToID, 2)
 
-	for _, url := range urls {
-		id, ok := urlToID[url]
+	for repDepId, url := range urlMap {
+		id, ok := urlToID[repDepId]
 		assert.True(t, ok, fmt.Sprintf("url %s not found in result", url))
 		assert.Greater(t, id, int64(0))
 	}
 
 	// Insert duplicates again, expect same IDs returned (no duplicates)
-	urlToID2, err := repository.UpsertGithubURLs(TestCtx, urls)
+	urlToID2, err := repository.UpsertGithubURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 	assert.Equal(t, urlToID, urlToID2)
 }
@@ -132,27 +132,20 @@ func TestBatchUpdateDependencies(t *testing.T) {
 	ClearTables(TestDB)
 	SeedDependencies(TestDB)
 
-	urls := []string{"https://github.com/facebook/react"}
-	repository := dependency.NewPostgresRepository(TestDB)
-	urlToID, err := repository.UpsertGithubURLs(TestCtx, urls)
-	assert.NoError(t, err)
-
-	deps, err := repository.GetPendingDependencies(TestCtx, 10, 0, "npm")
-	assert.NoError(t, err)
-
-	resolvedURLs := map[int64]string{}
-
-	for _, d := range deps {
-		if d.Name == "react" {
-			resolvedURLs[d.ID] = "https://github.com/facebook/react"
-		}
+	urlMap := map[int64]string{
+		1: "https://github.com/facebook/react",
 	}
 
-	err = repository.BatchUpdateDependencies(TestCtx, deps, urlToID, resolvedURLs)
+	repository := dependency.NewPostgresRepository(TestDB)
+	urlToID, err := repository.UpsertGithubURLs(TestCtx, urlMap)
+	assert.NoError(t, err)
+
+	err = repository.BatchUpdateDependencies(TestCtx, urlToID)
 	assert.NoError(t, err)
 
 	var resolved bool
-	err = TestDB.QueryRow(TestCtx, `SELECT github_url_resolved FROM dependencies WHERE name='react'`).Scan(&resolved)
+	var id int
+	err = TestDB.QueryRow(TestCtx, `SELECT id, github_url_resolved FROM dependencies WHERE name='react'`).Scan(&id, &resolved)
 
 	assert.NoError(t, err)
 	assert.True(t, resolved)
@@ -163,7 +156,7 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 	SeedDependencies(TestDB)
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	deps, err := repository.GetPendingDependencies(TestCtx, 10, 0, "npm")
+	deps, err := repository.GetDependenciesPendingUrlResolution(TestCtx, 10, 0, "npm")
 	assert.NoError(t, err)
 
 	failureReasons := map[int64]string{}

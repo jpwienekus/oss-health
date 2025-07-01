@@ -45,10 +45,12 @@ func (workerPool *WorkerPool) worker(id int, ctx context.Context) {
 		pairs, err := workerPool.s.CloneAndParse(ctx, r)
 
 		if err != nil {
-			log.Printf("Could not parse dependencies for %s: %v", r.URL, err)
+			log.Printf("[worker %d] Could not parse dependencies for %s: %v", id, r.URL, err)
 		}
 
-		workerPool.s.ReplaceRepositoryDependencyVersions(ctx, r.ID, pairs)
+		if err := workerPool.s.ReplaceRepositoryDependencyVersions(ctx, r.ID, pairs); err != nil {
+			log.Printf("[worker %d] failed to replace dependency versions for repository ID %d: %v", id, r.ID, err)
+		}
 
 		workerPool.waitGroup.Done()
 
