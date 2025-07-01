@@ -3,6 +3,7 @@ package repository_test
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -112,6 +113,9 @@ func TestCloneAndParse_LogsError(t *testing.T) {
 }
 
 func TestRunDailyScan_CallsGetRepositories(t *testing.T) {
+	err := os.Setenv("MAX_PARALLEL", "4")
+	assert.NoError(t, err)
+
 	ctx := context.Background()
 	mockRepo := new(repository.MockRepository)
 	mockDependencyRepo := new(dependency.MockDependencyRepository)
@@ -130,9 +134,10 @@ func TestRunDailyScan_CallsGetRepositories(t *testing.T) {
 	mockRepo.On("MarkScanned", ctx, 1).Return(nil)
 	mockRepo.On("MarkScanned", ctx, 2).Return(nil)
 	mockExtractor.On("ExtractDependencies", mock.Anything).Return([]dependency.DependencyVersionPair{}, nil)
-  mockDependencyRepo.On("ReplaceRepositoryDependencyVersions", mock.Anything, mock.Anything, mock.Anything).Return([]dependency.DependencyVersionResult{}, nil)
+	mockDependencyRepo.On("ReplaceRepositoryDependencyVersions", mock.Anything, mock.Anything, mock.Anything).Return([]dependency.DependencyVersionResult{}, nil)
 
-	service.RunDailyScan(ctx, 5, 15)
+	err = service.RunDailyScan(ctx, 5, 15)
+	assert.NoError(t, err)
 
 	mockRepo.AssertExpectations(t)
 }

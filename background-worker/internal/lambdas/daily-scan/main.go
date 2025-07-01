@@ -3,16 +3,21 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/dependency"
 	"github.com/oss-health/background-worker/internal/repository"
 	"github.com/oss-health/background-worker/internal/repository/parsers"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// connectionString := "postgres://dev-user:password@localhost:5432/dev_db"
-	connectionString := "postgresql://postgres.gfpivacysduostopkekw:4-dzBCK8Ptyg.FTukiBB@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	connectionString := os.Getenv("DATABASE_URL")
 	ctx := context.Background()
 	db, err := db.Connect(ctx, connectionString)
 
@@ -29,5 +34,7 @@ func main() {
 	}
 	service := repository.NewRepositoryService(repo, dependencyRepository, cloner, extractor)
 	// service.RunDailyScan(ctx, 4, 3)
-	service.RunDailyScan(ctx, 0, 0)
+	if err := service.RunDailyScan(ctx, 0, 0); err != nil {
+		log.Printf("error running daily scan: %v", err)
+	}
 }

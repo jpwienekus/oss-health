@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
-	// "fmt"
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/oss-health/background-worker/internal/dependency"
 )
@@ -30,16 +31,20 @@ func NewRepositoryService(
 	}
 }
 
-func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int) {
+func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int) error {
 	repositories, err := s.repository.GetRepositoriesForDay(ctx, day, hour)
 
 	if err != nil {
-		log.Printf("Error fetching repositories: %v", err)
+		return fmt.Errorf("get repositories for day %d hour %d: %w", day, hour, err)
 	}
 
 	totalRepositories := len(repositories)
-	// TODO: make env var
-	maxParallel := 16
+	maxParallelStr := os.Getenv("MAX_PARALLEL")
+	maxParallel, err := strconv.Atoi(maxParallelStr)
+	if err != nil {
+		return fmt.Errorf("invalid MAX_PARALLEL value %q: %w", maxParallelStr, err)
+	}
+
 	totalParallel := min(maxParallel, totalRepositories)
 
 	workerPool := NewWorkerPool(totalParallel, 2.0, s)
@@ -51,6 +56,8 @@ func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int)
 
 	workerPool.Wait()
 	log.Printf("Scanning complete")
+
+	return nil
 }
 
 func (s *RepositoryService) CloneAndParse(ctx context.Context, repository Repository) ([]dependency.DependencyVersionPair, error) {
@@ -63,40 +70,34 @@ func (s *RepositoryService) ProcessRepository(ctx context.Context, repo Reposito
 	tempDir, err := s.cloner.CloneRepository(repo.URL)
 
 	if err != nil {
-		log.Printf("Failed to process %s: %v", repo.URL, err)
-		markErr := s.repository.MarkFailed(ctx, repo.ID, err.Error())
-
-		if markErr != nil {
-			log.Printf("Failed to mark error %s: %v", repo.URL, markErr)
+		if markErr := s.repository.MarkFailed(ctx, repo.ID, err.Error()); markErr != nil {
+			return nil, fmt.Errorf("clone %s: %v (and failed to mark as failed: %v)", repo.URL, err, markErr)
 		}
 
-		return nil, err
-	} else {
-		err = s.repository.MarkScanned(ctx, repo.ID)
+		return nil, fmt.Errorf("clone repository %s: %w", repo.URL, err)
+	}
 
-		if err != nil {
-			return nil, err
-		}
+	if err := s.repository.MarkScanned(ctx, repo.ID); err != nil {
+		return nil, fmt.Errorf("mark repository %d as scanned: %w", repo.ID, err)
 	}
 
 	dependencies, err := s.extractor.ExtractDependencies(tempDir)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("extract dependencies from %s: %w", tempDir, err)
 	}
 
 	if err := os.RemoveAll(tempDir); err != nil {
-		log.Printf("failed to remove %s: %v", tempDir, err)
-		return nil, err
+		return nil, fmt.Errorf("remove temp dir %s: %w", tempDir, err)
 	}
 
 	return dependencies, nil
 }
 
-func (s *RepositoryService) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryId int, pairs []dependency.DependencyVersionPair) {
+func (s *RepositoryService) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryId int, pairs []dependency.DependencyVersionPair) error {
 	_, err := s.dependencyRepository.ReplaceRepositoryDependencyVersions(ctx, repositoryId, pairs)
-
 	if err != nil {
-		log.Print(err)
+		return fmt.Errorf("replace dependency versions for repository %d: %w", repositoryId, err)
 	}
+
+	return nil
 }
