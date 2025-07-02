@@ -41,22 +41,23 @@ export const GET_USERNAME = gql`
   }
 `
 
-export const MANUAL_SCAN_DEBUG = gql`
-  query ManualScanDebug($repositoryId: Int!) {
-    manualScanDebug(repositoryId: $repositoryId) {
-      id
-      name
-      description
-      githubId
-      private
-      score
-      vulnerabilities
-      dependencies
-      lastScannedAt
-      updatedAt
-      stars
-      watchers
-      forks
+export const GET_DEPENDENCIES = gql`
+  query Dependencies($pagination: PaginationInput!, $filter: DependencyFilter!, $sort: DependencySortInput!) {
+    dependencies(pagination: $pagination, filter: $filter, sort: $sort) {
+      edges {
+        node {
+          id
+          name
+          ecosystem
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
     }
   }
 `

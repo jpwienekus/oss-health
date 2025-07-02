@@ -12,6 +12,7 @@ import { RepositoryOverview } from '@/components/repositories/RepositoryOverview
 
 export const Repositories = () => {
   const { jwt } = useAuth()
+  console.log(99, jwt)
   const [data, setData] = useState<GitHubRepository[]>([])
 
   const [searchTerm, setSearchTerm] = useState('')
