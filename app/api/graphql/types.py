@@ -1,6 +1,49 @@
 from datetime import datetime
+from typing import List, Optional
 
 import strawberry
+
+@strawberry.type
+class DependencyType:
+    id: int
+    name: str
+    ecosystem: str
+    github_url_resolved: bool
+    github_url_resolve_failed: bool
+    github_url_resolve_failed_reason: str
+
+    @classmethod
+    def from_model(
+        cls,
+        model,
+    ) -> "DependencyType":
+        return cls(
+            id=model.id,
+            name=model.name,
+            ecosystem=model.ecosystem,
+            github_url_resolved=model.github_url_resolved,
+            github_url_resolve_failed=model.github_url_resolve_failed,
+            github_url_resolve_failed_reason=model.github_url_resolve_failed_reason
+        )
+
+
+
+@strawberry.type
+class DependencyEdge:
+    node: DependencyType
+    cursor: int
+
+@strawberry.type
+class PageInfo:
+    has_next_page: bool
+    has_previous_page: bool
+    start_cursor: Optional[int]
+    end_cursor: Optional[int]
+
+@strawberry.type
+class DependencyConnection:
+    edges: List[DependencyEdge]
+    page_info: PageInfo
 
 
 @strawberry.type
@@ -37,10 +80,6 @@ class GitHubRepository:
         number_of_vulnerabilities: int | None = None,
         last_scanned_at: datetime | None = None,
     ) -> "GitHubRepository":
-        updated_at = datetime.fromisoformat(
-            model.get("updated_at").replace("Z", "+00:00")
-        )
-        print(updated_at)
         return cls(
             id=id,
             name=model.get("name"),

@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
 
 from api.auth.jwt_utils import decode_token
-from api.graphql.types import GitHubRepository
+from api.graphql.inputs import DependencyFilter, DependencySortInput, PaginationInput
+from api.graphql.types import DependencyConnection, GitHubRepository
+from core.crud.dependency import get_dependencies_paginated
 from core.crud.repository import (
     add_repository_ids,
     get_repositories,
@@ -91,6 +93,12 @@ class Query:
         db = info.context["db"]
 
         return await get_repositories_for_user(user_id, db)
+
+    @strawberry.field
+    async def dependencies(self, info: Info, filter: DependencyFilter, sort: DependencySortInput, pagination: PaginationInput) -> DependencyConnection | None:
+    # async def dependencies(self, info: Info, filter: DependencyFilter) -> DependencyConnection | None:
+        return await get_dependencies_paginated(info.context["db"], filter, sort, pagination)
+        # return None
 
 
 @strawberry.type
