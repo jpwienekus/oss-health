@@ -22,8 +22,8 @@ class DependencyType:
             name=model.name,
             ecosystem=model.ecosystem,
             github_url_resolved=model.github_url_resolved,
-            github_url_resolve_failed=model.github_url_resolve_failed,
-            github_url_resolve_failed_reason=model.github_url_resolve_failed_reason
+            github_url_resolve_failed=model.github_url_resolve_failed or False,
+            github_url_resolve_failed_reason=model.github_url_resolve_failed_reason or ""
         )
 
 
@@ -37,8 +37,8 @@ class DependencyEdge:
 class PageInfo:
     has_next_page: bool
     has_previous_page: bool
-    start_cursor: Optional[int]
-    end_cursor: Optional[int]
+    start_cursor: Optional[str]
+    end_cursor: Optional[str]
 
 @strawberry.type
 class DependencyConnection:

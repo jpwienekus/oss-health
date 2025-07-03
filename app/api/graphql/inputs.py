@@ -30,6 +30,7 @@ class DependencySortInput:
 @strawberry.input
 class PaginationInput:
     limit: int = 10
-    after: int | None = None
+    before: str | None = None
+    after: str | None = None
 
 

@@ -1,7 +1,8 @@
 from sqlalchemy import and_, asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from api.graphql.inputs import DependencyFilter, DependencySortInput, PaginationInput
+from api.graphql.inputs import DependencyFilter, DependencySortInput, PaginationInput, SortDirection
 from api.graphql.types import DependencyConnection, DependencyEdge, DependencyType, PageInfo
+from core.crud.utils import paginate_query
 from core.models import Dependency as DependencyDBModel
 
 async def get_dependencies_paginated(
@@ -22,45 +23,69 @@ async def get_dependencies_paginated(
     if filter.github_url_resolve_failed is not None:
         filters.append(DependencyDBModel.github_url_resolve_failed == filter.github_url_resolve_failed)
 
-    sort_column = getattr(DependencyDBModel, sort.field.value)
-    sort_order = asc(sort_column) if sort.direction == "ASC" else desc(sort_column)
-
-    if pagination.after is not None:
-        op = ">" if sort.direction == "ASC" else "<"
-        filters.append(getattr(DependencyDBModel, sort.field.value).op(op)(pagination.after))
-
     if filters:
         query = query.where(and_(*filters))
 
-    query = query.order_by(sort_order).limit(pagination.limit + 1) # one extra to check if next row exists
+    return await paginate_query(
+        session=db_session,
+        base_query=query,
+        model=None,
+        sort_column=getattr(DependencyDBModel, sort.field.value),
+        limit=pagination.limit,
+        before=pagination.before,
+        after=pagination.after,
+        descending=sort.direction == SortDirection.DESC
+    )
 
-    result = await db_session.execute(query)
-    dependencies = result.scalars().all()
+    # order_clause = asc(sort_column) if sort.direction == SortDirection.ASC else desc(sort_column)
+    # query.order_by(order_clause)
 
-    has_next_page = len(dependencies) > pagination.limit
-    items = dependencies[:pagination.limit]
+    # result = await db_session.execute(query)
+    # dependencies = result.scalars().all()
 
-    edges = [
-        DependencyEdge(
-            node=DependencyType.from_model(dependency),
-            cursor=getattr(dependency, sort.field.value)
-        ) for dependency in items
-    ]
+    # has_next_page = len(dependencies) > pagination.limit
+    # items = dependencies[:pagination.limit]
 
-    start_cursor = getattr(items[0], sort.field.value) if items else None
-    end_cursor = getattr(items[-1], sort.field.value) if items else None
+    # if is_reverse:
+    #     items = list(reversed(items))
 
-    has_previous_page = False
+    # edges = [
+    #     DependencyEdge(
+    #         node=DependencyType.from_model(dependency),
+    #         cursor=getattr(dependency, sort.field.value)
+    #     ) for dependency in items
+    # ]
 
-    if pagination.after is not None and start_cursor is not None:
-        has_previous_result = await db_session.execute(
-            (
-                select(DependencyDBModel).where(
-                    and_(*filters, sort_column < start_cursor if sort.direction == "ASC" else sort_column > start_cursor)
-                ).order_by(sort_order).limit(1)
-            )
-        )
-        has_previous_page = bool(has_previous_result.scalars())
+    # start_cursor = getattr(items[0], sort.field.value) if items else None
+    # end_cursor = getattr(items[-1], sort.field.value) if items else None
+
+    # has_previous_page = False
+    #
+    # if start_cursor is not None:
+    #     has_previous_query = select(DependencyDBModel).where(
+    #                 and_(
+    #                     *filters, 
+    #                     sort_column < (start_cursor if direction == SortDirection.ASC else sort_column > start_cursor)
+    #                 )
+    #             ).limit(1)
+    #     print("eeeeeeeeeeeeeeee")
+    #     print(has_previous_query)
+    #     print(start_cursor)
+    #     has_previous_result = await db_session.execute(has_previous_query)
+    #     has_previous_page = bool(has_previous_result.scalars().first())
+    #     print("33333333333")
+    #     print(has_previous_page)
+
+
+    # if pagination.after is not None and start_cursor is not None:
+    #     has_previous_result = await db_session.execute(
+    #         (
+    #             select(DependencyDBModel).where(
+    #                 and_(*filters, sort_column < start_cursor if sort.direction == "ASC" else sort_column > start_cursor)
+    #             ).order_by(sort_order).limit(1)
+    #         )
+    #     )
+    #     has_previous_page = bool(has_previous_result.scalars())
 
 
     return DependencyConnection(
