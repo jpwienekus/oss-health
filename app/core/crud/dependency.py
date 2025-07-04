@@ -1,5 +1,7 @@
+from operator import or_
 from sqlalchemy import and_, asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import operators
 from api.graphql.inputs import DependencyFilter, DependencySortInput, PaginationInput, SortDirection
 from api.graphql.types import DependencyConnection, DependencyEdge, DependencyType, PageInfo
 from core.crud.utils import paginate_query
@@ -14,28 +16,104 @@ async def get_dependencies_paginated(
     query = select(DependencyDBModel)
     filters = []
 
-    if filter.name:
-        filters.append(DependencyDBModel.name.ilike(f"%{filter.name}"))
+    # if filter.name:
+    #     filters.append(DependencyDBModel.name.ilike(f"%{filter.name}"))
+    #
+    # if filter.ecosystem:
+    #     filters.append(DependencyDBModel.ecosystem.ilike(f"%{filter.ecosystem}"))
+    #
+    # if filter.github_url_resolve_failed is not None:
+    #     filters.append(DependencyDBModel.github_url_resolve_failed == filter.github_url_resolve_failed)
+    #
+    # if filters:
+    #     query = query.where(and_(*filters))
+    # op_str = '>'
+    # after: int | None = 761
+    after: int | None = None
+    # before: int | None = None
+    before: int | None = 10
 
-    if filter.ecosystem:
-        filters.append(DependencyDBModel.ecosystem.ilike(f"%{filter.ecosystem}"))
 
-    if filter.github_url_resolve_failed is not None:
-        filters.append(DependencyDBModel.github_url_resolve_failed == filter.github_url_resolve_failed)
+    id = 761
+    op = operators.gt
+    sortOrder = asc
 
-    if filters:
-        query = query.where(and_(*filters))
+    if after is not None:
+        id = after
+        op = operators.gt
+        sortOrder = asc
+    elif before is not None:
+        id = before
+        op = operators.lt
+        sortOrder = desc
 
-    return await paginate_query(
-        session=db_session,
-        base_query=query,
-        model=None,
-        sort_column=getattr(DependencyDBModel, sort.field.value),
-        limit=pagination.limit,
-        before=pagination.before,
-        after=pagination.after,
-        descending=sort.direction == SortDirection.DESC
+    ecosystem = 'npm'
+    # op = getattr(operators, op_str)
+    limit = 10
+
+    query = (
+        select(DependencyDBModel)
+        .where(
+            or_(
+                op(DependencyDBModel.ecosystem, ecosystem),
+                and_(
+                    DependencyDBModel.ecosystem == ecosystem,
+                    op(DependencyDBModel.id, id)
+                )
+            )
+        )
+        .order_by(sortOrder(DependencyDBModel.ecosystem), sortOrder(DependencyDBModel.id))
+        .limit(limit + 2)
     )
+
+    result = (await db_session.execute(query)).scalars().all()
+    print('=======')
+
+    items = result[:limit]
+
+
+    has_next_page = False
+    has_previous_page = False
+
+    if before is not None: # Handling previous page means there is a next
+        has_next_page = True
+    elif after is not None and len(result) > limit:
+        has_next_page = True
+
+    if after is not None: # Handling next page means there is a previous
+        has_previous_page = True
+    elif before is not None and len(result) > limit:
+        has_previous_page = True
+
+    # first page 
+    if before is None and after is None:
+        has_next_page = len(result > limit)
+        has_previous_page = False
+
+
+    if before:
+        items = list(reversed(items))
+
+
+    for item in items:
+        print(item.id, item.name)
+
+    print("#########")
+    print(has_next_page, has_previous_page)
+        
+
+
+    return {}
+    # return await paginate_query(
+    #     session=db_session,
+    #     base_query=query,
+    #     model=None,
+    #     sort_column=getattr(DependencyDBModel, sort.field.value),
+    #     limit=pagination.limit,
+    #     before=pagination.before,
+    #     after=pagination.after,
+    #     descending=sort.direction == SortDirection.DESC
+    # )
 
     # order_clause = asc(sort_column) if sort.direction == SortDirection.ASC else desc(sort_column)
     # query.order_by(order_clause)
