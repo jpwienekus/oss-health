@@ -5,9 +5,9 @@ import { Package } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
-import { getClient } from '@/graphql/client'
-import { SAVE_SELECTED_REPOSITORIES } from '@/graphql/mutations'
-import { GET_REPOSITORIES } from '@/graphql/queries'
+// import { getClient } from '@/graphql/client'
+// import { SAVE_SELECTED_REPOSITORIES } from '@/graphql/mutations'
+// import { GET_REPOSITORIES } from '@/graphql/queries'
 import { RepositoryOverview } from '@/components/repositories/RepositoryOverview'
 
 export const Repositories = () => {
@@ -51,11 +51,11 @@ export const Repositories = () => {
       }
 
       setIsLoading(true)
-      const client = getClient(jwt)
-      const response = await client.request<{
-        repositories: GitHubRepository[]
-      }>(GET_REPOSITORIES)
-      setData(response.repositories)
+      // const client = getClient(jwt)
+      // const response = await client.request<{
+      //   repositories: GitHubRepository[]
+      // }>(GET_REPOSITORIES)
+      // setData(response.repositories)
       setIsLoading(false)
     }
     fetchRepositories()
@@ -66,13 +66,13 @@ export const Repositories = () => {
       return
     }
 
-    const client = getClient(jwt)
-    const response = await client.request<{
-      saveSelectedRepositories: GitHubRepository[]
-    }>(SAVE_SELECTED_REPOSITORIES, {
-      selectedGithubRepositoryIds: selectedRepositoryIds,
-    })
-    setData(response.saveSelectedRepositories)
+    // const client = getClient(jwt)
+    // const response = await client.request<{
+    //   saveSelectedRepositories: GitHubRepository[]
+    // }>(SAVE_SELECTED_REPOSITORIES, {
+    //   selectedGithubRepositoryIds: selectedRepositoryIds,
+    // })
+    // setData(response.saveSelectedRepositories)
   }
 
   return (

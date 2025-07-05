@@ -1,0 +1,17 @@
+query GetRepositories {
+  repositories {
+    id
+    name
+    description
+    githubId
+    private
+    score
+    vulnerabilities
+    dependencies
+    lastScannedAt
+    updatedAt
+    stars
+    watchers
+    forks
+  }
+}

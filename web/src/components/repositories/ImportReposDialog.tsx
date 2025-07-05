@@ -10,9 +10,9 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { useState } from 'react'
 import type { GitHubRepository } from '@/types'
-import { getClient } from '@/graphql/client'
+// import { getClient } from '@/graphql/client'
 import { Calendar, Eye, GitFork, Import, Search, Star } from 'lucide-react'
-import { GET_REPOSITORIES_FROM_GITHUB } from '@/graphql/queries'
+// import { GET_REPOSITORIES_FROM_GITHUB } from '@/graphql/queries'
 import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { Checkbox } from '../ui/checkbox'
@@ -55,15 +55,15 @@ export const ImportReposDialog = ({
     }
 
     setIsImporting(true)
-    const client = getClient(jwt)
-    const response = await client.request<{
-      githubRepositories: GitHubRepository[]
-    }>(GET_REPOSITORIES_FROM_GITHUB)
-    setGitHubRepositories(
-      response.githubRepositories.filter(
-        (e) => !alreadyTracked.includes(e.githubId),
-      ),
-    )
+    // const client = getClient(jwt)
+    // const response = await client.request<{
+    //   githubRepositories: GitHubRepository[]
+    // }>(GET_REPOSITORIES_FROM_GITHUB)
+    // setGitHubRepositories(
+    //   response.githubRepositories.filter(
+    //     (e) => !alreadyTracked.includes(e.githubId),
+    //   ),
+    // )
     setSelectedRepositories([])
     setIsImporting(false)
     setIsOpen(true)

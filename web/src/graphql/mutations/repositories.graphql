@@ -1,0 +1,14 @@
+mutation SaveSelectedRepositories($selectedGithubRepositoryIds: [Int!]!) {
+  saveSelectedRepositories(
+    selectedGithubRepositoryIds: $selectedGithubRepositoryIds
+  ) {
+    name
+    description
+    githubId
+    updatedAt
+    private
+    stars
+    watchers
+    forks
+  }
+}

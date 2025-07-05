@@ -1,0 +1,13 @@
+query GetDependencies($pagination: PaginationInput!, $filter: DependencyFilter!, $sort: DependencySortInput!) {
+  dependencies(pagination: $pagination, filter: $filter, sort: $sort) {
+    dependencies {
+      id
+      name
+      status
+      ecosystem
+      repositoryUrlCheckedAt
+      repositoryUrlResolveFailedReason
+    }
+    total
+  }
+}

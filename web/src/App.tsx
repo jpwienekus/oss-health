@@ -2,7 +2,7 @@ import './App.css'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { Repositories } from './pages/Repositories'
-import { Dependencies } from './pages/Dependencies'
+import { Dependencies } from './pages/dependencies/page'
 
 function App() {
   return (

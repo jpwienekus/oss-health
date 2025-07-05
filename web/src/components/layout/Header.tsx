@@ -1,25 +1,31 @@
 import { useAuth } from '@/auth/AuthContext'
 import { Button } from '@/components/ui/button'
-import { getClient } from '@/graphql/client'
-import { GET_USERNAME } from '@/graphql/queries'
+import { useGetUserQuery } from '@/generated/graphql'
+// import { getClient } from '@/graphql/client'
+// import { GET_USERNAME } from '@/graphql/queries'
 import { Shield, Github } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export const Header = () => {
   const { jwt, loginWithGitHub } = useAuth()
-  const [username, setUsername] = useState<string>('')
+  // const [username, setUsername] = useState<string>('')
 
-  useEffect(() => {
-    const fetchUsername = async () => {
-      if (!jwt) {
-        return
-      }
-      const client = getClient(jwt)
-      const response = await client.request<{ username: string }>(GET_USERNAME)
-      setUsername(response.username)
-    }
-    fetchUsername()
-  }, [jwt])
+  const { data, loading, error } = useGetUserQuery({
+    skip: !jwt,
+    notifyOnNetworkStatusChange: true
+  })
+
+  // useEffect(() => {
+  //   const fetchUsername = async () => {
+  //     if (!jwt) {
+  //       return
+  //     }
+  //     const client = getClient(jwt)
+  //     const response = await client.request<{ username: string }>(GET_USERNAME)
+  //     setUsername(response.username)
+  //   }
+  //   fetchUsername()
+  // }, [jwt])
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -39,7 +45,7 @@ export const Header = () => {
             {jwt ? (
               <span>
                 <Github className="w-4 h-4 inline mr-2" />
-                {username}
+                {data?.username ?? ''}
               </span>
             ) : (
               <Button onClick={loginWithGitHub} className="px-4 py-2">
