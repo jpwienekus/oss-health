@@ -7,7 +7,7 @@ from strawberry.types import Info
 
 from api.auth.jwt_utils import decode_token
 from api.graphql.inputs import DependencyFilter, DependencySortInput, PaginationInput
-from api.graphql.types import DependencyConnection, DependencyEdge, DependencyType, GitHubRepository, PageInfo
+from api.graphql.types import DependencyPaginatedResponse, DependencyType, GitHubRepository
 from core.crud.dependency import get_dependencies_paginated
 from core.crud.repository import (
     add_repository_ids,
@@ -95,22 +95,16 @@ class Query:
         return await get_repositories_for_user(user_id, db)
 
     @strawberry.field
-    async def dependencies(self, info: Info, filter: DependencyFilter, sort: DependencySortInput, pagination: PaginationInput) -> DependencyConnection | None:
-    # async def dependencies(self, info: Info, filter: DependencyFilter) -> DependencyConnection | None:
-        result = await get_dependencies_paginated(info.context["db"], filter, sort, pagination)
-
-        edges = [
-            DependencyEdge(
-                node=DependencyType.from_model(dependency),
-                cursor=getattr(dependency, sort.field.value)
-            ) for dependency in result["edges"]
+    async def dependencies(self, info: Info, filter: DependencyFilter, sort: DependencySortInput, pagination: PaginationInput) -> DependencyPaginatedResponse:
+        total, dependency_models = await get_dependencies_paginated(info.context["db"], filter, sort, pagination)
+        dependencies = [
+            DependencyType.from_model(dependency) for dependency in dependency_models
         ]
-        return DependencyConnection(
-            edges=edges,
-            page_info=PageInfo(**result["page_info"])
-        )
-        # return None
 
+        return DependencyPaginatedResponse(
+            dependencies=dependencies,
+            total=total
+        )
 
 @strawberry.type
 class Mutation:

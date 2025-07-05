@@ -8,9 +8,9 @@ class DependencyType:
     id: int
     name: str
     ecosystem: str
-    github_url_resolved: bool
-    github_url_resolve_failed: bool
-    github_url_resolve_failed_reason: str
+    status: str
+    repository_url_checked_at: Optional[datetime]
+    repository_url_resolve_failed_reason: Optional[str]
 
     @classmethod
     def from_model(
@@ -21,29 +21,34 @@ class DependencyType:
             id=model.id,
             name=model.name,
             ecosystem=model.ecosystem,
-            github_url_resolved=model.github_url_resolved,
-            github_url_resolve_failed=model.github_url_resolve_failed or False,
-            github_url_resolve_failed_reason=model.github_url_resolve_failed_reason or ""
+            status=model.status,
+            repository_url_checked_at=model.repository_url_checked_at,
+            repository_url_resolve_failed_reason=model.repository_url_resolve_failed_reason
         )
 
-
-
 @strawberry.type
-class DependencyEdge:
-    node: DependencyType
-    cursor: int
+class DependencyPaginatedResponse:
+    dependencies: List[DependencyType]
+    total: int = 0
 
-@strawberry.type
-class PageInfo:
-    has_next_page: bool
-    has_previous_page: bool
-    start_cursor: Optional[str]
-    end_cursor: Optional[str]
 
-@strawberry.type
-class DependencyConnection:
-    edges: List[DependencyEdge]
-    page_info: PageInfo
+
+# @strawberry.type
+# class DependencyEdge:
+#     node: DependencyType
+#     cursor: int
+
+# @strawberry.type
+# class PageInfo:
+#     has_next_page: bool
+#     has_previous_page: bool
+#     start_cursor: Optional[str]
+#     end_cursor: Optional[str]
+
+# @strawberry.type
+# class DependencyConnection:
+#     edges: List[DependencyEdge]
+#     page_info: PageInfo
 
 
 @strawberry.type
