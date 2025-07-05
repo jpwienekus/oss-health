@@ -19,15 +19,17 @@ export type Scalars = {
 };
 
 export type DependencyFilter = {
-  ecosystem?: Scalars['String']['input'];
-  githubUrlResolveFailed?: InputMaybe<Scalars['Boolean']['input']>;
   name?: Scalars['String']['input'];
+  statuses: Array<Scalars['String']['input']>;
 };
 
 export type DependencyPaginatedResponse = {
   __typename?: 'DependencyPaginatedResponse';
+  completed: Scalars['Int']['output'];
   dependencies: Array<DependencyType>;
-  total: Scalars['Int']['output'];
+  failed: Scalars['Int']['output'];
+  pending: Scalars['Int']['output'];
+  totalPages: Scalars['Int']['output'];
 };
 
 export enum DependencySortField {
@@ -119,7 +121,7 @@ export type GetDependenciesQueryVariables = Exact<{
 }>;
 
 
-export type GetDependenciesQuery = { __typename?: 'Query', dependencies: { __typename?: 'DependencyPaginatedResponse', total: number, dependencies: Array<{ __typename?: 'DependencyType', id: number, name: string, status: string, ecosystem: string, repositoryUrlCheckedAt?: any | null, repositoryUrlResolveFailedReason?: string | null }> } };
+export type GetDependenciesQuery = { __typename?: 'Query', dependencies: { __typename?: 'DependencyPaginatedResponse', totalPages: number, completed: number, pending: number, failed: number, dependencies: Array<{ __typename?: 'DependencyType', id: number, name: string, status: string, ecosystem: string, repositoryUrlCheckedAt?: any | null, repositoryUrlResolveFailedReason?: string | null }> } };
 
 export type GetRepositoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -185,7 +187,10 @@ export const GetDependenciesDocument = gql`
       repositoryUrlCheckedAt
       repositoryUrlResolveFailedReason
     }
-    total
+    totalPages
+    completed
+    pending
+    failed
   }
 }
     `;

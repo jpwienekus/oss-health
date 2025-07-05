@@ -1,26 +1,27 @@
 import { Input } from "@/components/ui/input"
 import type { Table } from "@tanstack/react-table"
 import { useState } from "react"
-// import { X } from "lucide-react"
-
-// import { Button } from "@/registry/new-york-v4/ui/button"
-// import { Input } from "@/registry/new-york-v4/ui/input"
-// import { DataTableViewOptions } from "@/app/(app)/examples/tasks/components/data-table-view-options"
-
-// import { priorities, statuses } from "../data/data"
-// import { DataTableFacetedFilter } from "./data-table-faceted-filter"
+import { DataTableFacetedFilter } from "./data-table-faceted-filter"
+import { statuses } from "./columns"
+import { Button } from "@/components/ui/button"
+import { X } from "lucide-react"
+import { DataTableViewOptions } from "./data-table-view-options"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>,
-  handleSearch: (searchValue: string) => void
+  handleSearch: (searchValue: string) => void,
+  handleStatusFilter: (selectedValues: string[]) => void,
+  statusTotals?: { [key: string]: string }
 }
 
 export function DataTableToolbar<TData>({
   table,
-  handleSearch
+  handleSearch,
+  handleStatusFilter,
+  statusTotals
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0
   const [search, setSearch] = useState('')
+  const isFiltered = search.length > 0 || table.getState().columnFilters.length > 0
   const handleLocalSearch = (value: string) => {
     setSearch(value)
     handleSearch(value)
@@ -37,34 +38,32 @@ export function DataTableToolbar<TData>({
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
-        {/*{table.getColumn("status") && (
+        {table.getColumn("status") && (
           <DataTableFacetedFilter
             column={table.getColumn("status")}
             title="Status"
             options={statuses}
+            handleStatusFilter={handleStatusFilter}
+            facetTotals={statusTotals}
           />
-        )} */}
-        {/* {table.getColumn("priority") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("priority")}
-            title="Priority"
-            options={priorities}
-          />
-        )} */}
-        {/* {isFiltered && (
+        )}
+        {isFiltered && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => table.resetColumnFilters()}
+            onClick={() => {
+              handleLocalSearch('')
+              handleStatusFilter([])
+              table.resetColumnFilters()
+            }}
           >
             Reset
             <X />
           </Button>
-        )} */}
+        )}
       </div>
       <div className="flex items-center gap-2">
-        {/*<DataTableViewOptions table={table} />
-        <Button size="sm">Add Task</Button> */}
+        <DataTableViewOptions table={table} />
       </div>
     </div>
   )

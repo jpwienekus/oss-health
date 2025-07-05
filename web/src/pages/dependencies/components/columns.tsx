@@ -3,42 +3,54 @@ import type { DependencyType } from "@/generated/graphql";
 import { formatDate } from '@/utils'
 import { CheckCircle, LoaderCircle, XCircle } from "lucide-react";
 
-const statuses = {
-  pending: {
+export const statuses = [
+  {
+    value: "pending",
     label: "Pending",
     icon: LoaderCircle,
-    class: "text-yellow-600 size-4"
+    className: "text-yellow-600"
   },
-  completed: {
+  {
+    value: "completed",
     label: "Completed",
     icon: CheckCircle,
-    class: "text-green-600 size-4"
+    className: "text-green-600"
   },
-  failed: {
+  {
+    value: "failed",
     label: "Failed",
     icon: XCircle,
-    class: "text-red-600 size-4"
+    className: "text-red-600"
   },
-} as const
+]
 
 export const columns: ColumnDef<DependencyType>[] = [
   {
     accessorKey: "name",
     header: "Name",
+    enableHiding: false,
   },
   {
     accessorKey: "ecosystem",
-    header: "Registry",
+    header: "Ecosystem",
+    enableHiding: false,
   },
   {
     accessorKey: "status",
     header: "Status",
+    enableHiding: false,
     cell: ({ row }) => {
-      const status = statuses[row.getValue('status') as keyof typeof statuses]
+      const status = statuses.find(
+        (status) => status.value === row.getValue("status")
+      )
+
+      if (!status) {
+        return ''
+      }
 
       return <div className="flex w-[100px] items-center gap-2">
         {status.icon && (
-          <status.icon className={status.class} />
+          <status.icon className={`size-4 ${status.className}`} />
         )}
         <span>{status.label}</span>
       </div>
@@ -47,6 +59,7 @@ export const columns: ColumnDef<DependencyType>[] = [
   {
     accessorKey: 'repositoryUrlCheckedAt',
     header: 'Checked At',
+    enableHiding: false,
     cell: ({ row }) => {
       return formatDate(row.getValue('repositoryUrlCheckedAt'))
     }
@@ -54,5 +67,10 @@ export const columns: ColumnDef<DependencyType>[] = [
   {
     accessorKey: "repositoryUrlResolveFailedReason",
     header: "Failed Reason",
+    cell: ({ row }) => {
+      const value = row.getValue('repositoryUrlResolveFailedReason') 
+
+      return value ? value : '-'
+    },
   },
 ]

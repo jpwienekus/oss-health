@@ -8,6 +8,9 @@ query GetDependencies($pagination: PaginationInput!, $filter: DependencyFilter!,
       repositoryUrlCheckedAt
       repositoryUrlResolveFailedReason
     }
-    total
+    totalPages
+    completed
+    pending
+    failed
   }
 }

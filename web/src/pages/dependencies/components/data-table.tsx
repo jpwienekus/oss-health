@@ -7,13 +7,17 @@ import { DataTableToolbar } from "./data-table-toolbar"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  handleSearch: (searchValue: string) => void
+  handleSearch: (searchValue: string) => void,
+  handleStatusFilter: (selectedValues: string[]) => void,
+  statusTotals?: { [key: string]: string }
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  handleSearch
+  handleSearch,
+  handleStatusFilter,
+  statusTotals
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -23,7 +27,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="flex flex-col gap-4">
-      <DataTableToolbar table={table} handleSearch={handleSearch}/>
+      <DataTableToolbar table={table} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={statusTotals}/>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -49,7 +53,7 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  daa-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
