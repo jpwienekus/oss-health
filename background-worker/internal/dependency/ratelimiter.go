@@ -3,8 +3,6 @@ package dependency
 import (
 	"golang.org/x/time/rate"
 
-	"time"
-
 	"github.com/oss-health/background-worker/internal/utils"
 )
 
@@ -21,6 +19,5 @@ func InitRateLimiters(rateLimiter *utils.DefaultRateLimiter) {
 }
 
 func registerRateLimter(rateLimiter *utils.DefaultRateLimiter, registry string, rps int, burst int) {
-	periodPerRequest := time.Second / time.Duration(rps)
-	rateLimiter.RegisterLimiter(registry, rate.Every(periodPerRequest), burst)
+	rateLimiter.RegisterLimiter(registry, rate.Limit(rps), burst)
 }

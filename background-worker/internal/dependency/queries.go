@@ -8,9 +8,9 @@ const (
 	GetDependenciesPendingUrlResolutionQuery = `
 		SELECT id, name, ecosystem
 		FROM dependencies
-		WHERE github_url_resolved = false
+		WHERE status = 'pending'
 		AND LOWER(ecosystem) = LOWER($1)
-		AND github_url_resolve_failed = false
+		ORDER BY name ASC
 		OFFSET $2 LIMIT $3
 	`
 	GetExistingDependenciesQuery = `
@@ -41,15 +41,17 @@ const (
 	`
 	UpdateDependencyScannedQuery = `
     UPDATE dependencies
-    SET dependency_repository_id = $1,
-    	github_url_resolved = true,
-      github_url_checked_at = NOW()
+    SET 
+			dependency_repository_id = $1,
+    	status = 'completed',
+      repository_url_checked_at = NOW()
     WHERE id = $2
 	`
 	UpdateDependencyScannedFailedQuery = `
 		UPDATE dependencies
-		SET github_url_resolve_failed = true,
-		    github_url_resolve_failed_reason = updates.reason
+		SET 
+			status = 'failed',
+		  repository_url_resolve_failed_reason = updates.reason
 		FROM (
 			SELECT unnest($1::BIGINT[]) AS id, unnest($2::TEXT[]) AS reason
 		) AS updates

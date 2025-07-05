@@ -32,6 +32,7 @@ func main() {
 	defer db.Close()
 	repository := dependency.NewPostgresRepository(db)
 	rateLimiter := utils.NewDefaultRateLimiter()
+	dependency.InitRateLimiters(rateLimiter)
 	service := dependency.NewDependencyService(repository, rateLimiter, resolvers.Resolvers)
 
 	buffer := 10

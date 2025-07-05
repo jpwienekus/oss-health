@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/oss-health/background-worker/internal/utils"
 )
@@ -72,33 +73,54 @@ func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batc
 }
 
 func (s *DependencyService) resolveURLs(ctx context.Context, dependencies []Dependency) (map[int64]string, map[int64]string) {
-	resolved := make(map[int64]string)
-	failures := make(map[int64]string)
+	var (
+		resolved = make(map[int64]string)
+		failures = make(map[int64]string)
+		mu       sync.Mutex
+		wg       sync.WaitGroup
+	)
 
 	for _, dep := range dependencies {
-		ecosystem := strings.ToLower(dep.Ecosystem)
-		resolver, ok := s.resolvers[ecosystem]
+		depCopy := dep
+		wg.Add(1)
 
-		if !ok || resolver == nil {
-			failures[dep.ID] = "unsupported ecosystem"
-			continue
-		}
+		go func() {
+			defer wg.Done()
 
-		if err := s.rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
-			failures[dep.ID] = fmt.Sprintf("rate limit: %v", err)
-			continue
-		}
+			ecosystem := strings.ToLower(depCopy.Ecosystem)
+			resolver, ok := s.resolvers[ecosystem]
 
-		url, err := resolver(ctx, dep.Name)
-		switch {
-		case err != nil:
-			failures[dep.ID] = fmt.Sprintf("resolve: %v", err)
-		case url == "":
-			failures[dep.ID] = "empty URL"
-		default:
-			resolved[dep.ID] = url
-		}
+			if !ok || resolver == nil {
+				mu.Lock()
+				failures[depCopy.ID] = "unsupported ecosystem"
+				mu.Unlock()
+				return
+			}
+
+			if err := s.rateLimiter.WaitUntilAllowed(ctx, ecosystem); err != nil {
+				mu.Lock()
+				failures[depCopy.ID] = fmt.Sprintf("rate limit: %v", err)
+				mu.Unlock()
+				return
+			}
+
+			url, err := resolver(ctx, depCopy.Name)
+			log.Print(url)
+
+			mu.Lock()
+			defer mu.Unlock()
+			switch {
+			case err != nil:
+				failures[depCopy.ID] = fmt.Sprintf("resolve: %v", err)
+			case url == "":
+				failures[depCopy.ID] = "empty URL"
+			default:
+				resolved[depCopy.ID] = url
+			}
+		}()
 	}
+
+	wg.Wait()
 
 	return resolved, failures
 }
