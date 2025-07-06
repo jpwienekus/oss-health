@@ -32,12 +32,13 @@ export type DependencyPaginatedResponse = {
   totalPages: Scalars['Int']['output'];
 };
 
-export enum DependencySortField {
-  CheckedAt = 'CHECKED_AT',
-  Ecosystem = 'ECOSYSTEM',
-  Id = 'ID',
-  Name = 'NAME'
-}
+export type DependencySortField =
+  | 'CHECKED_AT'
+  | 'ECOSYSTEM'
+  | 'FAILED_REASON'
+  | 'ID'
+  | 'NAME'
+  | 'STATUS';
 
 export type DependencySortInput = {
   direction?: SortDirection;
@@ -102,10 +103,9 @@ export type QueryDependenciesArgs = {
   sort: DependencySortInput;
 };
 
-export enum SortDirection {
-  Asc = 'ASC',
-  Desc = 'DESC'
-}
+export type SortDirection =
+  | 'ASC'
+  | 'DESC';
 
 export type SaveSelectedRepositoriesMutationVariables = Exact<{
   selectedGithubRepositoryIds: Array<Scalars['Int']['input']> | Scalars['Int']['input'];

@@ -11,7 +11,7 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>,
   handleSearch: (searchValue: string) => void,
   handleStatusFilter: (selectedValues: string[]) => void,
-  statusTotals?: { [key: string]: string }
+  statusTotals?: { [key: string]: number | undefined }
 }
 
 export function DataTableToolbar<TData>({

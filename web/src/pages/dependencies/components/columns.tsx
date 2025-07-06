@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import type { DependencyType } from "@/generated/graphql";
 import { formatDate } from '@/utils'
 import { CheckCircle, LoaderCircle, XCircle } from "lucide-react";
+import { DataTableColumnHeader } from "./data-table-column-header";
 
 export const statuses = [
   {
@@ -58,13 +59,14 @@ export const columns: ColumnDef<DependencyType>[] = [
   },
   {
     accessorKey: 'repositoryUrlCheckedAt',
-    header: 'Checked At',
+    header: "Scanned At",
     enableHiding: false,
     cell: ({ row }) => {
       return formatDate(row.getValue('repositoryUrlCheckedAt'))
     }
   },
   {
+    id: "repositoryUrlResolveFailedReason",
     accessorKey: "repositoryUrlResolveFailedReason",
     header: "Failed Reason",
     cell: ({ row }) => {

@@ -19,7 +19,7 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     className: string
   }[],
   handleStatusFilter: (selectedValues: string[]) => void,
-  facetTotals?: { [key: string]: string }
+  facetTotals?: { [key: string]: number | undefined }
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -111,7 +111,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                       <option.icon className={`text-muted-foreground size-4 ${option.className}`} />
                     )}
                     <span>{option.label}</span>
-                    {facetTotals?.[option.value] && (
+                    {facetTotals?.[option.value] != null && (
                       <span className="text-muted-foreground ml-auto flex size-4 items-center justify-center font-mono text-xs">
                         {facetTotals[option.value]}
                       </span>

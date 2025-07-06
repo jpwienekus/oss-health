@@ -2,6 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
 import { DataTableToolbar } from "./data-table-toolbar"
+import { DataTableColumnHeader } from "./data-table-column-header"
 
 
 interface DataTableProps<TData, TValue> {
@@ -9,7 +10,8 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   handleSearch: (searchValue: string) => void,
   handleStatusFilter: (selectedValues: string[]) => void,
-  statusTotals?: { [key: string]: string }
+  handleSort: (sortColumn: string, sortDirection: string) => void
+  statusTotals?: { [key: string]: number | undefined }
 }
 
 export function DataTable<TData, TValue>({
@@ -17,6 +19,7 @@ export function DataTable<TData, TValue>({
   data,
   handleSearch,
   handleStatusFilter,
+  handleSort,
   statusTotals
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -27,7 +30,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="flex flex-col gap-4">
-      <DataTableToolbar table={table} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={statusTotals}/>
+      <DataTableToolbar table={table} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={statusTotals} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -38,9 +41,8 @@ export function DataTable<TData, TValue>({
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+                        : (
+                          <DataTableColumnHeader column={header.column} title={header.column.columnDef.header as string} handleSort={handleSort}/>
                         )}
                     </TableHead>
                   )
