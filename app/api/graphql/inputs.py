@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 import strawberry
 
 
@@ -7,7 +8,9 @@ class DependencySortField(Enum):
     ID = "id"
     NAME = "name"
     ECOSYSTEM = "ecosystem"
-    CHECKED_AT = "github_url_checked_at"
+    CHECKED_AT = "repository_url_checked_at"
+    STATUS = "status"
+    FAILED_REASON = "repository_url_resolve_failed_reason"
 
 @strawberry.enum
 class SortDirection(Enum):
@@ -17,8 +20,8 @@ class SortDirection(Enum):
 @strawberry.input
 class DependencyFilter:
     name: str = ""
-    ecosystem: str = ""
-    github_url_resolve_failed: bool | None = None
+    statuses: List[str]
+
 
 
 @strawberry.input

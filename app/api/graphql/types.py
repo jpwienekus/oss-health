@@ -29,7 +29,10 @@ class DependencyType:
 @strawberry.type
 class DependencyPaginatedResponse:
     dependencies: List[DependencyType]
-    total: int = 0
+    total_pages: int = 0
+    completed: int = 0
+    pending: int = 0
+    failed: int = 0
 
 
 

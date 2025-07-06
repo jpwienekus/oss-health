@@ -10,26 +10,48 @@ async def get_dependencies_paginated(
     filter: DependencyFilter,
     sort: DependencySortInput,
     pagination: PaginationInput
-) -> Tuple[int, Sequence[DependencyDBModel]]:
+) -> Tuple[int, int, int, int, Sequence[DependencyDBModel]]:
     filters = []
 
     if filter.name:
         safe_search = filter.name.replace('%', r'\%').replace('_', r'\_')
         filters.append(DependencyDBModel.name.ilike(f"%{safe_search}%"))
 
+    if filter.statuses:
+        filters.append(DependencyDBModel.status.in_(filter.statuses))
+
+
     offset = (pagination.page - 1) * pagination.page_size
     sort_direction = asc if sort.direction == SortDirection.ASC else desc
 
 
-    base_query = select(DependencyDBModel).order_by(sort_direction(getattr(DependencyDBModel, sort.field.value)))
+    base_query = select(DependencyDBModel).order_by(sort_direction(getattr(DependencyDBModel, sort.field.value)), sort_direction(DependencyDBModel.name))
 
     if filters:
         base_query = base_query.where(*filters)
 
-    count_query = select(func.count()).select_from(base_query.subquery())
     query = base_query.offset(offset).limit(pagination.page_size)
 
-    total = (await db_session.execute(count_query)).scalar_one()
+    status_count_query = (
+        select(DependencyDBModel.status, func.count().label("count"))
+        .group_by(DependencyDBModel.status)
+    )
+
+    if filters:
+        status_count_query = status_count_query.where(*filters)
+
     results = await db_session.execute(query)
 
-    return (math.ceil(total/pagination.page_size), results.scalars().all())
+
+
+
+
+    status_counts_raw = await db_session.execute(status_count_query)
+    status_counts = {status: count for status, count in status_counts_raw.all()}
+
+    int(status_counts.get("completed", 0))
+    int(status_counts.get("pending", 0))
+    int(status_counts.get("failed", 0))
+    calc_total = sum(status_counts.values())
+
+    return (math.ceil(calc_total/pagination.page_size), int(status_counts.get("completed", 0)), int(status_counts.get("pending", 0)), int(status_counts.get("failed", 0)), results.scalars().all())

@@ -1,4 +1,5 @@
 from typing import List
+import traceback
 
 import httpx
 import strawberry
@@ -96,15 +97,29 @@ class Query:
 
     @strawberry.field
     async def dependencies(self, info: Info, filter: DependencyFilter, sort: DependencySortInput, pagination: PaginationInput) -> DependencyPaginatedResponse:
-        total, dependency_models = await get_dependencies_paginated(info.context["db"], filter, sort, pagination)
-        dependencies = [
-            DependencyType.from_model(dependency) for dependency in dependency_models
-        ]
+        try:
+            total_pages, completed, pending, failed, dependency_models = await get_dependencies_paginated(info.context["db"], filter, sort, pagination)
+            dependencies = [
+                DependencyType.from_model(dependency) for dependency in dependency_models
+            ]
 
-        return DependencyPaginatedResponse(
-            dependencies=dependencies,
-            total=total
-        )
+            return DependencyPaginatedResponse(
+                dependencies=dependencies,
+                total_pages=total_pages,
+                completed=completed,
+                pending=pending,
+                failed=failed
+            )
+        except Exception as e:
+            print("Exception occurred:")
+            traceback.print_exc()
+            return DependencyPaginatedResponse(
+                dependencies=[],
+                total_pages=0,
+                completed=0,
+                pending=0,
+                failed=0
+            )
 
 @strawberry.type
 class Mutation:
