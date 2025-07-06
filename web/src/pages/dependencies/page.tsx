@@ -2,6 +2,7 @@ import { type DependencySortField, type SortDirection, useGetDependenciesQuery, 
 import { useEffect, useState } from "react"
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
+import SwirlingEffectSpinner from "@/components/customized/spinner/spinner-06";
 
 const sortColumnMap: Record<string, DependencySortField> = {
   name: "NAME",
@@ -28,7 +29,7 @@ export const Dependencies = () => {
   })
 
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(10)
 
   const { data, loading, error } = useGetDependenciesQuery({
     variables: {
@@ -92,7 +93,15 @@ export const Dependencies = () => {
 
   return (
     <div className="container mx-auto py-10">
-      <DataTable columns={columns} data={posts} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <SwirlingEffectSpinner />
+        </div>
+      )}
+
+      {!loading && (
+        <DataTable columns={columns} data={posts} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
+      )}
     </div>
   )
 }
