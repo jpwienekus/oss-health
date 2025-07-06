@@ -4,6 +4,8 @@ import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tan
 import { DataTableToolbar } from "./data-table-toolbar"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTablePagination } from "./data-table-pagination"
+import { useState } from "react"
+import type { VisibilityState } from "@tanstack/react-table"
 
 
 interface DataTableProps<TData, TValue> {
@@ -49,7 +51,7 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} style={{ width: header.getSize() }}>
                       {header.isPlaceholder
                         ? null
                         : (
@@ -69,7 +71,7 @@ export function DataTable<TData, TValue>({
                   daa-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -85,7 +87,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} pageSize={pageSize} totalPages={totalPages} currentPage={currentPage} handlePageSize={handlePageSize} handleSetPage={handleSetPage}/>
+      <DataTablePagination table={table} pageSize={pageSize} totalPages={totalPages} currentPage={currentPage} handlePageSize={handlePageSize} handleSetPage={handleSetPage} />
     </div>
   )
 }

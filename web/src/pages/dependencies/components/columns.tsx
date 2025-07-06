@@ -30,16 +30,19 @@ export const columns: ColumnDef<DependencyType>[] = [
     accessorKey: "name",
     header: "Name",
     enableHiding: false,
+    size: 100,
   },
   {
     accessorKey: "ecosystem",
     header: "Ecosystem",
     enableHiding: false,
+    size: 100,
   },
   {
     accessorKey: "status",
     header: "Status",
     enableHiding: false,
+    size: 100,
     cell: ({ row }) => {
       const status = statuses.find(
         (status) => status.value === row.getValue("status")
@@ -61,6 +64,7 @@ export const columns: ColumnDef<DependencyType>[] = [
     accessorKey: 'repositoryUrlCheckedAt',
     header: "Scanned At",
     enableHiding: false,
+    size: 100,
     cell: ({ row }) => {
       return formatDate(row.getValue('repositoryUrlCheckedAt'))
     }
@@ -69,6 +73,7 @@ export const columns: ColumnDef<DependencyType>[] = [
     id: "repositoryUrlResolveFailedReason",
     accessorKey: "repositoryUrlResolveFailedReason",
     header: "Failed Reason",
+    size: 200,
     cell: ({ row }) => {
       const value = row.getValue('repositoryUrlResolveFailedReason') 
 
