@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
 import { DataTableToolbar } from "./data-table-toolbar"
 import { DataTableColumnHeader } from "./data-table-column-header"
+import { DataTablePagination } from "./data-table-pagination"
 
 
 interface DataTableProps<TData, TValue> {
@@ -11,6 +12,11 @@ interface DataTableProps<TData, TValue> {
   handleSearch: (searchValue: string) => void,
   handleStatusFilter: (selectedValues: string[]) => void,
   handleSort: (sortColumn: string, sortDirection: string) => void
+  handlePageSize: (size: number) => void
+  handleSetPage: (page: number) => void
+  pageSize: number
+  totalPages: number
+  currentPage: number
   statusTotals?: { [key: string]: number | undefined }
 }
 
@@ -20,6 +26,11 @@ export function DataTable<TData, TValue>({
   handleSearch,
   handleStatusFilter,
   handleSort,
+  handlePageSize,
+  handleSetPage,
+  pageSize,
+  totalPages,
+  currentPage,
   statusTotals
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -42,7 +53,7 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : (
-                          <DataTableColumnHeader column={header.column} title={header.column.columnDef.header as string} handleSort={handleSort}/>
+                          <DataTableColumnHeader column={header.column} title={header.column.columnDef.header as string} handleSort={handleSort} />
                         )}
                     </TableHead>
                   )
@@ -74,6 +85,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
+      <DataTablePagination table={table} pageSize={pageSize} totalPages={totalPages} currentPage={currentPage} handlePageSize={handlePageSize} handleSetPage={handleSetPage}/>
     </div>
   )
 }

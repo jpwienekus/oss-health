@@ -1,10 +1,7 @@
-import { useAuth } from "@/auth/AuthContext"
-import { Button } from "@/components/ui/button"
 import { type DependencySortField, type SortDirection, useGetDependenciesQuery, type DependencyType } from "@/generated/graphql";
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
-import { statuses } from "./components/columns"
 
 const sortColumnMap: Record<string, DependencySortField> = {
   name: "NAME",
@@ -85,35 +82,17 @@ export const Dependencies = () => {
     setSortDirection(sortDirectionMap[sortDirection])
   }
 
-  const handleNext = () => {
-    setPage(page < totalPages ? page + 1 : totalPages)
-  };
+  const handlePageSize = (size: number) => {
+    setPageSize(size)
+  }
 
-  const handlePrevious = () => {
-    setPage(page > 1 ? page - 1 : 1)
-  };
+  const handleSetPage = (page: number) => {
+    setPage(page)
+  }
 
   return (
     <div className="container mx-auto py-10">
-      <DataTable columns={columns} data={posts} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort}/>
-
-      <div className="flex justify-between space-x-2">
-        <Button
-          onClick={handlePrevious}
-          disabled={page == 1 || loading}
-          variant="outline"
-        >
-          Previous
-        </Button>
-
-        <Button
-          onClick={handleNext}
-          disabled={page == totalPages || loading}
-          variant="outline"
-        >
-          Next
-        </Button>
-      </div>
+      <DataTable columns={columns} data={posts} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
     </div>
   )
 }
