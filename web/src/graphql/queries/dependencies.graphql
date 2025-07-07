@@ -5,6 +5,7 @@ query GetDependencies($pagination: PaginationInput!, $filter: DependencyFilter!,
       name
       status
       ecosystem
+      repositoryUrl
       repositoryUrlCheckedAt
       repositoryUrlResolveFailedReason
     }

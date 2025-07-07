@@ -1,8 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import type { DependencyType } from "@/generated/graphql";
 import { formatDate } from '@/utils'
-import { CheckCircle, LoaderCircle, XCircle } from "lucide-react";
+import { CheckCircle, LoaderCircle, XCircle, Info } from "lucide-react";
 import { DataTableColumnHeader } from "./data-table-column-header";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 export const statuses = [
   {
@@ -57,6 +59,16 @@ export const columns: ColumnDef<DependencyType>[] = [
           <status.icon className={`size-4 ${status.className}`} />
         )}
         <span>{status.label}</span>
+        {status.value === "failed" && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="size-4 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{row.original.repositoryUrlResolveFailedReason}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     },
   },
@@ -70,14 +82,12 @@ export const columns: ColumnDef<DependencyType>[] = [
     }
   },
   {
-    id: "repositoryUrlResolveFailedReason",
-    accessorKey: "repositoryUrlResolveFailedReason",
-    header: "Failed Reason",
-    size: 200,
+    accessorKey: 'repositoryUrl',
+    header: "Repository URL",
+    enableHiding: true,
+    size: 100,
     cell: ({ row }) => {
-      const value = row.getValue('repositoryUrlResolveFailedReason') 
-
-      return value ? value : '-'
-    },
+      return row.getValue('repositoryUrl') ?? '-'
+    }
   },
 ]
