@@ -13,7 +13,7 @@ func (m *MockDependencyRepository) GetDependenciesPendingUrlResolution(ctx conte
     args := m.Called(ctx, batchSize, offset, eco)
     return args.Get(0).([]Dependency), args.Error(1)
 }
-func (m *MockDependencyRepository) UpsertGithubURLs(ctx context.Context, resolvedUrls map[int64]string) (map[int64]int64, error) {
+func (m *MockDependencyRepository) UpsertRepositoryURLs(ctx context.Context, resolvedUrls map[int64]string) (map[int64]int64, error) {
     args := m.Called(ctx, resolvedUrls)
     return args.Get(0).(map[int64]int64), args.Error(1)
 }

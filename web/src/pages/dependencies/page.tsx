@@ -7,9 +7,9 @@ import SwirlingEffectSpinner from "@/components/customized/spinner/spinner-06";
 const sortColumnMap: Record<string, DependencySortField> = {
   name: "NAME",
   ecosystem: "ECOSYSTEM",
-  status: "STATUS",
-  repositoryUrlCheckedAt: 'CHECKED_AT',
-  repositoryUrlResolveFailedReason: "FAILED_REASON"
+  scanStatus: "SCAN_STATUS",
+  scannedAt: 'SCANNED_AT',
+  errorMessage: "ERROR_MESSAGE"
 }
 const sortDirectionMap: Record<string, SortDirection> = {
   asc: "ASC",

@@ -8,9 +8,9 @@ class DependencySortField(Enum):
     ID = "id"
     NAME = "name"
     ECOSYSTEM = "ecosystem"
-    CHECKED_AT = "repository_url_checked_at"
-    STATUS = "status"
-    FAILED_REASON = "repository_url_resolve_failed_reason"
+    SCANNED_AT = "scanned_at"
+    SCAN_STATUS = "scan_status"
+    ERROR_MESSAGE = "error_message"
 
 @strawberry.enum
 class SortDirection(Enum):

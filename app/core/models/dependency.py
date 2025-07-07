@@ -13,11 +13,11 @@ class Dependency(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
     name: Mapped[str] = mapped_column(nullable=True)
     ecosystem: Mapped[str] = mapped_column(nullable=True)
-    status: Mapped[str] = mapped_column(nullable=False)
-    repository_url_checked_at: Mapped[datetime] = mapped_column(
+    scan_status: Mapped[str] = mapped_column(nullable=False)
+    scanned_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    repository_url_resolve_failed_reason: Mapped[str] = mapped_column(nullable=True)
+    error_message: Mapped[str] = mapped_column(nullable=True)
     dependency_repository_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("dependency_repository.id"), nullable=True
     )

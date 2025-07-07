@@ -44,7 +44,7 @@ func (r *PostgresRepository) GetDependenciesPendingUrlResolution(ctx context.Con
 	return dependencies, nil
 }
 
-func (r *PostgresRepository) UpsertGithubURLs(ctx context.Context, resolvedUrls map[int64]string) (map[int64]int64, error) {
+func (r *PostgresRepository) UpsertRepositoryURLs(ctx context.Context, resolvedUrls map[int64]string) (map[int64]int64, error) {
 	if len(resolvedUrls) == 0 {
 		return nil, nil
 	}

@@ -3,11 +3,11 @@ query GetDependencies($pagination: PaginationInput!, $filter: DependencyFilter!,
     dependencies {
       id
       name
-      status
       ecosystem
+      scannedAt
+      scanStatus
+      errorMessage
       repositoryUrl
-      repositoryUrlCheckedAt
-      repositoryUrlResolveFailedReason
     }
     totalPages
     completed

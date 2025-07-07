@@ -41,13 +41,13 @@ export const columns: ColumnDef<DependencyType>[] = [
     size: 100,
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "scanStatus",
+    header: "Scan Status",
     enableHiding: false,
     size: 100,
     cell: ({ row }) => {
       const status = statuses.find(
-        (status) => status.value === row.getValue("status")
+        (status) => status.value === row.getValue("scanStatus")
       )
 
       if (!status) {
@@ -65,7 +65,7 @@ export const columns: ColumnDef<DependencyType>[] = [
               <Info className="size-4 text-muted-foreground" />
             </TooltipTrigger>
             <TooltipContent>
-              <p>{row.original.repositoryUrlResolveFailedReason}</p>
+              <p>{row.original.errorMessage}</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -73,12 +73,12 @@ export const columns: ColumnDef<DependencyType>[] = [
     },
   },
   {
-    accessorKey: 'repositoryUrlCheckedAt',
+    accessorKey: 'scannedAt',
     header: "Scanned At",
     enableHiding: false,
     size: 100,
     cell: ({ row }) => {
-      return formatDate(row.getValue('repositoryUrlCheckedAt'))
+      return formatDate(row.getValue('scannedAt'))
     }
   },
   {

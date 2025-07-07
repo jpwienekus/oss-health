@@ -46,17 +46,17 @@ func (s *DependencyService) ResolvePendingDependencies(ctx context.Context, batc
 	resolvedUrls, failures := s.resolveURLs(ctx, dependencies)
 
 	if len(resolvedUrls) > 0 {
-		dependencyDependencyRepositoryIdMap, err := s.repository.UpsertGithubURLs(ctx, resolvedUrls)
+		dependencyDependencyRepositoryIdMap, err := s.repository.UpsertRepositoryURLs(ctx, resolvedUrls)
 
 		if err != nil {
-			return fmt.Errorf("upsert GitHub URLs: %w", err)
+			return fmt.Errorf("upsert Repository URLs: %w", err)
 		}
 
 		if err := s.repository.BatchUpdateDependencies(ctx, dependencyDependencyRepositoryIdMap); err != nil {
 			return fmt.Errorf("update dependencies: %w", err)
 		}
 
-		log.Printf("Processed %d dependencies with GitHub URLs", len(resolvedUrls))
+		log.Printf("Processed %d dependencies with Repository URLs", len(resolvedUrls))
 	}
 
 	if len(failures) > 0 {

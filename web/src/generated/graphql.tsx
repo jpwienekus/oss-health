@@ -33,12 +33,12 @@ export type DependencyPaginatedResponse = {
 };
 
 export type DependencySortField =
-  | 'CHECKED_AT'
   | 'ECOSYSTEM'
-  | 'FAILED_REASON'
+  | 'ERROR_MESSAGE'
   | 'ID'
   | 'NAME'
-  | 'STATUS';
+  | 'SCANNED_AT'
+  | 'SCAN_STATUS';
 
 export type DependencySortInput = {
   direction?: SortDirection;
@@ -48,12 +48,12 @@ export type DependencySortInput = {
 export type DependencyType = {
   __typename?: 'DependencyType';
   ecosystem: Scalars['String']['output'];
+  errorMessage?: Maybe<Scalars['String']['output']>;
   id: Scalars['Int']['output'];
   name: Scalars['String']['output'];
   repositoryUrl?: Maybe<Scalars['String']['output']>;
-  repositoryUrlCheckedAt?: Maybe<Scalars['DateTime']['output']>;
-  repositoryUrlResolveFailedReason?: Maybe<Scalars['String']['output']>;
-  status: Scalars['String']['output'];
+  scanStatus: Scalars['String']['output'];
+  scannedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
 export type GitHubRepository = {
@@ -122,7 +122,7 @@ export type GetDependenciesQueryVariables = Exact<{
 }>;
 
 
-export type GetDependenciesQuery = { __typename?: 'Query', dependencies: { __typename?: 'DependencyPaginatedResponse', totalPages: number, completed: number, pending: number, failed: number, dependencies: Array<{ __typename?: 'DependencyType', id: number, name: string, status: string, ecosystem: string, repositoryUrl?: string | null, repositoryUrlCheckedAt?: any | null, repositoryUrlResolveFailedReason?: string | null }> } };
+export type GetDependenciesQuery = { __typename?: 'Query', dependencies: { __typename?: 'DependencyPaginatedResponse', totalPages: number, completed: number, pending: number, failed: number, dependencies: Array<{ __typename?: 'DependencyType', id: number, name: string, ecosystem: string, scannedAt?: any | null, scanStatus: string, errorMessage?: string | null, repositoryUrl?: string | null }> } };
 
 export type GetRepositoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -183,11 +183,11 @@ export const GetDependenciesDocument = gql`
     dependencies {
       id
       name
-      status
       ecosystem
+      scannedAt
+      scanStatus
+      errorMessage
       repositoryUrl
-      repositoryUrlCheckedAt
-      repositoryUrlResolveFailedReason
     }
     totalPages
     completed

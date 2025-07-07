@@ -103,7 +103,7 @@ func TestGetDependenciesPendingUrlResolution(t *testing.T) {
 	assert.Contains(t, names, "express")
 }
 
-func TestUpsertGithubURLs(t *testing.T) {
+func TestUpsertRepositoryURLs(t *testing.T) {
 	ClearTables(TestDB)
 
 	urlMap := map[int64]string{
@@ -112,7 +112,7 @@ func TestUpsertGithubURLs(t *testing.T) {
 	}
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	urlToID, err := repository.UpsertGithubURLs(TestCtx, urlMap)
+	urlToID, err := repository.UpsertRepositoryURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 	assert.Len(t, urlToID, 2)
 
@@ -123,7 +123,7 @@ func TestUpsertGithubURLs(t *testing.T) {
 	}
 
 	// Insert duplicates again, expect same IDs returned (no duplicates)
-	urlToID2, err := repository.UpsertGithubURLs(TestCtx, urlMap)
+	urlToID2, err := repository.UpsertRepositoryURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 	assert.Equal(t, urlToID, urlToID2)
 }
@@ -137,7 +137,7 @@ func TestBatchUpdateDependencies(t *testing.T) {
 	}
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	urlToID, err := repository.UpsertGithubURLs(TestCtx, urlMap)
+	urlToID, err := repository.UpsertRepositoryURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 
 	err = repository.BatchUpdateDependencies(TestCtx, urlToID)
