@@ -1,11 +1,11 @@
 import { type DependencySortField, type SortDirection, useGetDependenciesQuery, type DependencyType } from "@/generated/graphql";
 import { useEffect, useState } from "react"
-import { DataTable } from "./components/data-table";
-import { columns } from "./components/columns";
+import { DataTable } from "@/components/admin/data-table";
+import { columns } from "@/components/admin/columns";
 import SwirlingEffectSpinner from "@/components/customized/spinner/spinner-06";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
-import { LogIn } from "lucide-react";
+import { RequestLogin } from "@/components/request-login";
 
 const sortColumnMap: Record<string, DependencySortField> = {
   name: "NAME",
@@ -108,17 +108,9 @@ export const Dependencies = () => {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div>
       {!jwt && (
-        <div className="text-center py-12">
-          <LogIn className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            You're not logged in
-          </h3>
-          <p className="text-gray-500">
-            Log in with your GitHub account to view your repositories
-          </p>
-        </div>
+        <RequestLogin />
       )}
 
       {loading && jwt && (
@@ -127,7 +119,7 @@ export const Dependencies = () => {
         </div>
       )}
 
-      { jwt && (
+      {jwt && (
         <DataTable columns={columns} data={dependencies} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
       )}
     </div>

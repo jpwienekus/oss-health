@@ -1,61 +1,36 @@
 import { useAuth } from '@/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { useGetUserQuery } from '@/generated/graphql'
-// import { getClient } from '@/graphql/client'
-// import { GET_USERNAME } from '@/graphql/queries'
-import { Shield, Github } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Shield, Github, BarChart3, Users, Database, Settings } from 'lucide-react'
+import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
+
+import { Navbar } from './nav-bar'
 
 export const Header = () => {
   const { jwt, loginWithGitHub } = useAuth()
-  // const [username, setUsername] = useState<string>('')
 
   const { data, loading, error } = useGetUserQuery({
     skip: !jwt,
     notifyOnNetworkStatusChange: true
   })
 
-  // useEffect(() => {
-  //   const fetchUsername = async () => {
-  //     if (!jwt) {
-  //       return
-  //     }
-  //     const client = getClient(jwt)
-  //     const response = await client.request<{ username: string }>(GET_USERNAME)
-  //     setUsername(response.username)
-  //   }
-  //   fetchUsername()
-  // }, [jwt])
+  useEffect(() => {
+    if (!error) {
+      return
+    }
+
+    toast.error("Could not log in", {
+      description: error.message,
+    })
+
+  }, [error])
+
+  const isAdminPath = location.pathname.startsWith('/admin')
+  const isAuthenticated = !loading && jwt
 
   return (
-    <header className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex items-center space-x-3">
-            <Shield className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">VulnWatch</h1>
-              <p className="text-sm text-gray-500">
-                Dependency Security & Health Monitoring
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {jwt ? (
-              <span>
-                <Github className="w-4 h-4 inline mr-2" />
-                {data?.username ?? ''}
-              </span>
-            ) : (
-              <Button onClick={loginWithGitHub} className="px-4 py-2">
-                <Github className="w-4 h-4 inline mr-2" />
-                Log in with GitHub
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
+    <Navbar />
   )
 }

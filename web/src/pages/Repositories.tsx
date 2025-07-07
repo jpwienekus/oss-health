@@ -56,6 +56,10 @@ export const Repositories = () => {
       return
     }
 
+    if (error.message.includes('token')) {
+      return
+    }
+
     toast.error("Could not fetch repositories", {
       description: error.message,
     })

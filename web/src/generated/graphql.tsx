@@ -18,6 +18,13 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+export type CronInfo = {
+  __typename?: 'CronInfo';
+  day: Scalars['String']['output'];
+  hour: Scalars['String']['output'];
+  total: Scalars['Int']['output'];
+};
+
 export type DependencyFilter = {
   name?: Scalars['String']['input'];
   statuses: Array<Scalars['String']['input']>;
@@ -92,6 +99,7 @@ export type PaginationInput = {
 export type Query = {
   __typename?: 'Query';
   dependencies: DependencyPaginatedResponse;
+  getCronInfo: Array<CronInfo>;
   githubRepositories: Array<GitHubRepository>;
   repositories: Array<GitHubRepository>;
   username: Scalars['String']['output'];
@@ -114,6 +122,11 @@ export type SaveSelectedRepositoriesMutationVariables = Exact<{
 
 
 export type SaveSelectedRepositoriesMutation = { __typename?: 'Mutation', saveSelectedRepositories: Array<{ __typename?: 'GitHubRepository', id?: number | null, name: string, description?: string | null, githubId: number, stars: number, watchers: number, forks: number, private: boolean, score?: number | null, vulnerabilities?: number | null, dependencies?: number | null, url: string, lastScannedAt?: any | null, updatedAt?: any | null }> };
+
+export type GetCronInfoQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetCronInfoQuery = { __typename?: 'Query', getCronInfo: Array<{ __typename?: 'CronInfo', day: string, hour: string, total: number }> };
 
 export type GetDependenciesQueryVariables = Exact<{
   pagination: PaginationInput;
@@ -188,6 +201,47 @@ export function useSaveSelectedRepositoriesMutation(baseOptions?: Apollo.Mutatio
 export type SaveSelectedRepositoriesMutationHookResult = ReturnType<typeof useSaveSelectedRepositoriesMutation>;
 export type SaveSelectedRepositoriesMutationResult = Apollo.MutationResult<SaveSelectedRepositoriesMutation>;
 export type SaveSelectedRepositoriesMutationOptions = Apollo.BaseMutationOptions<SaveSelectedRepositoriesMutation, SaveSelectedRepositoriesMutationVariables>;
+export const GetCronInfoDocument = gql`
+    query GetCronInfo {
+  getCronInfo {
+    day
+    hour
+    total
+  }
+}
+    `;
+
+/**
+ * __useGetCronInfoQuery__
+ *
+ * To run a query within a React component, call `useGetCronInfoQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCronInfoQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCronInfoQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetCronInfoQuery(baseOptions?: Apollo.QueryHookOptions<GetCronInfoQuery, GetCronInfoQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCronInfoQuery, GetCronInfoQueryVariables>(GetCronInfoDocument, options);
+      }
+export function useGetCronInfoLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCronInfoQuery, GetCronInfoQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCronInfoQuery, GetCronInfoQueryVariables>(GetCronInfoDocument, options);
+        }
+export function useGetCronInfoSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCronInfoQuery, GetCronInfoQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetCronInfoQuery, GetCronInfoQueryVariables>(GetCronInfoDocument, options);
+        }
+export type GetCronInfoQueryHookResult = ReturnType<typeof useGetCronInfoQuery>;
+export type GetCronInfoLazyQueryHookResult = ReturnType<typeof useGetCronInfoLazyQuery>;
+export type GetCronInfoSuspenseQueryHookResult = ReturnType<typeof useGetCronInfoSuspenseQuery>;
+export type GetCronInfoQueryResult = Apollo.QueryResult<GetCronInfoQuery, GetCronInfoQueryVariables>;
 export const GetDependenciesDocument = gql`
     query GetDependencies($pagination: PaginationInput!, $filter: DependencyFilter!, $sort: DependencySortInput!) {
   dependencies(pagination: $pagination, filter: $filter, sort: $sort) {
