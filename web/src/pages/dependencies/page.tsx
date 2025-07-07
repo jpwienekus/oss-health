@@ -3,6 +3,10 @@ import { useEffect, useState } from "react"
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
 import SwirlingEffectSpinner from "@/components/customized/spinner/spinner-06";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/auth/AuthContext";
+import { LogIn } from "lucide-react";
 
 const sortColumnMap: Record<string, DependencySortField> = {
   name: "NAME",
@@ -17,6 +21,7 @@ const sortDirectionMap: Record<string, SortDirection> = {
 }
 
 export const Dependencies = () => {
+  const { jwt } = useAuth()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statuses, setStatuses] = useState<string[]>([])
@@ -52,6 +57,7 @@ export const Dependencies = () => {
   const posts: DependencyType[] = (data?.dependencies.dependencies ?? [])
   const totalPages = data?.dependencies?.totalPages ?? 0
 
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setDebouncedSearch(search);
@@ -69,6 +75,17 @@ export const Dependencies = () => {
       })
     }
   }, [data, totals.completed])
+
+  useEffect(() => {
+    if (!error) {
+      return
+    }
+
+    toast.error("Could not fetch dependencies", {
+      description: error.message,
+    })
+
+  }, [error])
 
   const handleSearch = (searchValue: string) => {
     setSearch(searchValue)
@@ -93,13 +110,25 @@ export const Dependencies = () => {
 
   return (
     <div className="container mx-auto py-10">
-      {loading && (
+      {!jwt && (
+        <div className="text-center py-12">
+          <LogIn className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            You're not logged in
+          </h3>
+          <p className="text-gray-500">
+            Log in with your GitHub account to view your repositories
+          </p>
+        </div>
+      )}
+
+      {loading && jwt && (
         <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
           <SwirlingEffectSpinner />
         </div>
       )}
 
-      {!loading && (
+      {!loading && jwt && (
         <DataTable columns={columns} data={posts} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
       )}
     </div>

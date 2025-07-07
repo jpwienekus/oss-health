@@ -1,7 +1,7 @@
 import type { GitHubRepository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Package } from 'lucide-react'
+import { LogIn, Package } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
@@ -12,7 +12,6 @@ import { RepositoryOverview } from '@/components/repositories/RepositoryOverview
 
 export const Repositories = () => {
   const { jwt } = useAuth()
-  console.log(99, jwt)
   const [data, setData] = useState<GitHubRepository[]>([])
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -79,9 +78,9 @@ export const Repositories = () => {
     <div>
       {!jwt && (
         <div className="text-center py-12">
-          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <LogIn className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No repositories found
+            You're not logged in
           </h3>
           <p className="text-gray-500">
             Log in with your GitHub account to view your repositories

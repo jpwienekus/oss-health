@@ -38,9 +38,9 @@ export function DataTableToolbar<TData>({
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
-        {table.getColumn("status") && (
+        {table.getColumn("scanStatus") && (
           <DataTableFacetedFilter
-            column={table.getColumn("status")}
+            column={table.getColumn("scanStatus")}
             title="Status"
             options={statuses}
             handleStatusFilter={handleStatusFilter}
