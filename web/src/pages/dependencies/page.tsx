@@ -128,7 +128,7 @@ export const Dependencies = () => {
         </div>
       )}
 
-      {!loading && jwt && (
+      { jwt && (
         <DataTable columns={columns} data={posts} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
       )}
     </div>
