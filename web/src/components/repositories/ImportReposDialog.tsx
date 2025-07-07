@@ -8,15 +8,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
-import { useState } from 'react'
-import type { GitHubRepository } from '@/types'
-// import { getClient } from '@/graphql/client'
+import { useEffect, useState } from 'react'
 import { Calendar, Eye, GitFork, Import, Search, Star } from 'lucide-react'
-// import { GET_REPOSITORIES_FROM_GITHUB } from '@/graphql/queries'
 import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { Checkbox } from '../ui/checkbox'
 import { formatDate } from '@/utils'
+import { useGithubRepositoriesLazyQuery, type GitHubRepository } from '@/generated/graphql'
+import { toast } from 'sonner'
 
 type ImportReposDialogParams = {
   alreadyTracked: number[]
@@ -32,40 +31,37 @@ export const ImportReposDialog = ({
   const { jwt } = useAuth()
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const [isImporting, setIsImporting] = useState<boolean>(false)
-  const [githubRepositories, setGitHubRepositories] = useState<
-    GitHubRepository[]
-  >([])
-  const [selectedRepositories, setSelectedRepositories] = useState<number[]>([])
 
-  const filteredRepos = githubRepositories
+  const [selectedRepositories, setSelectedRepositories] = useState<number[]>([])
+  const [getRepositories, { data, error, loading }] = useGithubRepositoriesLazyQuery()
+
+  const filteredRepos = (data?.githubRepositories ?? [])
     .filter(
       (repo) =>
-        repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+        (repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          repo.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        !alreadyTracked.includes(repo.githubId),
     )
     .sort(
       (a: GitHubRepository, b: GitHubRepository) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     )
 
-  const fetchGitHubRepos = async () => {
-    if (!jwt) {
+
+  useEffect(() => {
+    if (!error) {
       return
     }
 
-    setIsImporting(true)
-    // const client = getClient(jwt)
-    // const response = await client.request<{
-    //   githubRepositories: GitHubRepository[]
-    // }>(GET_REPOSITORIES_FROM_GITHUB)
-    // setGitHubRepositories(
-    //   response.githubRepositories.filter(
-    //     (e) => !alreadyTracked.includes(e.githubId),
-    //   ),
-    // )
+    toast.error("Could not fetch repositories", {
+      description: error.message,
+    })
+
+  }, [error])
+
+  const fetchGitHubRepos = async () => {
+    await getRepositories()
     setSelectedRepositories([])
-    setIsImporting(false)
     setIsOpen(true)
   }
 
@@ -85,9 +81,9 @@ export const ImportReposDialog = ({
   return (
     <div>
       {alreadyTracked.length < MAX_REPOSITORIES && (
-        <Button onClick={fetchGitHubRepos} disabled={isImporting}>
+        <Button onClick={fetchGitHubRepos} disabled={loading}>
           <Import className="w-4 h-4" />
-          <span>{isImporting ? 'Loading...' : 'Import from GitHub'}</span>
+          <span>{loading ? 'Loading...' : 'Import from GitHub'}</span>
         </Button>
       )}
       {alreadyTracked.length >= MAX_REPOSITORIES && (

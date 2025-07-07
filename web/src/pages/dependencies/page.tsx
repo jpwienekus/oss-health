@@ -4,7 +4,6 @@ import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
 import SwirlingEffectSpinner from "@/components/customized/spinner/spinner-06";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthContext";
 import { LogIn } from "lucide-react";
 
@@ -54,7 +53,7 @@ export const Dependencies = () => {
     notifyOnNetworkStatusChange: true,
   })
 
-  const posts: DependencyType[] = (data?.dependencies.dependencies ?? [])
+  const dependencies: DependencyType[] = (data?.dependencies.dependencies ?? [])
   const totalPages = data?.dependencies?.totalPages ?? 0
 
 
@@ -129,7 +128,7 @@ export const Dependencies = () => {
       )}
 
       { jwt && (
-        <DataTable columns={columns} data={posts} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
+        <DataTable columns={columns} data={dependencies} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
       )}
     </div>
   )

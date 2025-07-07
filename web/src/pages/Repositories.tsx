@@ -1,35 +1,34 @@
-import type { GitHubRepository } from '@/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { LogIn, Package } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
-// import { getClient } from '@/graphql/client'
-// import { SAVE_SELECTED_REPOSITORIES } from '@/graphql/mutations'
-// import { GET_REPOSITORIES } from '@/graphql/queries'
 import { RepositoryOverview } from '@/components/repositories/RepositoryOverview'
+import { useGetRepositoriesQuery, useSaveSelectedRepositoriesMutation, type GitHubRepository } from '@/generated/graphql'
+import SwirlingEffectSpinner from '@/components/customized/spinner/spinner-06'
+import { toast } from 'sonner'
 
 export const Repositories = () => {
   const { jwt } = useAuth()
-  const [data, setData] = useState<GitHubRepository[]>([])
-
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'health' | 'stars' | 'updated' | 'name'>(
     'health',
   )
-  const [isLoading, setIsLoading] = useState(false)
+  const [repositories, setRepositories] = useState<GitHubRepository[]>([])
 
-  const filteredAndSortedRepositories = data
+  const { data, loading, error } = useGetRepositoriesQuery()
+
+  const filteredAndSortedRepositories = repositories
     .filter(
       (repo) =>
         repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
-    .sort((a: GitHubRepository, b: GitHubRepository) => {
+    .sort((a, b) => {
       switch (sortBy) {
         case 'health':
-          return b.score - a.score
+          return (b.score ?? 0) - (a.score ?? 0)
         case 'stars':
           return b.stars - a.stars
         case 'updated':
@@ -43,35 +42,36 @@ export const Repositories = () => {
       }
     })
 
+
+  const [saveRepositories] = useSaveSelectedRepositoriesMutation()
+
   useEffect(() => {
-    const fetchRepositories = async () => {
-      if (!jwt) {
-        return
-      }
-
-      setIsLoading(true)
-      // const client = getClient(jwt)
-      // const response = await client.request<{
-      //   repositories: GitHubRepository[]
-      // }>(GET_REPOSITORIES)
-      // setData(response.repositories)
-      setIsLoading(false)
+    if (data?.repositories) {
+      setRepositories(data.repositories)
     }
-    fetchRepositories()
-  }, [jwt])
+  }, [data])
 
-  const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
-    if (!jwt) {
+  useEffect(() => {
+    if (!error) {
       return
     }
 
-    // const client = getClient(jwt)
-    // const response = await client.request<{
-    //   saveSelectedRepositories: GitHubRepository[]
-    // }>(SAVE_SELECTED_REPOSITORIES, {
-    //   selectedGithubRepositoryIds: selectedRepositoryIds,
-    // })
-    // setData(response.saveSelectedRepositories)
+    toast.error("Could not fetch repositories", {
+      description: error.message,
+    })
+
+  }, [error])
+
+  const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
+    const { data } = await saveRepositories({
+      variables: {
+        selectedGithubRepositoryIds: selectedRepositoryIds
+      }
+    })
+
+    if (data) {
+      setRepositories(data.saveSelectedRepositories)
+    }
   }
 
   return (
@@ -99,24 +99,23 @@ export const Repositories = () => {
                 Manage and monitor your imported repositories
               </p>
             </div>
-            {!isLoading && (
+            {!loading && (
               <ImportReposDialog
                 onConfirm={onDialogConfirm}
-                alreadyTracked={data.map((e) => e.githubId)}
+                alreadyTracked={repositories.map((e) => e.githubId)}
               />
             )}
           </div>
         </div>
       )}
 
-      {jwt && isLoading && (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading repositories...</p>
+      {jwt && loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <SwirlingEffectSpinner />
         </div>
       )}
 
-      {jwt && !isLoading && data.length === 0 && (
+      {jwt && !loading && repositories.length === 0 && (
         <div className="text-center py-12">
           <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -129,7 +128,7 @@ export const Repositories = () => {
         </div>
       )}
 
-      {jwt && !isLoading && data.length > 0 && (
+      {jwt && !loading && repositories.length > 0 && (
         <div>
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1">

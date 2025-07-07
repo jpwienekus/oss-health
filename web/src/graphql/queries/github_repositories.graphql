@@ -1,7 +1,5 @@
-mutation SaveSelectedRepositories($selectedGithubRepositoryIds: [Int!]!) {
-  saveSelectedRepositories(
-    selectedGithubRepositoryIds: $selectedGithubRepositoryIds
-  ) {
+query GithubRepositories {
+    githubRepositories {
       id
       name
       description
@@ -16,5 +14,6 @@ mutation SaveSelectedRepositories($selectedGithubRepositoryIds: [Int!]!) {
       url
       lastScannedAt
       updatedAt
+    }
   }
-}
+

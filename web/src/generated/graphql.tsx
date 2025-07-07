@@ -113,7 +113,7 @@ export type SaveSelectedRepositoriesMutationVariables = Exact<{
 }>;
 
 
-export type SaveSelectedRepositoriesMutation = { __typename?: 'Mutation', saveSelectedRepositories: Array<{ __typename?: 'GitHubRepository', name: string, description?: string | null, githubId: number, updatedAt?: any | null, private: boolean, stars: number, watchers: number, forks: number }> };
+export type SaveSelectedRepositoriesMutation = { __typename?: 'Mutation', saveSelectedRepositories: Array<{ __typename?: 'GitHubRepository', id?: number | null, name: string, description?: string | null, githubId: number, stars: number, watchers: number, forks: number, private: boolean, score?: number | null, vulnerabilities?: number | null, dependencies?: number | null, url: string, lastScannedAt?: any | null, updatedAt?: any | null }> };
 
 export type GetDependenciesQueryVariables = Exact<{
   pagination: PaginationInput;
@@ -124,10 +124,15 @@ export type GetDependenciesQueryVariables = Exact<{
 
 export type GetDependenciesQuery = { __typename?: 'Query', dependencies: { __typename?: 'DependencyPaginatedResponse', totalPages: number, completed: number, pending: number, failed: number, dependencies: Array<{ __typename?: 'DependencyType', id: number, name: string, ecosystem: string, scannedAt?: any | null, scanStatus: string, errorMessage?: string | null, repositoryUrl?: string | null }> } };
 
+export type GithubRepositoriesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GithubRepositoriesQuery = { __typename?: 'Query', githubRepositories: Array<{ __typename?: 'GitHubRepository', id?: number | null, name: string, description?: string | null, githubId: number, stars: number, watchers: number, forks: number, private: boolean, score?: number | null, vulnerabilities?: number | null, dependencies?: number | null, url: string, lastScannedAt?: any | null, updatedAt?: any | null }> };
+
 export type GetRepositoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetRepositoriesQuery = { __typename?: 'Query', repositories: Array<{ __typename?: 'GitHubRepository', id?: number | null, name: string, description?: string | null, githubId: number, private: boolean, score?: number | null, vulnerabilities?: number | null, dependencies?: number | null, lastScannedAt?: any | null, updatedAt?: any | null, stars: number, watchers: number, forks: number }> };
+export type GetRepositoriesQuery = { __typename?: 'Query', repositories: Array<{ __typename?: 'GitHubRepository', id?: number | null, name: string, description?: string | null, githubId: number, private: boolean, score?: number | null, vulnerabilities?: number | null, dependencies?: number | null, lastScannedAt?: any | null, updatedAt?: any | null, stars: number, watchers: number, forks: number, url: string }> };
 
 export type GetUserQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -140,14 +145,20 @@ export const SaveSelectedRepositoriesDocument = gql`
   saveSelectedRepositories(
     selectedGithubRepositoryIds: $selectedGithubRepositoryIds
   ) {
+    id
     name
     description
     githubId
-    updatedAt
-    private
     stars
     watchers
     forks
+    private
+    score
+    vulnerabilities
+    dependencies
+    url
+    lastScannedAt
+    updatedAt
   }
 }
     `;
@@ -231,6 +242,58 @@ export type GetDependenciesQueryHookResult = ReturnType<typeof useGetDependencie
 export type GetDependenciesLazyQueryHookResult = ReturnType<typeof useGetDependenciesLazyQuery>;
 export type GetDependenciesSuspenseQueryHookResult = ReturnType<typeof useGetDependenciesSuspenseQuery>;
 export type GetDependenciesQueryResult = Apollo.QueryResult<GetDependenciesQuery, GetDependenciesQueryVariables>;
+export const GithubRepositoriesDocument = gql`
+    query GithubRepositories {
+  githubRepositories {
+    id
+    name
+    description
+    githubId
+    stars
+    watchers
+    forks
+    private
+    score
+    vulnerabilities
+    dependencies
+    url
+    lastScannedAt
+    updatedAt
+  }
+}
+    `;
+
+/**
+ * __useGithubRepositoriesQuery__
+ *
+ * To run a query within a React component, call `useGithubRepositoriesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGithubRepositoriesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGithubRepositoriesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGithubRepositoriesQuery(baseOptions?: Apollo.QueryHookOptions<GithubRepositoriesQuery, GithubRepositoriesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GithubRepositoriesQuery, GithubRepositoriesQueryVariables>(GithubRepositoriesDocument, options);
+      }
+export function useGithubRepositoriesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GithubRepositoriesQuery, GithubRepositoriesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GithubRepositoriesQuery, GithubRepositoriesQueryVariables>(GithubRepositoriesDocument, options);
+        }
+export function useGithubRepositoriesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GithubRepositoriesQuery, GithubRepositoriesQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GithubRepositoriesQuery, GithubRepositoriesQueryVariables>(GithubRepositoriesDocument, options);
+        }
+export type GithubRepositoriesQueryHookResult = ReturnType<typeof useGithubRepositoriesQuery>;
+export type GithubRepositoriesLazyQueryHookResult = ReturnType<typeof useGithubRepositoriesLazyQuery>;
+export type GithubRepositoriesSuspenseQueryHookResult = ReturnType<typeof useGithubRepositoriesSuspenseQuery>;
+export type GithubRepositoriesQueryResult = Apollo.QueryResult<GithubRepositoriesQuery, GithubRepositoriesQueryVariables>;
 export const GetRepositoriesDocument = gql`
     query GetRepositories {
   repositories {
@@ -247,6 +310,7 @@ export const GetRepositoriesDocument = gql`
     stars
     watchers
     forks
+    url
   }
 }
     `;
