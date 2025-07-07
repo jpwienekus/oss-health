@@ -114,7 +114,7 @@ export const Dependencies = () => {
       )}
 
       {loading && jwt && (
-        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 z-50">
           <SwirlingEffectSpinner />
         </div>
       )}

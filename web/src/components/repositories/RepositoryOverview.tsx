@@ -76,7 +76,7 @@ export const RepositoryOverview = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+        <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-1">
             <Package size={12} />
             <span>

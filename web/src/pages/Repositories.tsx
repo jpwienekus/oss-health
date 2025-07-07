@@ -96,10 +96,10 @@ export const Repositories = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                 Repositories
               </h2>
-              <p className="text-gray-600">
+              <p className="text-slate-500 dark:text-slate-400">
                 Manage and monitor your imported repositories
               </p>
             </div>
@@ -114,7 +114,7 @@ export const Repositories = () => {
       )}
 
       {jwt && loading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 z-50">
           <SwirlingEffectSpinner />
         </div>
       )}

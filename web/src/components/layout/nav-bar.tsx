@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useEffect } from "react";
 import { useGetUserQuery } from "@/generated/graphql";
 import { toast } from "sonner";
+import { ThemeToggle } from "./theme-toggle";
 
 export const Navbar = () => {
   const { jwt, loginWithGitHub } = useAuth()
@@ -36,8 +37,8 @@ export const Navbar = () => {
               <Shield className="h-8 w-8 text-blue-600" />
 
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">OSS Health</h1>
-                <p className="text-sm text-gray-500">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">OSS Health</h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   Dependency Security & Health Monitoring
                 </p>
               </div>
@@ -50,7 +51,7 @@ export const Navbar = () => {
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <span className="flex items-center text-sm text-gray-700">
+                <span className="flex items-center text-sm text-slate-500 dark:text-slate-400">
                   <Github className="w-4 h-4 inline mr-2" />
                   {data?.username ?? ''}
                 </span>
@@ -61,9 +62,7 @@ export const Navbar = () => {
                 Log in with GitHub
               </Button>
             )}
-            <Button size="icon" variant="outline">
-              <SunIcon />
-            </Button>
+            <ThemeToggle />
 
             <div className="md:hidden">
               <NavigationSheet />

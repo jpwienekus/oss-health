@@ -2,10 +2,10 @@ import { useAuth } from "@/auth/AuthContext";
 import SwirlingEffectSpinner from "@/components/customized/spinner/spinner-06";
 import { useGetCronInfoQuery } from "@/generated/graphql"
 import { ResponsiveHeatMap } from '@nivo/heatmap'
-import { LogIn } from "lucide-react";
 import { useEffect, useState } from "react"
 import { RequestLogin } from '@/components/request-login'
 import { toast } from "sonner";
+import { useTheme } from "@/components/theme-provider";
 
 type HeatmapEntry = {
   id: string;
@@ -19,6 +19,7 @@ export const Repositories = () => {
   const { jwt } = useAuth()
   const { data, loading, error } = useGetCronInfoQuery()
   const [heatmapData, setHeatmapData] = useState<HeatmapEntry[]>([])
+  const { theme } = useTheme()
 
   const cronInfo = data?.getCronInfo ?? []
   const allDays = [
@@ -36,7 +37,7 @@ export const Repositories = () => {
     const result = allDays.map(day => ({
       id: day,
       data: allHours.map(hour => ({
-        x: hour,
+        x: (+hour + 1).toString(),
         y: inputMap.get(`${day}-${hour}`) ?? 0
       }))
     }));
@@ -56,13 +57,15 @@ export const Repositories = () => {
 
   }, [error])
 
+  const labelColor = theme === 'dark' ? '#E5E7EB' : '#1F2937' // tailwind slate-200 / slate-800
+
   return (
     <div>
       {!jwt && (
         <RequestLogin />
       )}
       {loading && jwt && (
-        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 z-50">
           <SwirlingEffectSpinner />
         </div>
       )}
@@ -80,6 +83,36 @@ export const Repositories = () => {
               divergeAt: 0.5,
               minValue: 0,
               maxValue: 10
+            }}
+            axisTop={{
+              tickSize: 5,
+              tickPadding: 5,
+              tickRotation: -45,
+              legend: '',
+              legendOffset: 46,
+              tickValues: 'every 1',
+            }}
+            axisLeft={{
+              tickSize: 5,
+              tickPadding: 5,
+              tickRotation: 0,
+              legend: '',
+              legendOffset: -60,
+              tickValues: 'every 1',
+            }}
+            theme={{
+              axis: {
+                ticks: {
+                  text: {
+                    fill: labelColor,
+                  },
+                },
+              },
+              labels: {
+                text: {
+                  fill: labelColor,
+                },
+              },
             }}
           />
         )}

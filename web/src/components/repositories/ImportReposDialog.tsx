@@ -87,7 +87,7 @@ export const ImportReposDialog = ({
         </Button>
       )}
       {alreadyTracked.length >= MAX_REPOSITORIES && (
-        <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">
+        <div className="text-sm text-slate-500 dark:text-slate-400 p-2 rounded-md">
           Maximum number of repositories ({MAX_REPOSITORIES}) reached
         </div>
       )}
@@ -134,11 +134,11 @@ export const ImportReposDialog = ({
                       )}
                     </div>
 
-                    <p className="text-sm text-slate-600 mb-2 line-clamp-2">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 line-clamp-2">
                       {repo.description ?? '-'}
                     </p>
 
-                    <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                    <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
                       <div className="flex items-center gap-1">
                         <Star size={12} />
                         <span>{repo.stars}</span>
