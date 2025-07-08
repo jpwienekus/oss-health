@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -92,10 +93,16 @@ export const ImportReposDialog = ({
         </div>
       )}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent
+          className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+          aria-describedby="import-dialog-description"
+        >
           <DialogHeader>
             <DialogTitle>Select Reporistories to import</DialogTitle>
           </DialogHeader>
+
+          <DialogDescription>
+          </DialogDescription>
 
           <div className="relative mb-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -112,7 +119,9 @@ export const ImportReposDialog = ({
               {filteredRepos.map((repo, index) => (
                 <div
                   key={index}
-                  className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-slate-50 ${selectedRepositories.includes(repo.githubId) ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
+                  className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 ${selectedRepositories.includes(repo.githubId)
+                    ? 'bg-blue-50 border-blue-200 dark:bg-blue-900 dark:border-blue-700'
+                    : ''}}`}
                   onClick={() => handleRepositoryToggle(repo.githubId)}
                 >
                   <Checkbox

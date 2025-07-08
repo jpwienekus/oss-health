@@ -29,7 +29,7 @@ export const statuses = [
   },
 ]
 
-export const columns: ColumnDef<DependencyType>[] = [
+export const Columns: ColumnDef<DependencyType>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
