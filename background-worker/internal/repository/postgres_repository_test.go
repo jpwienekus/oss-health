@@ -118,8 +118,8 @@ func TestMarkScanned(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = TestDB.Exec(ctx, `
-		INSERT INTO repositories (id, url, github_id, user_id, scan_status)
-		VALUES (1, 'http://example.com', 123, 1, 'pending')
+		INSERT INTO repositories (id, url, github_id, user_id, scan_day, scan_hour, scan_status)
+		VALUES (1, 'http://example.com', 123, 1, 1, 1, 'pending')
 	`)
 	assert.NoError(t, err)
 
