@@ -2,10 +2,15 @@ import pytest
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import Dependency as DependencyDBModel
-from api.graphql.inputs import DependencyFilter, DependencySortField, DependencySortInput, PaginationInput, SortDirection
-
+from api.graphql.inputs import (
+    DependencyFilter,
+    DependencySortField,
+    DependencySortInput,
+    PaginationInput,
+    SortDirection,
+)
 from core.crud.dependency import get_dependencies_paginated
+from core.models import Dependency as DependencyDBModel
 
 
 @pytest.mark.asyncio
@@ -20,7 +25,9 @@ async def test_get_dependencies_paginated_basic(db_session: AsyncSession):
     await db_session.commit()
 
     filter = DependencyFilter(name="", statuses=[])
-    sort = DependencySortInput(field=DependencySortField.NAME, direction=SortDirection.ASC)
+    sort = DependencySortInput(
+        field=DependencySortField.NAME, direction=SortDirection.ASC
+    )
     pagination = PaginationInput(page=1, page_size=2)
 
     total_pages, completed, pending, failed, deps = await get_dependencies_paginated(
@@ -38,18 +45,25 @@ async def test_get_dependencies_paginated_basic(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_get_dependencies_paginated_name_filter(db_session: AsyncSession):
-    await db_session.execute(insert(DependencyDBModel), [
-        {"name": "lib_sqlite", "scan_status": "completed"},
-        {"name": "sqlite_parser", "scan_status": "pending"},
-        {"name": "libcrypto", "scan_status": "failed"},
-    ])
+    await db_session.execute(
+        insert(DependencyDBModel),
+        [
+            {"name": "lib_sqlite", "scan_status": "completed"},
+            {"name": "sqlite_parser", "scan_status": "pending"},
+            {"name": "libcrypto", "scan_status": "failed"},
+        ],
+    )
     await db_session.commit()
 
     filter = DependencyFilter(name="sqlite", statuses=None)
-    sort = DependencySortInput(field=DependencySortField.NAME, direction=SortDirection.ASC)
+    sort = DependencySortInput(
+        field=DependencySortField.NAME, direction=SortDirection.ASC
+    )
     pagination = PaginationInput(page=1, page_size=10)
 
-    _, _, _, _, deps = await get_dependencies_paginated(db_session, filter, sort, pagination)
+    _, _, _, _, deps = await get_dependencies_paginated(
+        db_session, filter, sort, pagination
+    )
 
     assert len(deps) == 2
     assert all("sqlite" in d.name for d in deps)
@@ -57,15 +71,20 @@ async def test_get_dependencies_paginated_name_filter(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_get_dependencies_paginated_status_filter(db_session: AsyncSession):
-    await db_session.execute(insert(DependencyDBModel), [
-        {"name": "dep1", "scan_status": "completed"},
-        {"name": "dep2", "scan_status": "pending"},
-        {"name": "dep3", "scan_status": "failed"},
-    ])
+    await db_session.execute(
+        insert(DependencyDBModel),
+        [
+            {"name": "dep1", "scan_status": "completed"},
+            {"name": "dep2", "scan_status": "pending"},
+            {"name": "dep3", "scan_status": "failed"},
+        ],
+    )
     await db_session.commit()
 
     filter = DependencyFilter(name=None, statuses=["pending", "failed"])
-    sort = DependencySortInput(field=DependencySortField.NAME, direction=SortDirection.ASC)
+    sort = DependencySortInput(
+        field=DependencySortField.NAME, direction=SortDirection.ASC
+    )
     pagination = PaginationInput(page=1, page_size=10)
 
     _, completed, pending, failed, deps = await get_dependencies_paginated(
@@ -81,13 +100,16 @@ async def test_get_dependencies_paginated_status_filter(db_session: AsyncSession
 
 @pytest.mark.asyncio
 async def test_get_dependencies_paginated_pagination_math(db_session: AsyncSession):
-    await db_session.execute(insert(DependencyDBModel), [
-        {"name": f"dep-{i}", "scan_status": "completed"} for i in range(5)
-    ])
+    await db_session.execute(
+        insert(DependencyDBModel),
+        [{"name": f"dep-{i}", "scan_status": "completed"} for i in range(5)],
+    )
     await db_session.commit()
 
     filter = DependencyFilter(name=None, statuses=None)
-    sort = DependencySortInput(field=DependencySortField.NAME, direction=SortDirection.ASC)
+    sort = DependencySortInput(
+        field=DependencySortField.NAME, direction=SortDirection.ASC
+    )
     pagination = PaginationInput(page=2, page_size=2)
 
     total_pages, completed, pending, failed, deps = await get_dependencies_paginated(

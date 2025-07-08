@@ -150,13 +150,17 @@ async def test_save_selected_repositories(
 async def test_dependencies(mock_get_dependencies_paginated, mock_context):
     # Mock response from get_dependencies_paginated
     mock_get_dependencies_paginated.return_value = (
-        3, 5, 2, 1,  # total_pages, completed, pending, failed
+        3,
+        5,
+        2,
+        1,  # total_pages, completed, pending, failed
         [
             MagicMock(id=1, name="dep1"),
             MagicMock(id=2, name="dep2"),
-        ]
+        ],
     )
 
+    # ruff: noqa: E501
     query = """
       query GetDependencies($filter: DependencyFilter!, $sort: DependencySortInput!, $pagination: PaginationInput!) {
         dependencies(filter: $filter, sort: $sort, pagination: $pagination) {
@@ -173,7 +177,7 @@ async def test_dependencies(mock_get_dependencies_paginated, mock_context):
     """
 
     variables = {
-        "filter": { "statuses": []},
+        "filter": {"statuses": []},
         "sort": {"field": "NAME", "direction": "ASC"},
         "pagination": {"page": 1, "pageSize": 10},
     }
@@ -197,7 +201,7 @@ async def test_dependencies(mock_get_dependencies_paginated, mock_context):
 async def test_get_cron_info(mock_get_cron_info, mock_context):
     mock_get_cron_info.return_value = [
         MagicMock(scan_day=0, scan_hour=13, total=5),  # Monday
-        MagicMock(scan_day=3, scan_hour=9, total=2),   # Thursday
+        MagicMock(scan_day=3, scan_hour=9, total=2),  # Thursday
     ]
 
     query = """

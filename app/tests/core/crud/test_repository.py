@@ -3,8 +3,8 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.crud.repository import add_repository_ids, get_cron_info, get_repositories
-from core.models.user import User as UserDBModel
 from core.models.repository import Repository as RepositoryDBModel
+from core.models.user import User as UserDBModel
 
 
 @pytest.mark.asyncio
@@ -23,13 +23,31 @@ async def test_add_repository_ids(db_session: AsyncSession, test_user: UserDBMod
     assert repos[1].github_id == 2222
     assert repos[1].url == "https://github.com/test/repo2"
 
-@pytest.mark.asyncio
 
+@pytest.mark.asyncio
 async def test_get_cron_info(db_session: AsyncSession, test_user: UserDBModel):
     data = [
-        {"user_id": test_user.id, "github_id": 1, "url": "https://github.com/a/repo1", "scan_day": 1, "scan_hour": 10},  # Monday 10h
-        {"user_id": test_user.id, "github_id": 2, "url": "https://github.com/a/repo2", "scan_day": 1, "scan_hour": 10},  # Monday 10h
-        {"user_id": test_user.id, "github_id": 3, "url": "https://github.com/a/repo3", "scan_day": 2, "scan_hour": 14},  # Tuesday 14h
+        {
+            "user_id": test_user.id,
+            "github_id": 1,
+            "url": "https://github.com/a/repo1",
+            "scan_day": 1,
+            "scan_hour": 10,
+        },  # Monday 10h
+        {
+            "user_id": test_user.id,
+            "github_id": 2,
+            "url": "https://github.com/a/repo2",
+            "scan_day": 1,
+            "scan_hour": 10,
+        },  # Monday 10h
+        {
+            "user_id": test_user.id,
+            "github_id": 3,
+            "url": "https://github.com/a/repo3",
+            "scan_day": 2,
+            "scan_hour": 14,
+        },  # Tuesday 14h
     ]
 
     await db_session.execute(insert(RepositoryDBModel), data)
