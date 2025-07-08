@@ -50,11 +50,12 @@ async def add_repository_ids(
 
 
 async def get_cron_info(db_session: AsyncSession):
-    return (await db_session.execute(
-        select(
-            RepositoryDBModel.scan_day, 
-            RepositoryDBModel.scan_hour,
-            func.count().label("total")
+    return (
+        await db_session.execute(
+            select(
+                RepositoryDBModel.scan_day,
+                RepositoryDBModel.scan_hour,
+                func.count().label("total"),
+            ).group_by(RepositoryDBModel.scan_day, RepositoryDBModel.scan_hour)
         )
-        .group_by(RepositoryDBModel.scan_day, RepositoryDBModel.scan_hour)
-    )).all()
+    ).all()

@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List
+
 import strawberry
 
 
@@ -12,16 +13,17 @@ class DependencySortField(Enum):
     SCAN_STATUS = "scan_status"
     ERROR_MESSAGE = "error_message"
 
+
 @strawberry.enum
 class SortDirection(Enum):
     ASC = "asc"
     DESC = "desc"
 
+
 @strawberry.input
 class DependencyFilter:
     name: str = ""
     statuses: List[str]
-
 
 
 @strawberry.input

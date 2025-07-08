@@ -1,15 +1,19 @@
+import calendar
 from typing import List
-import traceback
 
 import httpx
 import strawberry
 from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.types import Info
-import calendar
 
 from api.auth.jwt_utils import decode_token
 from api.graphql.inputs import DependencyFilter, DependencySortInput, PaginationInput
-from api.graphql.types import CronInfo, DependencyPaginatedResponse, DependencyType, GitHubRepository
+from api.graphql.types import (
+    CronInfo,
+    DependencyPaginatedResponse,
+    DependencyType,
+    GitHubRepository,
+)
 from core.crud.dependency import get_dependencies_paginated
 from core.crud.repository import (
     add_repository_ids,
@@ -98,8 +102,18 @@ class Query:
         return await get_repositories_for_user(user_id, db)
 
     @strawberry.field
-    async def dependencies(self, info: Info, filter: DependencyFilter, sort: DependencySortInput, pagination: PaginationInput) -> DependencyPaginatedResponse:
-        total_pages, completed, pending, failed, dependency_models = await get_dependencies_paginated(info.context["db"], filter, sort, pagination)
+    async def dependencies(
+        self,
+        info: Info,
+        filter: DependencyFilter,
+        sort: DependencySortInput,
+        pagination: PaginationInput,
+    ) -> DependencyPaginatedResponse:
+        total_pages, completed, pending, failed, dependency_models = (
+            await get_dependencies_paginated(
+                info.context["db"], filter, sort, pagination
+            )
+        )
         dependencies = [
             DependencyType.from_model(dependency) for dependency in dependency_models
         ]
@@ -109,19 +123,24 @@ class Query:
             total_pages=total_pages,
             completed=completed,
             pending=pending,
-            failed=failed
+            failed=failed,
         )
-
 
     @strawberry.field
     async def get_cron_info(self, info: Info) -> List[CronInfo]:
         db = info.context["db"]
 
         cron_info = [
-            CronInfo(day=calendar.day_name[cron.scan_day], hour=cron.scan_hour, total=cron.total) for cron in await get_cron_info(db)
+            CronInfo(
+                day=calendar.day_name[cron.scan_day],
+                hour=cron.scan_hour,
+                total=cron.total,
+            )
+            for cron in await get_cron_info(db)
         ]
 
         return cron_info
+
 
 @strawberry.type
 class Mutation:
@@ -140,4 +159,3 @@ class Mutation:
         await add_repository_ids(db, user_id, tracked_repositories)
 
         return await get_repositories_for_user(user_id, db)
-

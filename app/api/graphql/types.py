@@ -3,6 +3,7 @@ from typing import List, Optional
 
 import strawberry
 
+
 @strawberry.type
 class DependencyType:
     id: int
@@ -23,10 +24,15 @@ class DependencyType:
             name=model.name,
             ecosystem=model.ecosystem,
             scan_status=model.scan_status,
-            repository_url=model.dependency_repository.repository_url if model.dependency_repository else None,
+            repository_url=(
+                model.dependency_repository.repository_url
+                if model.dependency_repository
+                else None
+            ),
             scanned_at=model.scanned_at,
-            error_message=model.error_message
+            error_message=model.error_message,
         )
+
 
 @strawberry.type
 class DependencyPaginatedResponse:
@@ -35,6 +41,7 @@ class DependencyPaginatedResponse:
     completed: int = 0
     pending: int = 0
     failed: int = 0
+
 
 @strawberry.type
 class CronInfo:
