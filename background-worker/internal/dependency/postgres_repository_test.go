@@ -37,7 +37,7 @@ func ClearTables(pool *pgxpool.Pool) {
 
 func SeedDependencies(pool *pgxpool.Pool) {
 	_, err := pool.Exec(TestCtx, `
-		INSERT INTO dependencies (id, name, ecosystem, status)
+		INSERT INTO dependencies (id, name, ecosystem, scan_status)
 		VALUES
 			(1, 'react', 'npm', 'pending'),
 			(2, 'express', 'npm', 'pending'),
@@ -145,7 +145,7 @@ func TestBatchUpdateDependencies(t *testing.T) {
 
 	var status string
 	var id int
-	err = TestDB.QueryRow(TestCtx, `SELECT id, status FROM dependencies WHERE name='react'`).Scan(&id, &status)
+	err = TestDB.QueryRow(TestCtx, `SELECT id, scan_status FROM dependencies WHERE name='react'`).Scan(&id, &status)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, status)
@@ -170,7 +170,7 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 
 	var status string
 	var reason string
-	err = TestDB.QueryRow(TestCtx, `SELECT status, repository_url_resolve_failed_reason FROM dependencies WHERE id=$1`, deps[0].ID).Scan(&status, &reason)
+	err = TestDB.QueryRow(TestCtx, `SELECT scan_status, error_message FROM dependencies WHERE id=$1`, deps[0].ID).Scan(&status, &reason)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "failed", status)
