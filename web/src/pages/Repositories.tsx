@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { LogIn, Package } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
-import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
+import { ImportReposDialog } from '@/components/repositories/ImportRepositoriesDialog'
 import { RepositoryOverview } from '@/components/repositories/RepositoryOverview'
 import {
   useGetRepositoriesQuery,

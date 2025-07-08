@@ -4,7 +4,7 @@ import { Layout } from './components/layout/Layout'
 import { Repositories } from './pages/Repositories'
 import { Repositories as AdminRepositories } from './pages/admin/repositories'
 import { Dependencies as AdminDependencies } from './pages/admin/dependencies'
-import { ThemeProvider } from './components/theme-provider'
+import { ThemeProvider } from './components/ThemeProvider'
 
 function App() {
   return (

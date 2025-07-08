@@ -1,4 +1,3 @@
-import type { GitHubRepository } from '@/types'
 import {
   AlertTriangle,
   CheckCircle,
@@ -14,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/utils'
+import type { GitHubRepository } from '@/generated/graphql'
 
 type RepositoryOverviewParams = {
   repository: GitHubRepository
@@ -26,7 +26,7 @@ export const RepositoryOverview = ({
     if (score >= 80) {
       return <CheckCircle className="w-4 h-4 text-green-600" />
     } else if (score >= 60) {
-      return <AlertTriangle className="w-4 h-4 text-yello-600" />
+      return <AlertTriangle className="w-4 h-4 text-yellow-600" />
     } else {
       return <XCircle className="w-4 h-4 text-red-600" />
     }
@@ -52,9 +52,9 @@ export const RepositoryOverview = ({
               {repository.lastScannedAt !== null &&
               repository.lastScannedAt !== undefined ? (
                 <>
-                  {getHealthIcon(repository.score)}
+                  {getHealthIcon(repository.score ?? 0)}
                   <span
-                    className={`text-xs font-medium ${getHealthColor(repository.score)}`}
+                    className={`text-xs font-medium ${getHealthColor(repository.score ?? 0)}`}
                   >
                     {repository.score}/100
                   </span>
@@ -88,7 +88,7 @@ export const RepositoryOverview = ({
             <AlertTriangle size={12} />
             <span
               className={
-                repository.lastScannedAt && repository.vulnerabilities > 0
+                repository.lastScannedAt && repository.vulnerabilities && repository.vulnerabilities > 0
                   ? 'text-red-600'
                   : ''
               }

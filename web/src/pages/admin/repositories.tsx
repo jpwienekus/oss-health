@@ -3,9 +3,9 @@ import SwirlingEffectSpinner from '@/components/customized/spinner/spinner-06'
 import { useGetCronInfoQuery } from '@/generated/graphql'
 import { ResponsiveHeatMap } from '@nivo/heatmap'
 import { useEffect, useState } from 'react'
-import { RequestLogin } from '@/components/request-login'
+import { RequestLogin } from '@/components/RequestLogin'
 import { toast } from 'sonner'
-import { useTheme } from '@/components/theme-provider'
+import { useTheme } from '@/components/ThemeProvider'
 
 type HeatmapEntry = {
   id: string

@@ -10,7 +10,7 @@ import { columns } from '@/components/admin/columns'
 import SwirlingEffectSpinner from '@/components/customized/spinner/spinner-06'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthContext'
-import { RequestLogin } from '@/components/request-login'
+import { RequestLogin } from '@/components/RequestLogin'
 
 const sortColumnMap: Record<string, DependencySortField> = {
   name: 'NAME',
