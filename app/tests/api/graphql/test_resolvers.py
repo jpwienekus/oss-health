@@ -143,3 +143,82 @@ async def test_save_selected_repositories(
     assert result.data is not None
     assert len(result.data["saveSelectedRepositories"]) == 1
     assert result.data["saveSelectedRepositories"][0]["name"] == "repo1"
+
+
+@pytest.mark.asyncio
+@patch("api.graphql.resolvers.get_dependencies_paginated", new_callable=AsyncMock)
+async def test_dependencies(mock_get_dependencies_paginated, mock_context):
+    # Mock response from get_dependencies_paginated
+    mock_get_dependencies_paginated.return_value = (
+        3, 5, 2, 1,  # total_pages, completed, pending, failed
+        [
+            MagicMock(id=1, name="dep1"),
+            MagicMock(id=2, name="dep2"),
+        ]
+    )
+
+    query = """
+      query GetDependencies($filter: DependencyFilter!, $sort: DependencySortInput!, $pagination: PaginationInput!) {
+        dependencies(filter: $filter, sort: $sort, pagination: $pagination) {
+          totalPages
+          completed
+          pending
+          failed
+          dependencies {
+            id
+            name
+          }
+        }
+      }
+    """
+
+    variables = {
+        "filter": { "statuses": []},
+        "sort": {"field": "NAME", "direction": "ASC"},
+        "pagination": {"page": 1, "pageSize": 10},
+    }
+
+    result = await schema.execute(
+        query, context_value=mock_context, variable_values=variables
+    )
+
+    assert result.errors is None
+    assert result.data is not None
+    deps = result.data["dependencies"]
+    assert deps["totalPages"] == 3
+    assert deps["completed"] == 5
+    assert deps["pending"] == 2
+    assert deps["failed"] == 1
+    assert len(deps["dependencies"]) == 2
+
+
+@pytest.mark.asyncio
+@patch("api.graphql.resolvers.get_cron_info", new_callable=AsyncMock)
+async def test_get_cron_info(mock_get_cron_info, mock_context):
+    mock_get_cron_info.return_value = [
+        MagicMock(scan_day=0, scan_hour=13, total=5),  # Monday
+        MagicMock(scan_day=3, scan_hour=9, total=2),   # Thursday
+    ]
+
+    query = """
+      query {
+        getCronInfo {
+          day
+          hour
+          total
+        }
+      }
+    """
+
+    result = await schema.execute(query, context_value=mock_context)
+
+    assert result.errors is None
+    assert result.data is not None
+    info = result.data["getCronInfo"]
+
+    assert info == [
+        {"day": "Monday", "hour": "13", "total": 5},
+        {"day": "Thursday", "hour": "9", "total": 2},
+    ]
+
+    mock_get_cron_info.assert_called_once()
