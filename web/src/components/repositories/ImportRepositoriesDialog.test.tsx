@@ -33,8 +33,9 @@ vi.mock('@/generated/graphql.tsx', () => ({
           },
         ],
       },
-      loading: false, error: null
-    }
+      loading: false,
+      error: null,
+    },
   ]),
 }))
 
@@ -69,7 +70,9 @@ describe('ImportReposDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /import from github/i }))
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/search repositories/i)).toBeInTheDocument()
+      expect(
+        screen.getByPlaceholderText(/search repositories/i),
+      ).toBeInTheDocument()
       expect(screen.getByText('Repo One')).toBeInTheDocument()
       expect(screen.getByText('Repo Two')).toBeInTheDocument()
     })
@@ -115,7 +118,9 @@ describe('ImportReposDialog', () => {
     //   vi.fn(),
     //   { data: null, loading: false, error: new Error('GraphQL error') },
     // ])
-    (useGithubRepositoriesLazyQuery as ReturnType<typeof vi.fn>).mockReturnValueOnce([
+    ;(
+      useGithubRepositoriesLazyQuery as ReturnType<typeof vi.fn>
+    ).mockReturnValueOnce([
       vi.fn(),
       { data: null, loading: false, error: new Error('GraphQL error') },
     ])

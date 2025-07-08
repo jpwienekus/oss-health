@@ -88,7 +88,9 @@ export const RepositoryOverview = ({
             <AlertTriangle size={12} />
             <span
               className={
-                repository.lastScannedAt && repository.vulnerabilities && repository.vulnerabilities > 0
+                repository.lastScannedAt &&
+                repository.vulnerabilities &&
+                repository.vulnerabilities > 0
                   ? 'text-red-600'
                   : ''
               }

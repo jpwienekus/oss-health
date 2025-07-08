@@ -5,8 +5,8 @@ import {
   type DependencyType,
 } from '@/generated/graphql'
 import { useEffect, useState } from 'react'
-import { DataTable } from '@/components/admin/data-table'
-import { columns } from '@/components/admin/columns'
+import { DataTable } from '@/components/admin/DataTable'
+import { Columns } from '@/components/admin/Columns'
 import SwirlingEffectSpinner from '@/components/customized/spinner/spinner-06'
 import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthContext'
@@ -122,7 +122,7 @@ export const Dependencies = () => {
 
       {jwt && (
         <DataTable
-          columns={columns}
+          columns={Columns}
           data={dependencies}
           handleSearch={handleSearch}
           handleStatusFilter={handleStatusFilter}

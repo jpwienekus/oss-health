@@ -12,9 +12,9 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table'
-import { DataTableToolbar } from './data-table-toolbar'
-import { DataTableColumnHeader } from './data-table-column-header'
-import { DataTablePagination } from './data-table-pagination'
+import { DataTableToolbar } from './DataTableToolbar'
+import { DataTableColumnHeader } from './DataTableColumnHeader'
+import { DataTablePagination } from './DataTablePagination'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]

@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 import { Columns } from './Columns'
 import type { DependencyType } from '@/generated/graphql'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -16,20 +20,23 @@ function TestTable({ data }: { data: DependencyType[] }) {
     <TooltipProvider>
       <table>
         <thead>
-          {table.getHeaderGroups().map(headerGroup => (
+          {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
+              {headerGroup.headers.map((header) => (
                 <th key={header.id}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext(),
+                  )}
                 </th>
               ))}
             </tr>
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map(row => (
+          {table.getRowModel().rows.map((row) => (
             <tr key={row.id}>
-              {row.getVisibleCells().map(cell => (
+              {row.getVisibleCells().map((cell) => (
                 <td key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
@@ -73,7 +80,6 @@ describe('columns', () => {
     },
   ]
 
-
   beforeEach(() => {
     render(<TestTable data={mockData} />)
   })
@@ -105,6 +111,8 @@ describe('columns', () => {
   })
 
   it('renders actual repository url', () => {
-    expect(screen.getByText('https://github.com/lodash/lodash')).toBeInTheDocument()
+    expect(
+      screen.getByText('https://github.com/lodash/lodash'),
+    ).toBeInTheDocument()
   })
 })

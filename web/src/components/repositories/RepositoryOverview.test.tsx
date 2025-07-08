@@ -19,7 +19,7 @@ const baseRepository: GitHubRepository = {
   githubId: 2,
   url: 'test',
   stars: 1,
-  watchers: 1
+  watchers: 1,
 }
 
 describe('RepositoryOverview', () => {
@@ -64,7 +64,9 @@ describe('RepositoryOverview', () => {
   })
 
   it('shows "Private" badge if repository.private is true', () => {
-    render(<RepositoryOverview repository={{ ...baseRepository, private: true }} />)
+    render(
+      <RepositoryOverview repository={{ ...baseRepository, private: true }} />,
+    )
 
     expect(screen.getByText('Private')).toBeInTheDocument()
   })
@@ -75,7 +77,11 @@ describe('RepositoryOverview', () => {
     expect(screen.getByText(/10 dependencies/i)).toBeInTheDocument()
 
     // When lastScannedAt missing, show "-"
-    render(<RepositoryOverview repository={{ ...baseRepository, lastScannedAt: null }} />)
+    render(
+      <RepositoryOverview
+        repository={{ ...baseRepository, lastScannedAt: null }}
+      />,
+    )
     expect(screen.getByText(/- dependencies/i)).toBeInTheDocument()
   })
 
@@ -96,9 +102,15 @@ describe('RepositoryOverview', () => {
 
   it('shows formatted lastScannedAt date', () => {
     render(<RepositoryOverview repository={baseRepository} />)
-    expect(screen.getByText(`Formatted: ${baseRepository.lastScannedAt}`)).toBeInTheDocument()
+    expect(
+      screen.getByText(`Formatted: ${baseRepository.lastScannedAt}`),
+    ).toBeInTheDocument()
 
-    render(<RepositoryOverview repository={{ ...baseRepository, lastScannedAt: null }} />)
+    render(
+      <RepositoryOverview
+        repository={{ ...baseRepository, lastScannedAt: null }}
+      />,
+    )
     expect(screen.getByText('-')).toBeInTheDocument()
   })
 })

@@ -4,14 +4,16 @@ import { RequestLogin } from './RequestLogin'
 
 describe('RequestLogin', () => {
   it('renders the login message and icon', () => {
-   const { container } = render(<RequestLogin />)
+    const { container } = render(<RequestLogin />)
 
     expect(
       screen.getByRole('heading', { name: /you're not logged in/i }),
     ).toBeInTheDocument()
 
     expect(
-      screen.getByText(/log in with your github account to view your repositories/i),
+      screen.getByText(
+        /log in with your github account to view your repositories/i,
+      ),
     ).toBeInTheDocument()
 
     const icon = container.querySelector('svg.lucide-log-in')
