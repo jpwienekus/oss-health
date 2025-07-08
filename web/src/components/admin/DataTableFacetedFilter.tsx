@@ -120,11 +120,12 @@ export function DataTableFacetedFilter<TData, TValue>({
                       />
                     )}
                     <span>{option.label}</span>
-                    {facetTotals?.[option.value] != null && (
-                      <span className="text-muted-foreground ml-auto flex size-4 items-center justify-center font-mono text-xs">
-                        {facetTotals[option.value]}
-                      </span>
-                    )}
+                    {facetTotals?.[option.value] !== null &&
+                      facetTotals?.[option.value] !== undefined && (
+                        <span className="text-muted-foreground ml-auto flex size-4 items-center justify-center font-mono text-xs">
+                          {facetTotals[option.value]}
+                        </span>
+                      )}
                   </CommandItem>
                 )
               })}
