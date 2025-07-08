@@ -24,7 +24,7 @@ func TestResolvePendingDependencies_Success(t *testing.T) {
 
 	repository.On("GetDependenciesPendingUrlResolution", ctx, 10, 0, "npm").Return(deps, nil)
 	limiter.On("WaitUntilAllowed", ctx, "npm").Return(nil)
-	repository.On("UpsertGithubURLs", ctx, map[int64]string{1: "https://github.com/test/repo"}).
+	repository.On("UpsertRepositoryURLs", ctx, map[int64]string{1: "https://github.com/test/repo"}).
 		Return(map[int64]int64{100: 10}, nil)
 	repository.On("BatchUpdateDependencies", ctx, map[int64]int64{100: 10}).Return(nil)
 
@@ -110,7 +110,7 @@ func TestResolvePendingDependencies_ResolverError(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestResolvePendingDependencies_UpsertGithubURLsFails(t *testing.T) {
+func TestResolvePendingDependencies_UpsertRepositoryURLsFails(t *testing.T) {
 	ctx := context.Background()
 	repository := new(dependency.MockDependencyRepository)
 	limiter := new(dependency.MockRateLimiter)
@@ -118,7 +118,7 @@ func TestResolvePendingDependencies_UpsertGithubURLsFails(t *testing.T) {
 	deps := []dependency.Dependency{{ID: 1, Name: "test", Ecosystem: "npm"}}
 	repository.On("GetDependenciesPendingUrlResolution", ctx, 10, 0, "npm").Return(deps, nil)
 	limiter.On("WaitUntilAllowed", ctx, "npm").Return(nil)
-	repository.On("UpsertGithubURLs", ctx, mock.Anything).Return(map[int64]int64{}, errors.New("upsert failed"))
+	repository.On("UpsertRepositoryURLs", ctx, mock.Anything).Return(map[int64]int64{}, errors.New("upsert failed"))
 
 	service := dependency.NewDependencyService(repository, limiter, map[string]func(context.Context, string) (string, error){
 		"npm": func(ctx context.Context, name string) (string, error) {
@@ -127,7 +127,7 @@ func TestResolvePendingDependencies_UpsertGithubURLsFails(t *testing.T) {
 	})
 
 	err := service.ResolvePendingDependencies(ctx, 10, 0, "npm")
-	assert.ErrorContains(t, err, "upsert GitHub URLs: upsert failed")
+	assert.ErrorContains(t, err, "upsert Repository URLs: upsert failed")
 }
 
 func TestResolvePendingDependencies_Concurrency(t *testing.T) {
@@ -158,7 +158,7 @@ func TestResolvePendingDependencies_Concurrency(t *testing.T) {
 		upserted[dep.ID] = dep.ID + 1000
 	}
 
-	repository.On("UpsertGithubURLs", ctx, mock.Anything).Return(upserted, nil)
+	repository.On("UpsertRepositoryURLs", ctx, mock.Anything).Return(upserted, nil)
 
 	repository.On("BatchUpdateDependencies", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

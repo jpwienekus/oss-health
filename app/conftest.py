@@ -120,7 +120,9 @@ async def test_repository(
 async def test_version(
     db_session: AsyncSession, version_str: str = "1.0.0"
 ) -> VersionDBModel:
-    dependency = DependencyDBModel(name="example-package", ecosystem="pypi")
+    dependency = DependencyDBModel(
+        name="example-package", ecosystem="pypi", scan_status="pending"
+    )
     db_session.add(dependency)
     await db_session.flush()
 

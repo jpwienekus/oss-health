@@ -1,0 +1,19 @@
+query GithubRepositories {
+    githubRepositories {
+      id
+      name
+      description
+      githubId
+      stars
+      watchers
+      forks
+      private
+      score
+      vulnerabilities
+      dependencies
+      url
+      lastScannedAt
+      updatedAt
+    }
+  }
+

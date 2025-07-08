@@ -1,22 +1,24 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/auth/AuthContext'
-import { useState } from 'react'
-import type { GitHubRepository } from '@/types'
-import { getClient } from '@/graphql/client'
+import { useEffect, useState } from 'react'
 import { Calendar, Eye, GitFork, Import, Search, Star } from 'lucide-react'
-import { GET_REPOSITORIES_FROM_GITHUB } from '@/graphql/queries'
 import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { Checkbox } from '../ui/checkbox'
 import { formatDate } from '@/utils'
+import {
+  useGithubRepositoriesLazyQuery,
+  type GitHubRepository,
+} from '@/generated/graphql'
+import { toast } from 'sonner'
 
 type ImportReposDialogParams = {
   alreadyTracked: number[]
@@ -29,43 +31,38 @@ export const ImportReposDialog = ({
 }: ImportReposDialogParams) => {
   // TODO: Fetch with account info
   const MAX_REPOSITORIES = 2
-  const { jwt } = useAuth()
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const [isImporting, setIsImporting] = useState<boolean>(false)
-  const [githubRepositories, setGitHubRepositories] = useState<
-    GitHubRepository[]
-  >([])
-  const [selectedRepositories, setSelectedRepositories] = useState<number[]>([])
 
-  const filteredRepos = githubRepositories
+  const [selectedRepositories, setSelectedRepositories] = useState<number[]>([])
+  const [getRepositories, { data, error, loading }] =
+    useGithubRepositoriesLazyQuery()
+
+  const filteredRepos = (data?.githubRepositories ?? [])
     .filter(
       (repo) =>
-        repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        repo.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+        (repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          repo.description?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        !alreadyTracked.includes(repo.githubId),
     )
     .sort(
       (a: GitHubRepository, b: GitHubRepository) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     )
 
-  const fetchGitHubRepos = async () => {
-    if (!jwt) {
+  useEffect(() => {
+    if (!error) {
       return
     }
 
-    setIsImporting(true)
-    const client = getClient(jwt)
-    const response = await client.request<{
-      githubRepositories: GitHubRepository[]
-    }>(GET_REPOSITORIES_FROM_GITHUB)
-    setGitHubRepositories(
-      response.githubRepositories.filter(
-        (e) => !alreadyTracked.includes(e.githubId),
-      ),
-    )
+    toast.error('Could not fetch repositories', {
+      description: error.message,
+    })
+  }, [error])
+
+  const fetchGitHubRepos = async () => {
+    await getRepositories()
     setSelectedRepositories([])
-    setIsImporting(false)
     setIsOpen(true)
   }
 
@@ -85,21 +82,26 @@ export const ImportReposDialog = ({
   return (
     <div>
       {alreadyTracked.length < MAX_REPOSITORIES && (
-        <Button onClick={fetchGitHubRepos} disabled={isImporting}>
+        <Button onClick={fetchGitHubRepos} disabled={loading}>
           <Import className="w-4 h-4" />
-          <span>{isImporting ? 'Loading...' : 'Import from GitHub'}</span>
+          <span>{loading ? 'Loading...' : 'Import from GitHub'}</span>
         </Button>
       )}
       {alreadyTracked.length >= MAX_REPOSITORIES && (
-        <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded-md">
+        <div className="text-sm text-slate-500 dark:text-slate-400 p-2 rounded-md">
           Maximum number of repositories ({MAX_REPOSITORIES}) reached
         </div>
       )}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent
+          className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+          aria-describedby="import-dialog-description"
+        >
           <DialogHeader>
             <DialogTitle>Select Reporistories to import</DialogTitle>
           </DialogHeader>
+
+          <DialogDescription></DialogDescription>
 
           <div className="relative mb-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -116,7 +118,11 @@ export const ImportReposDialog = ({
               {filteredRepos.map((repo, index) => (
                 <div
                   key={index}
-                  className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-slate-50 ${selectedRepositories.includes(repo.githubId) ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
+                  className={`flex items-start gap-3 p-4 rounded-lg border transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                    selectedRepositories.includes(repo.githubId)
+                      ? 'bg-blue-50 border-blue-200 dark:bg-blue-900 dark:border-blue-700'
+                      : ''
+                  }}`}
                   onClick={() => handleRepositoryToggle(repo.githubId)}
                 >
                   <Checkbox
@@ -138,11 +144,11 @@ export const ImportReposDialog = ({
                       )}
                     </div>
 
-                    <p className="text-sm text-slate-600 mb-2 line-clamp-2">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 line-clamp-2">
                       {repo.description ?? '-'}
                     </p>
 
-                    <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                    <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
                       <div className="flex items-center gap-1">
                         <Star size={12} />
                         <span>{repo.stars}</span>

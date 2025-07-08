@@ -37,11 +37,11 @@ func ClearTables(pool *pgxpool.Pool) {
 
 func SeedDependencies(pool *pgxpool.Pool) {
 	_, err := pool.Exec(TestCtx, `
-		INSERT INTO dependencies (id, name, ecosystem, github_url_resolved, github_url_resolve_failed)
+		INSERT INTO dependencies (id, name, ecosystem, scan_status)
 		VALUES
-			(1, 'react', 'npm', false, false),
-			(2, 'express', 'npm', false, false),
-			(3, 'flask', 'pypi', false, false)
+			(1, 'react', 'npm', 'pending'),
+			(2, 'express', 'npm', 'pending'),
+			(3, 'flask', 'pypi', 'pending')
 	`)
 
 	if err != nil {
@@ -103,7 +103,7 @@ func TestGetDependenciesPendingUrlResolution(t *testing.T) {
 	assert.Contains(t, names, "express")
 }
 
-func TestUpsertGithubURLs(t *testing.T) {
+func TestUpsertRepositoryURLs(t *testing.T) {
 	ClearTables(TestDB)
 
 	urlMap := map[int64]string{
@@ -112,7 +112,7 @@ func TestUpsertGithubURLs(t *testing.T) {
 	}
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	urlToID, err := repository.UpsertGithubURLs(TestCtx, urlMap)
+	urlToID, err := repository.UpsertRepositoryURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 	assert.Len(t, urlToID, 2)
 
@@ -123,7 +123,7 @@ func TestUpsertGithubURLs(t *testing.T) {
 	}
 
 	// Insert duplicates again, expect same IDs returned (no duplicates)
-	urlToID2, err := repository.UpsertGithubURLs(TestCtx, urlMap)
+	urlToID2, err := repository.UpsertRepositoryURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 	assert.Equal(t, urlToID, urlToID2)
 }
@@ -137,18 +137,18 @@ func TestBatchUpdateDependencies(t *testing.T) {
 	}
 
 	repository := dependency.NewPostgresRepository(TestDB)
-	urlToID, err := repository.UpsertGithubURLs(TestCtx, urlMap)
+	urlToID, err := repository.UpsertRepositoryURLs(TestCtx, urlMap)
 	assert.NoError(t, err)
 
 	err = repository.BatchUpdateDependencies(TestCtx, urlToID)
 	assert.NoError(t, err)
 
-	var resolved bool
+	var status string
 	var id int
-	err = TestDB.QueryRow(TestCtx, `SELECT id, github_url_resolved FROM dependencies WHERE name='react'`).Scan(&id, &resolved)
+	err = TestDB.QueryRow(TestCtx, `SELECT id, scan_status FROM dependencies WHERE name='react'`).Scan(&id, &status)
 
 	assert.NoError(t, err)
-	assert.True(t, resolved)
+	assert.NotEmpty(t, status)
 }
 
 func TestMarkDependenciesAsFailed(t *testing.T) {
@@ -168,12 +168,12 @@ func TestMarkDependenciesAsFailed(t *testing.T) {
 	err = repository.MarkDependenciesAsFailed(TestCtx, failureReasons)
 	assert.NoError(t, err)
 
-	var failed bool
+	var status string
 	var reason string
-	err = TestDB.QueryRow(TestCtx, `SELECT github_url_resolve_failed, github_url_resolve_failed_reason FROM dependencies WHERE id=$1`, deps[0].ID).Scan(&failed, &reason)
+	err = TestDB.QueryRow(TestCtx, `SELECT scan_status, error_message FROM dependencies WHERE id=$1`, deps[0].ID).Scan(&status, &reason)
 
 	assert.NoError(t, err)
-	assert.True(t, failed)
+	assert.Equal(t, "failed", status)
 	assert.Equal(t, "Failed to resolve URL", reason)
 }
 

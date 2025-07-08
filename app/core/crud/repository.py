@@ -1,7 +1,7 @@
 import random
 from typing import List, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -38,8 +38,8 @@ async def add_repository_ids(
                 user_id=user_id,
                 score=0,
                 url=repository.get("url"),
-                scan_day=random.randint(1, 7),
-                scan_hour=random.randint(1, 24),
+                scan_day=random.randint(0, 6),
+                scan_hour=random.randint(0, 23),
                 scan_status="pending",
             )
             for repository in tracked_repositories
@@ -47,3 +47,15 @@ async def add_repository_ids(
     )
 
     await db_session.commit()
+
+
+async def get_cron_info(db_session: AsyncSession):
+    return (
+        await db_session.execute(
+            select(
+                RepositoryDBModel.scan_day,
+                RepositoryDBModel.scan_hour,
+                func.count().label("total"),
+            ).group_by(RepositoryDBModel.scan_day, RepositoryDBModel.scan_hour)
+        )
+    ).all()
