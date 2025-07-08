@@ -36,6 +36,12 @@ class DependencyPaginatedResponse:
     pending: int = 0
     failed: int = 0
 
+@strawberry.type
+class CronInfo:
+    day: str
+    hour: str
+    total: int
+
 
 @strawberry.type
 class Dependency:
