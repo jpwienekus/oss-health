@@ -52,7 +52,7 @@ export const RepositoryOverview = ({
             <CardTitle className="text-lg flex items-center gap-2">
               <span className="text-md font-medium">{repository.name}</span>
               {repository.lastScannedAt !== null &&
-                repository.lastScannedAt !== undefined ? (
+              repository.lastScannedAt !== undefined ? (
                 <>
                   {getHealthIcon(repository.score ?? 0)}
                   <span
@@ -91,8 +91,8 @@ export const RepositoryOverview = ({
             <span
               className={
                 repository.lastScannedAt &&
-                  repository.vulnerabilities &&
-                  repository.vulnerabilities > 0
+                repository.vulnerabilities &&
+                repository.vulnerabilities > 0
                   ? 'text-red-600'
                   : ''
               }
