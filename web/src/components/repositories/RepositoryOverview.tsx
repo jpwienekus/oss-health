@@ -32,8 +32,10 @@ export const RepositoryOverview = ({
     }
   }
 
-  const getHealthColor = (score: number) => {
-    if (score >= 80) {
+  const getHealthColor = (score: number | null) => {
+    if (!score) {
+      return ''
+    } else if (score >= 80) {
       return 'text-green-600'
     } else if (score >= 60) {
       return 'text-yellow-600'
@@ -50,11 +52,11 @@ export const RepositoryOverview = ({
             <CardTitle className="text-lg flex items-center gap-2">
               <span className="text-md font-medium">{repository.name}</span>
               {repository.lastScannedAt !== null &&
-              repository.lastScannedAt !== undefined ? (
+                repository.lastScannedAt !== undefined ? (
                 <>
                   {getHealthIcon(repository.score ?? 0)}
                   <span
-                    className={`text-xs font-medium ${getHealthColor(repository.score ?? 0)}`}
+                    className={`text-xs font-medium ${getHealthColor(repository.score ?? null)}`}
                   >
                     {repository.score}/100
                   </span>
@@ -89,8 +91,8 @@ export const RepositoryOverview = ({
             <span
               className={
                 repository.lastScannedAt &&
-                repository.vulnerabilities &&
-                repository.vulnerabilities > 0
+                  repository.vulnerabilities &&
+                  repository.vulnerabilities > 0
                   ? 'text-red-600'
                   : ''
               }
