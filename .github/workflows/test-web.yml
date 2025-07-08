@@ -32,3 +32,8 @@ jobs:
         run: |
           cd web/
           pnpm lint
+
+      - name: Run Build
+        run: |
+          cd web/
+          pnpm run build

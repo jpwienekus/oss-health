@@ -2,10 +2,10 @@ import { Input } from '@/components/ui/input'
 import type { Table } from '@tanstack/react-table'
 import { useState } from 'react'
 import { DataTableFacetedFilter } from './DataTableFacetedFilter'
-import { statuses } from './Columns'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import { DataTableViewOptions } from './DataTableViewOptions'
+import { statuses } from './Columns'
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>

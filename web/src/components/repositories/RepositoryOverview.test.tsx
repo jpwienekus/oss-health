@@ -26,7 +26,9 @@ describe('RepositoryOverview', () => {
   it('renders repository name and description', () => {
     render(<RepositoryOverview repository={baseRepository} />)
     expect(screen.getByText(baseRepository.name)).toBeInTheDocument()
-    expect(screen.getByText(baseRepository.description)).toBeInTheDocument()
+    expect(
+      screen.getByText(baseRepository.description ?? ''),
+    ).toBeInTheDocument()
   })
 
   it('shows the green CheckCircle icon and green score when score >= 80', () => {
