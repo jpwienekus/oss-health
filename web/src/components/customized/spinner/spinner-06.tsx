@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react'
 
 const SwirlingEffectSpinner = () => {
   return (
@@ -50,7 +50,7 @@ const SwirlingEffectSpinner = () => {
         />
       </svg>
     </>
-  );
-};
+  )
+}
 
-export default SwirlingEffectSpinner;
+export default SwirlingEffectSpinner

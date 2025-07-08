@@ -12,8 +12,8 @@ createRoot(document.getElementById('root')!).render(
     <ApolloProvider client={client}>
       <AuthProvider>
         <App />
-        <Toaster position='top-center'/>
+        <Toaster position="top-center" />
       </AuthProvider>
     </ApolloProvider>
-  </StrictMode>
+  </StrictMode>,
 )

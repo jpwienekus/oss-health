@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/auth/AuthContext'
 import { ImportReposDialog } from '@/components/repositories/ImportReposDialog'
 import { RepositoryOverview } from '@/components/repositories/RepositoryOverview'
-import { useGetRepositoriesQuery, useSaveSelectedRepositoriesMutation, type GitHubRepository } from '@/generated/graphql'
+import {
+  useGetRepositoriesQuery,
+  useSaveSelectedRepositoriesMutation,
+  type GitHubRepository,
+} from '@/generated/graphql'
 import SwirlingEffectSpinner from '@/components/customized/spinner/spinner-06'
 import { toast } from 'sonner'
 
@@ -42,7 +46,6 @@ export const Repositories = () => {
       }
     })
 
-
   const [saveRepositories] = useSaveSelectedRepositoriesMutation()
 
   useEffect(() => {
@@ -60,21 +63,20 @@ export const Repositories = () => {
       return
     }
 
-    toast.error("Could not fetch repositories", {
+    toast.error('Could not fetch repositories', {
       description: error.message,
     })
-
   }, [error])
 
   const onDialogConfirm = async (selectedRepositoryIds: number[]) => {
-    const { data } = await saveRepositories({
+    const { data: saveData } = await saveRepositories({
       variables: {
-        selectedGithubRepositoryIds: selectedRepositoryIds
-      }
+        selectedGithubRepositoryIds: selectedRepositoryIds,
+      },
     })
 
-    if (data) {
-      setRepositories(data.saveSelectedRepositories)
+    if (saveData) {
+      setRepositories(saveData.saveSelectedRepositories)
     }
   }
 

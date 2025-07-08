@@ -5,12 +5,16 @@ const config: CodegenConfig = {
   documents: './src/**/*.graphql',
   generates: {
     './src/generated/graphql.tsx': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-react-apollo'],
+      plugins: [
+        'typescript',
+        'typescript-operations',
+        'typescript-react-apollo',
+      ],
       config: {
         withHooks: 'I',
-        enumsAsTypes: true
-      }
-    }
-  }
+        enumsAsTypes: true,
+      },
+    },
+  },
 }
 export default config

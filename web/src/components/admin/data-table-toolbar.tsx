@@ -1,16 +1,16 @@
-import { Input } from "@/components/ui/input"
-import type { Table } from "@tanstack/react-table"
-import { useState } from "react"
-import { DataTableFacetedFilter } from "./data-table-faceted-filter"
-import { statuses } from "./columns"
-import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
-import { DataTableViewOptions } from "./data-table-view-options"
+import { Input } from '@/components/ui/input'
+import type { Table } from '@tanstack/react-table'
+import { useState } from 'react'
+import { DataTableFacetedFilter } from './data-table-faceted-filter'
+import { statuses } from './columns'
+import { Button } from '@/components/ui/button'
+import { X } from 'lucide-react'
+import { DataTableViewOptions } from './data-table-view-options'
 
 interface DataTableToolbarProps<TData> {
-  table: Table<TData>,
-  handleSearch: (searchValue: string) => void,
-  handleStatusFilter: (selectedValues: string[]) => void,
+  table: Table<TData>
+  handleSearch: (searchValue: string) => void
+  handleStatusFilter: (selectedValues: string[]) => void
   statusTotals?: { [key: string]: number | undefined }
 }
 
@@ -18,10 +18,11 @@ export function DataTableToolbar<TData>({
   table,
   handleSearch,
   handleStatusFilter,
-  statusTotals
+  statusTotals,
 }: DataTableToolbarProps<TData>) {
   const [search, setSearch] = useState('')
-  const isFiltered = search.length > 0 || table.getState().columnFilters.length > 0
+  const isFiltered =
+    search.length > 0 || table.getState().columnFilters.length > 0
   const handleLocalSearch = (value: string) => {
     setSearch(value)
     handleSearch(value)
@@ -33,14 +34,12 @@ export function DataTableToolbar<TData>({
         <Input
           placeholder="Filter dependencies..."
           value={search}
-          onChange={(event) =>
-            handleLocalSearch(event.target.value)
-          }
+          onChange={(event) => handleLocalSearch(event.target.value)}
           className="h-8 w-[150px] lg:w-[250px]"
         />
-        {table.getColumn("scanStatus") && (
+        {table.getColumn('scanStatus') && (
           <DataTableFacetedFilter
-            column={table.getColumn("scanStatus")}
+            column={table.getColumn('scanStatus')}
             title="Status"
             options={statuses}
             handleStatusFilter={handleStatusFilter}

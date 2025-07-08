@@ -15,24 +15,24 @@
 // }
 
 export interface Dependency {
-    id: number
-    name: string
-    ecosystem: string
-    githubUrlResolved: boolean
-    githubUrlResolveFailed: boolean
-    githubUrlResolveFailedReason: string
+  id: number
+  name: string
+  ecosystem: string
+  githubUrlResolved: boolean
+  githubUrlResolveFailed: boolean
+  githubUrlResolveFailedReason: string
 }
 
 export interface DependencyEdge {
-  node: Dependency,
+  node: Dependency
   cursor: number
 }
 
 export interface PageInfo {
-    hasNextPage: boolean
-    hasPreviousPage: boolean
-    startCursor?: number
-    endCursor?: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  startCursor?: number
+  endCursor?: number
 }
 
 export interface DependencyConnection {
@@ -55,8 +55,8 @@ export interface DependencyConnection {
 //
 // }
 
-    // field: DependencySortField = DependencySortField.ID
-    // direction: SortDirection = SortDirection.ASC
+// field: DependencySortField = DependencySortField.ID
+// direction: SortDirection = SortDirection.ASC
 /*
  
 export const GET_DEPENDENCIES = gql`

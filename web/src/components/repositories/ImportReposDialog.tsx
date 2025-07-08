@@ -7,14 +7,16 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/auth/AuthContext'
 import { useEffect, useState } from 'react'
 import { Calendar, Eye, GitFork, Import, Search, Star } from 'lucide-react'
 import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { Checkbox } from '../ui/checkbox'
 import { formatDate } from '@/utils'
-import { useGithubRepositoriesLazyQuery, type GitHubRepository } from '@/generated/graphql'
+import {
+  useGithubRepositoriesLazyQuery,
+  type GitHubRepository,
+} from '@/generated/graphql'
 import { toast } from 'sonner'
 
 type ImportReposDialogParams = {
@@ -28,12 +30,12 @@ export const ImportReposDialog = ({
 }: ImportReposDialogParams) => {
   // TODO: Fetch with account info
   const MAX_REPOSITORIES = 2
-  const { jwt } = useAuth()
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
 
   const [selectedRepositories, setSelectedRepositories] = useState<number[]>([])
-  const [getRepositories, { data, error, loading }] = useGithubRepositoriesLazyQuery()
+  const [getRepositories, { data, error, loading }] =
+    useGithubRepositoriesLazyQuery()
 
   const filteredRepos = (data?.githubRepositories ?? [])
     .filter(
@@ -47,16 +49,14 @@ export const ImportReposDialog = ({
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     )
 
-
   useEffect(() => {
     if (!error) {
       return
     }
 
-    toast.error("Could not fetch repositories", {
+    toast.error('Could not fetch repositories', {
       description: error.message,
     })
-
   }, [error])
 
   const fetchGitHubRepos = async () => {

@@ -1,18 +1,26 @@
-
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
-import { DataTableToolbar } from "./data-table-toolbar"
-import { DataTableColumnHeader } from "./data-table-column-header"
-import { DataTablePagination } from "./data-table-pagination"
-import { useState } from "react"
-import type { VisibilityState } from "@tanstack/react-table"
-
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+} from '@tanstack/react-table'
+import { DataTableToolbar } from './data-table-toolbar'
+import { DataTableColumnHeader } from './data-table-column-header'
+import { DataTablePagination } from './data-table-pagination'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  handleSearch: (searchValue: string) => void,
-  handleStatusFilter: (selectedValues: string[]) => void,
+  handleSearch: (searchValue: string) => void
+  handleStatusFilter: (selectedValues: string[]) => void
   handleSort: (sortColumn: string, sortDirection: string) => void
   handlePageSize: (size: number) => void
   handleSetPage: (page: number) => void
@@ -33,7 +41,7 @@ export function DataTable<TData, TValue>({
   pageSize,
   totalPages,
   currentPage,
-  statusTotals
+  statusTotals,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -43,7 +51,12 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="flex flex-col gap-4">
-      <DataTableToolbar table={table} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={statusTotals} />
+      <DataTableToolbar
+        table={table}
+        handleSearch={handleSearch}
+        handleStatusFilter={handleStatusFilter}
+        statusTotals={statusTotals}
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -51,12 +64,17 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} style={{ width: header.getSize() }}>
-                      {header.isPlaceholder
-                        ? null
-                        : (
-                          <DataTableColumnHeader column={header.column} title={header.column.columnDef.header as string} handleSort={handleSort} />
-                        )}
+                    <TableHead
+                      key={header.id}
+                      style={{ width: header.getSize() }}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <DataTableColumnHeader
+                          column={header.column}
+                          title={header.column.columnDef.header as string}
+                          handleSort={handleSort}
+                        />
+                      )}
                     </TableHead>
                   )
                 })}
@@ -68,18 +86,27 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  daa-state={row.getIsSelected() && "selected"}
+                  daa-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <TableCell
+                      key={cell.id}
+                      style={{ width: cell.column.getSize() }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -87,7 +114,14 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} pageSize={pageSize} totalPages={totalPages} currentPage={currentPage} handlePageSize={handlePageSize} handleSetPage={handleSetPage} />
+      <DataTablePagination
+        table={table}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        currentPage={currentPage}
+        handlePageSize={handlePageSize}
+        handleSetPage={handleSetPage}
+      />
     </div>
   )
 }

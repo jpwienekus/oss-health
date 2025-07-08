@@ -8,7 +8,7 @@ import pluginVitest from 'eslint-plugin-vitest'
 import pluginPrettier from 'eslint-plugin-prettier'
 
 export default tseslint.config(
-  { ignores: ['dist', 'src/components/ui/**'] },
+  { ignores: ['dist', 'src/components/ui/**', 'src/generated/graphql.tsx'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

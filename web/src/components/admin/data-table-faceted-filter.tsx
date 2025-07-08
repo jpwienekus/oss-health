@@ -1,13 +1,21 @@
-import * as React from "react"
-import type { Column } from "@tanstack/react-table"
-import { Check, PlusCircle } from "lucide-react"
-import { Popover, PopoverTrigger } from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { PopoverContent } from "@radix-ui/react-popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
-import { cn } from "@/lib/utils"
+import * as React from 'react'
+import type { Column } from '@tanstack/react-table'
+import { Check, PlusCircle } from 'lucide-react'
+import { Popover, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import { PopoverContent } from '@radix-ui/react-popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command'
+import { cn } from '@/lib/utils'
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>
@@ -17,8 +25,8 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     value: string
     icon?: React.ComponentType<{ className?: string }>
     className: string
-  }[],
-  handleStatusFilter: (selectedValues: string[]) => void,
+  }[]
+  handleStatusFilter: (selectedValues: string[]) => void
   facetTotals?: { [key: string]: number | undefined }
 }
 
@@ -27,9 +35,8 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
   handleStatusFilter,
-  facetTotals
+  facetTotals,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-  const facets = column?.getFacetedUniqueValues()
   const selectedValues = new Set(column?.getFilterValue() as string[])
 
   return (
@@ -93,29 +100,33 @@ export function DataTableFacetedFilter<TData, TValue>({
                       const filterValues = Array.from(selectedValues)
                       handleStatusFilter(filterValues)
                       column?.setFilterValue(
-                        filterValues.length ? filterValues : undefined
+                        filterValues.length ? filterValues : undefined,
                       )
                     }}
                   >
                     <div
                       className={cn(
-                        "flex size-4 items-center justify-center rounded-[4px] border",
+                        'flex size-4 items-center justify-center rounded-[4px] border',
                         isSelected
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "border-input [&_svg]:invisible"
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-input [&_svg]:invisible',
                       )}
                     >
                       <Check className="text-primary-foreground size-3.5" />
                     </div>
                     {option.icon && (
-                      <option.icon className={`text-muted-foreground size-4 ${option.className}`} />
+                      <option.icon
+                        className={`text-muted-foreground size-4 ${option.className}`}
+                      />
                     )}
                     <span>{option.label}</span>
-                    {facetTotals?.[option.value] != null && (
-                      <span className="text-muted-foreground ml-auto flex size-4 items-center justify-center font-mono text-xs">
-                        {facetTotals[option.value]}
-                      </span>
-                    )}
+                    {facetTotals?.[option.value] !== null &&
+                      facetTotals?.[option.value] !==
+                        undefined(
+                          <span className="text-muted-foreground ml-auto flex size-4 items-center justify-center font-mono text-xs">
+                            {facetTotals[option.value]}
+                          </span>,
+                        )}
                   </CommandItem>
                 )
               })}

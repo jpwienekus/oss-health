@@ -1,31 +1,36 @@
-import { type DependencySortField, type SortDirection, useGetDependenciesQuery, type DependencyType } from "@/generated/graphql";
-import { useEffect, useState } from "react"
-import { DataTable } from "@/components/admin/data-table";
-import { columns } from "@/components/admin/columns";
-import SwirlingEffectSpinner from "@/components/customized/spinner/spinner-06";
-import { toast } from "sonner";
-import { useAuth } from "@/auth/AuthContext";
-import { RequestLogin } from "@/components/request-login";
+import {
+  type DependencySortField,
+  type SortDirection,
+  useGetDependenciesQuery,
+  type DependencyType,
+} from '@/generated/graphql'
+import { useEffect, useState } from 'react'
+import { DataTable } from '@/components/admin/data-table'
+import { columns } from '@/components/admin/columns'
+import SwirlingEffectSpinner from '@/components/customized/spinner/spinner-06'
+import { toast } from 'sonner'
+import { useAuth } from '@/auth/AuthContext'
+import { RequestLogin } from '@/components/request-login'
 
 const sortColumnMap: Record<string, DependencySortField> = {
-  name: "NAME",
-  ecosystem: "ECOSYSTEM",
-  scanStatus: "SCAN_STATUS",
+  name: 'NAME',
+  ecosystem: 'ECOSYSTEM',
+  scanStatus: 'SCAN_STATUS',
   scannedAt: 'SCANNED_AT',
-  errorMessage: "ERROR_MESSAGE"
+  errorMessage: 'ERROR_MESSAGE',
 }
 const sortDirectionMap: Record<string, SortDirection> = {
-  asc: "ASC",
-  desc: "DESC"
+  asc: 'ASC',
+  desc: 'DESC',
 }
 
 export const Dependencies = () => {
   const { jwt } = useAuth()
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statuses, setStatuses] = useState<string[]>([])
-  const [sortColumn, setSortColumn] = useState<DependencySortField>("NAME")
-  const [sortDirection, setSortDirection] = useState<SortDirection>("ASC")
+  const [sortColumn, setSortColumn] = useState<DependencySortField>('NAME')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('ASC')
   const [totals, setTotals] = useState<Record<string, number | undefined>>({
     completed: undefined,
     pending: undefined,
@@ -47,23 +52,22 @@ export const Dependencies = () => {
       },
       sort: {
         field: sortColumn,
-        direction: sortDirection
-      }
+        direction: sortDirection,
+      },
     },
     notifyOnNetworkStatusChange: true,
   })
 
-  const dependencies: DependencyType[] = (data?.dependencies.dependencies ?? [])
+  const dependencies: DependencyType[] = data?.dependencies.dependencies ?? []
   const totalPages = data?.dependencies?.totalPages ?? 0
-
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
+      setDebouncedSearch(search)
+    }, 500)
 
-    return () => clearTimeout(timeoutId);
-  }, [search]);
+    return () => clearTimeout(timeoutId)
+  }, [search])
 
   useEffect(() => {
     if (data && totals.completed === undefined) {
@@ -80,10 +84,9 @@ export const Dependencies = () => {
       return
     }
 
-    toast.error("Could not fetch dependencies", {
+    toast.error('Could not fetch dependencies', {
       description: error.message,
     })
-
   }, [error])
 
   const handleSearch = (searchValue: string) => {
@@ -94,24 +97,22 @@ export const Dependencies = () => {
     setStatuses(selectedValues)
   }
 
-  const handleSort = (sortColumn: string, sortDirection: string) => {
-    setSortColumn(sortColumnMap[sortColumn])
-    setSortDirection(sortDirectionMap[sortDirection])
+  const handleSort = (sortColumnNew: string, sortDirectionNew: string) => {
+    setSortColumn(sortColumnMap[sortColumnNew])
+    setSortDirection(sortDirectionMap[sortDirectionNew])
   }
 
   const handlePageSize = (size: number) => {
     setPageSize(size)
   }
 
-  const handleSetPage = (page: number) => {
-    setPage(page)
+  const handleSetPage = (pageNew: number) => {
+    setPage(pageNew)
   }
 
   return (
     <div>
-      {!jwt && (
-        <RequestLogin />
-      )}
+      {!jwt && <RequestLogin />}
 
       {loading && jwt && (
         <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 z-50">
@@ -120,7 +121,19 @@ export const Dependencies = () => {
       )}
 
       {jwt && (
-        <DataTable columns={columns} data={dependencies} handleSearch={handleSearch} handleStatusFilter={handleStatusFilter} statusTotals={totals} handleSort={handleSort} handlePageSize={handlePageSize} handleSetPage={handleSetPage} pageSize={pageSize} totalPages={totalPages} currentPage={page} />
+        <DataTable
+          columns={columns}
+          data={dependencies}
+          handleSearch={handleSearch}
+          handleStatusFilter={handleStatusFilter}
+          statusTotals={totals}
+          handleSort={handleSort}
+          handlePageSize={handlePageSize}
+          handleSetPage={handleSetPage}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          currentPage={page}
+        />
       )}
     </div>
   )

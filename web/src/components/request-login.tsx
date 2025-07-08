@@ -1,4 +1,4 @@
-import { LogIn } from "lucide-react";
+import { LogIn } from 'lucide-react'
 
 export const RequestLogin = () => (
   <div className="text-center py-12">
