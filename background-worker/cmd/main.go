@@ -5,11 +5,14 @@ import (
 
 	"github.com/oss-health/background-worker/fetcher"
 	"github.com/oss-health/background-worker/pipeline"
+	"github.com/oss-health/background-worker/parser"
 )
 
 func main() {
+
 	p := pipeline.NewPipeline(
 		fetcher.NewFetcherChain(),
+		parser.NewParserRegistry(),
 	)
 
 	repoUrl := "https://github.com/jpwienekus/oss-health.git"
