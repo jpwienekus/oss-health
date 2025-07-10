@@ -8,6 +8,7 @@ import (
 
 type GithubFetcher struct{}
 
+var execCommand = exec.Command
 
 func (g GithubFetcher) CanHandle(repoUrl string) bool {
 	return strings.HasPrefix(repoUrl, "git@") || strings.Contains(repoUrl, ".git")
@@ -15,7 +16,7 @@ func (g GithubFetcher) CanHandle(repoUrl string) bool {
 }
 
 func (g GithubFetcher) Fetch(repoUrl string, destPath string) error {
-	cmd := exec.Command("git", "clone", "--depth=1", repoUrl, destPath)
+	cmd := execCommand("git", "clone", "--depth=1", repoUrl, destPath)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -24,3 +25,4 @@ func (g GithubFetcher) Fetch(repoUrl string, destPath string) error {
 
 	return nil
 }
+
