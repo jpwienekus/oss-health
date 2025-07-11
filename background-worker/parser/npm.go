@@ -26,7 +26,7 @@ func (n NpmParser) Parse(fileContent []byte) ([]Dependency, error) {
 		for name, version := range m {
 			cleanedVersion := strings.TrimLeft(version, "^~><= ")
 			dependencies = append(dependencies, Dependency{
-				Name:      name,
+				Name:      strings.ToLower(name),
 				Version:   cleanedVersion,
 				Ecosystem: "npm",
 			})

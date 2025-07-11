@@ -133,7 +133,10 @@ func (s *PostgresStore) GetExistingVersionsForDependencies(dependencies []parser
 
 	for i, d := range dependencies {
 		n := i*3 + 1
-		clauses = append(clauses, fmt.Sprintf("(LOWER(v.version) = $%d AND LOWER(d.name) = $%d AND LOWER(d.ecosystem) = $%d)", n, n+1, n+2))
+		// NOTE: All parsers need to call ToLower on these values,
+		// Don't want to have to call LOWER in sql for each row for
+		// for performance reasons.
+		clauses = append(clauses, fmt.Sprintf("(v.version = $%d AND d.name = $%d AND d.ecosystem = $%d)", n, n+1, n+2))
 		queryArguments = append(queryArguments, strings.ToLower(d.Version), strings.ToLower(d.Name), strings.ToLower(d.Ecosystem))
 	}
 

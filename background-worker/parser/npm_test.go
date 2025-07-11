@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -88,4 +89,27 @@ func TestNpmParser_Parse_InvalidJSON(t *testing.T) {
 
 	_, err := p.Parse([]byte(json))
 	assert.Error(t, err)
+}
+
+func TestNpmParser_Parse_FieldsAreLowercased(t *testing.T) {
+	p := parser.NpmParser{}
+
+	json := `{
+		"dependencies": {
+			"React": "^18.2.0",
+			"LoDash": "4.17.21"
+		},
+		"devDependencies": {
+			"JEST": "^29.0.0"
+		}
+	}`
+
+	deps, err := p.Parse([]byte(json))
+	assert.NoError(t, err)
+
+	for _, dep := range deps {
+		assert.Equal(t, dep.Name, strings.ToLower(dep.Name), "name should be lowercase")
+		assert.Equal(t, dep.Version, strings.ToLower(dep.Version), "version should be lowercase")
+		assert.Equal(t, dep.Ecosystem, strings.ToLower(dep.Ecosystem), "ecosystem should be lowercase")
+	}
 }

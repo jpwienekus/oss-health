@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -97,4 +98,26 @@ dependencies = [
 		{Name: "example", Version: "0.1.0", Ecosystem: "pypi"},
 		{Name: "toolkit", Version: "unknown", Ecosystem: "pypi"},
 	}, deps)
+}
+
+func TestPep621PyProjectParser_Parse_FieldsAreLowercased(t *testing.T) {
+	p := parser.Pep621PyProjectParser{}
+
+	tomlData := `
+[project]
+dependencies = [
+  "Requests (>=2.28.0)",
+  "NumPy (^1.26.0)",
+  "Flask"
+]
+`
+
+	deps, err := p.Parse([]byte(tomlData))
+	assert.NoError(t, err)
+
+	for _, dep := range deps {
+		assert.Equal(t, dep.Name, strings.ToLower(dep.Name), "name should be lowercase")
+		assert.Equal(t, dep.Version, strings.ToLower(dep.Version), "version should be lowercase")
+		assert.Equal(t, dep.Ecosystem, strings.ToLower(dep.Ecosystem), "ecosystem should be lowercase")
+	}
 }

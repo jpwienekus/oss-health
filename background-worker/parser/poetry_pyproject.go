@@ -45,7 +45,7 @@ func (p PoetryPyProjectParser) Parse(fileContent []byte) ([]Dependency, error) {
 			}
 			cleanedVersion := strings.TrimLeft(verStr, "^~><= ")
 			dependencies = append(dependencies, Dependency{
-				Name:      name,
+				Name:      strings.ToLower(name),
 				Version:   cleanedVersion,
 				Ecosystem: "pypi",
 			})

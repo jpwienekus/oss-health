@@ -44,7 +44,7 @@ func (p Pep621PyProjectParser) Parse(fileContent []byte) ([]Dependency, error) {
 		name, version := parsePythonDependency(depstr, reBracket, rePrefix)
 
 		dependency := Dependency{
-			Name:      name,
+			Name:      strings.ToLower(name),
 			Version:   version,
 			Ecosystem: "pypi",
 		}

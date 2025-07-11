@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -97,4 +98,30 @@ func TestPoetryPyProjectParser_Parse_InvalidTOML(t *testing.T) {
 	deps, err := p.Parse([]byte(invalid))
 	assert.Error(t, err)
 	assert.Nil(t, deps)
+}
+
+func TestPoetryPyProjectParser_Parse_FieldsAreLowercased(t *testing.T) {
+	p := parser.PoetryPyProjectParser{}
+
+	tomlData := `
+[tool.poetry]
+name = "Example"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+Flask = "^2.3.0"
+
+[tool.poetry.group.Dev.dependencies]
+PyTest = "^7.4.0"
+BLACK = "^23.7.0"
+`
+
+	deps, err := p.Parse([]byte(tomlData))
+	assert.NoError(t, err)
+
+	for _, dep := range deps {
+		assert.Equal(t, dep.Name, strings.ToLower(dep.Name), "name should be lowercase")
+		assert.Equal(t, dep.Version, strings.ToLower(dep.Version), "version should be lowercase")
+		assert.Equal(t, dep.Ecosystem, strings.ToLower(dep.Ecosystem), "ecosystem should be lowercase")
+	}
 }
