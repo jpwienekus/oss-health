@@ -30,7 +30,7 @@ func TestNpmParser_Parse_WithDependencies(t *testing.T) {
 	deps, err := p.Parse([]byte(json))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []parser.Dependency{
-		{Name: "react", Version: "^18.2.0", Ecosystem: "npm"},
+		{Name: "react", Version: "18.2.0", Ecosystem: "npm"},
 		{Name: "lodash", Version: "4.17.21", Ecosystem: "npm"},
 	}, deps)
 }
@@ -47,7 +47,7 @@ func TestNpmParser_Parse_WithDevDependencies(t *testing.T) {
 	deps, err := p.Parse([]byte(json))
 	assert.NoError(t, err)
 	assert.Equal(t, []parser.Dependency{
-		{Name: "jest", Version: "^29.0.0", Ecosystem: "npm"},
+		{Name: "jest", Version: "29.0.0", Ecosystem: "npm"},
 	}, deps)
 }
 
@@ -66,8 +66,8 @@ func TestNpmParser_Parse_WithBothDeps(t *testing.T) {
 	deps, err := p.Parse([]byte(json))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []parser.Dependency{
-		{Name: "express", Version: "^4.18.1", Ecosystem: "npm"},
-		{Name: "mocha", Version: "^10.0.0", Ecosystem: "npm"},
+		{Name: "express", Version: "4.18.1", Ecosystem: "npm"},
+		{Name: "mocha", Version: "10.0.0", Ecosystem: "npm"},
 	}, deps)
 }
 

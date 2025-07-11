@@ -32,8 +32,8 @@ requests = "^2.31.0"
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []parser.Dependency{
-		{Name: "python", Version: "^3.10", Ecosystem: "pypi"},
-		{Name: "requests", Version: "^2.31.0", Ecosystem: "pypi"},
+		{Name: "python", Version: "3.10", Ecosystem: "pypi"},
+		{Name: "requests", Version: "2.31.0", Ecosystem: "pypi"},
 	}, deps)
 }
 
@@ -56,9 +56,9 @@ black = "^23.7.0"
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []parser.Dependency{
-		{Name: "flask", Version: "^2.3.0", Ecosystem: "pypi"},
-		{Name: "pytest", Version: "^7.4.0", Ecosystem: "pypi"},
-		{Name: "black", Version: "^23.7.0", Ecosystem: "pypi"},
+		{Name: "flask", Version: "2.3.0", Ecosystem: "pypi"},
+		{Name: "pytest", Version: "7.4.0", Ecosystem: "pypi"},
+		{Name: "black", Version: "23.7.0", Ecosystem: "pypi"},
 	}, deps)
 }
 
