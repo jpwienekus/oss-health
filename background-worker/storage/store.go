@@ -13,4 +13,7 @@ type Store interface {
 
 	GetExistingDependencies(dependencies []parser.Dependency) ([]models.Dependency, error)
 	InsertDependencies(dependencies []parser.Dependency) error
+
+	GetExistingVersionsForDependencies(dependencies []parser.Dependency) ([]models.DependencyVersion, error)
+	InsertDependencyVersions(dependencies []models.DependencyVersion) error
 }

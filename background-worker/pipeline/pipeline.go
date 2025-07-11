@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/oss-health/background-worker/internal/models"
 	"github.com/oss-health/background-worker/parser"
 	"github.com/oss-health/background-worker/storage"
 )
@@ -67,6 +68,10 @@ func (p *Pipeline) RunRepositoryEnrichment(repositoryId int, repositoryUrl strin
 
 	if err := p.insertDependenciesThatDoNotExist(dependencies); err != nil {
 		return fmt.Errorf("failed to insert dependencies: %w", err)
+	}
+
+	if err := p.insertVersionsThatDoNotExist(dependencies); err != nil {
+		return fmt.Errorf("failed to insert versions: %w", err)
 	}
 
 	if err := os.RemoveAll(dest); err != nil {
@@ -174,20 +179,76 @@ func (p *Pipeline) insertDependenciesThatDoNotExist(dependencies []parser.Depend
 		}
 	}
 
-	if len(dependenciesToInsert) == 0 {
-		return nil
-	}
+	log.Printf("Existing dependencies: %d, Inserted dependencies: %d\n", len(existingDependencies), len(dependenciesToInsert))
 
-	log.Print(dependenciesToInsert)
-	if err := p.Store.InsertDependencies(dependenciesToInsert); err != nil {
-		return fmt.Errorf("failed to insert dependencies: %w", err)
+	if len(dependenciesToInsert) > 0 {
+		if err := p.Store.InsertDependencies(dependenciesToInsert); err != nil {
+			return fmt.Errorf("failed to insert dependencies: %w", err)
+		}
 	}
 
 	return nil
 }
 
 func (p *Pipeline) insertVersionsThatDoNotExist(dependencies []parser.Dependency) error {
+	type key struct {
+		Name, Ecosystem string
+	}
 
+	existingDependencies, err := p.Store.GetExistingDependencies(dependencies)
+	if err != nil {
+		return fmt.Errorf("failed to get existing dependencies: %w", err)
+	}
+
+	dependencyIdMap := make(map[key]int, len(existingDependencies))
+	for _, dep := range existingDependencies {
+		dependencyIdMap[key{Name: dep.Name, Ecosystem: dep.Ecosystem}] = dep.ID
+	}
+
+	type versionKey struct {
+		Version, Name, Ecosystem string
+	}
+
+	existingVersions, err := p.Store.GetExistingVersionsForDependencies(dependencies)
+	if err != nil {
+		return fmt.Errorf("failed to get existing versions: %w", err)
+	}
+
+	existingVersionMap := make(map[versionKey]bool, len(existingVersions))
+	for _, v := range existingVersions {
+		existingVersionMap[versionKey{
+			Version:   v.Version,
+			Name:      v.DependencyName,
+			Ecosystem: v.DependencyEcosystem,
+		}] = true
+	}
+
+	versionsToInsert := []models.DependencyVersion{}
+
+	for _, dep := range dependencies {
+		vk := versionKey{Version: dep.Version, Name: dep.Name, Ecosystem: dep.Ecosystem}
+
+		if !existingVersionMap[vk] {
+			id, ok := dependencyIdMap[key{Name: dep.Name, Ecosystem: dep.Ecosystem}]
+
+			if !ok {
+				return fmt.Errorf("missing dependency ID for %s (%s)", dep.Name, dep.Ecosystem)
+			}
+
+			versionsToInsert = append(versionsToInsert, models.DependencyVersion{
+				Version:      dep.Version,
+				DependencyId: id,
+			})
+		}
+	}
+
+	log.Printf("Existing versions: %d, Inserted versions: %d\n", len(existingVersions), len(versionsToInsert))
+
+	if len(versionsToInsert) > 0 {
+		if err := p.Store.InsertDependencyVersions(versionsToInsert); err != nil {
+			return fmt.Errorf("failed to insert dependency versions: %w", err)
+		}
+	}
 
 	return nil
 }

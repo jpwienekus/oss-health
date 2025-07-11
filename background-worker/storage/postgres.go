@@ -127,18 +127,19 @@ func (s *PostgresStore) InsertDependencies(dependencies []parser.Dependency) err
 	return nil
 }
 
-func (s *PostgresStore) GetExistingDependencyVersions(dependencies []parser.Dependency) ([]models.Dependency, error) {
+func (s *PostgresStore) GetExistingVersionsForDependencies(dependencies []parser.Dependency) ([]models.DependencyVersion, error) {
 	queryArguments := []any{}
 	clauses := []string{}
 
 	for i, d := range dependencies {
-		n := i*2 + 1
-		clauses = append(clauses, fmt.Sprintf("(version = $%d AND dependency_id = $%d)", n, n+1))
-		queryArguments = append(queryArguments, d.Version, d.id)
+		n := i*3 + 1
+		clauses = append(clauses, fmt.Sprintf("(LOWER(v.version) = $%d AND LOWER(d.name) = $%d AND LOWER(d.ecosystem) = $%d)", n, n+1, n+2))
+		queryArguments = append(queryArguments, strings.ToLower(d.Version), strings.ToLower(d.Name), strings.ToLower(d.Ecosystem))
 	}
 
-	query := GetExistingDependenciesQuery
+	query := GetExistingVersionsByDependencyAndEcosystemQuery
 	query += strings.Join(clauses, " OR ")
+	// logQueryWithParams(query, queryArguments)
 
 	rows, err := s.db.Query(query, queryArguments...)
 	if err != nil {
@@ -147,20 +148,39 @@ func (s *PostgresStore) GetExistingDependencyVersions(dependencies []parser.Depe
 
 	defer rows.Close()
 
-	returnValue := make([]models.Dependency, 0)
+	returnValue := make([]models.DependencyVersion, 0)
 
 	for rows.Next() {
-		var dependency models.Dependency
-		if err := rows.Scan(&dependency.ID, &dependency.Name, &dependency.Ecosystem); err != nil {
+		var dependencyVersion models.DependencyVersion
+		if err := rows.Scan(&dependencyVersion.ID, &dependencyVersion.Version, &dependencyVersion.DependencyId, &dependencyVersion.DependencyName, &dependencyVersion.DependencyEcosystem); err != nil {
 			return nil, fmt.Errorf("failed to scan existing dependency: %v", err)
 		}
 
-		returnValue = append(returnValue, dependency)
+		returnValue = append(returnValue, dependencyVersion)
 	}
 
 	return returnValue, nil
 }
 
+
+func (s *PostgresStore) InsertDependencyVersions(dependencies []models.DependencyVersion) error {
+	queryArguments := []any{}
+	clauses := []string{}
+
+	for i, d := range dependencies {
+		n := i*2 + 1
+		clauses = append(clauses, fmt.Sprintf("($%d, $%d)", n, n+1))
+		queryArguments = append(queryArguments, d.Version, d.DependencyId)
+	}
+
+	query := fmt.Sprintf(InsertVersionQuery, strings.Join(clauses, ", "))
+	_, err := s.db.Exec(query, queryArguments...)
+	if err != nil {
+		return fmt.Errorf("failed to insert dependency versions: %v", err)
+	}
+
+	return nil
+}
 // func logQueryWithParams(query string, args []any) {
 // 	for i, arg := range args {
 // 		placeholder := fmt.Sprintf("$%d", i+1)

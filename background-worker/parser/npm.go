@@ -24,9 +24,10 @@ func (n NpmParser) Parse(fileContent []byte) ([]Dependency, error) {
 	toDependencies := func(m map[string]string) []Dependency {
 		dependencies := make([]Dependency, 0, len(m))
 		for name, version := range m {
+			cleanedVersion := strings.TrimLeft(version, "^~><= ")
 			dependencies = append(dependencies, Dependency{
 				Name:      name,
-				Version:   version,
+				Version:   cleanedVersion,
 				Ecosystem: "npm",
 			})
 		}

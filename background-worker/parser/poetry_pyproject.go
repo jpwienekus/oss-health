@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 )
@@ -36,23 +37,23 @@ func (p PoetryPyProjectParser) Parse(fileContent []byte) ([]Dependency, error) {
 	mainDependencies, _ := poetrySection["dependencies"].(map[string]any)
 	devDependencies, _ := devSection["dependencies"].(map[string]any)
 
-	for name, version := range mainDependencies {
-		dependency := Dependency{
-			Name:      name,
-			Version:   version.(string),
-			Ecosystem: "pypi",
+	parseDependencies := func(depMap map[string]any) {
+		for name, val := range depMap {
+			verStr, ok := val.(string)
+			if !ok {
+				continue // skip tables or invalid types
+			}
+			cleanedVersion := strings.TrimLeft(verStr, "^~><= ")
+			dependencies = append(dependencies, Dependency{
+				Name:      name,
+				Version:   cleanedVersion,
+				Ecosystem: "pypi",
+			})
 		}
-		dependencies = append(dependencies, dependency)
 	}
 
-	for name, version := range devDependencies {
-		dependency := Dependency{
-			Name:      name,
-			Version:   version.(string),
-			Ecosystem: "pypi",
-		}
-		dependencies = append(dependencies, dependency)
-	}
+	parseDependencies(mainDependencies)
+	parseDependencies(devDependencies)
 
 	return dependencies, nil
 }

@@ -28,6 +28,11 @@ const (
 	GetExistingDependenciesQuery = `
 		SELECT id, name, ecosystem FROM dependencies WHERE 
 	`
+	GetInsertedDependenciesQuery = `
+		SELECT id, name, ecosystem
+		FROM dependencies
+		WHERE (name, ecosystem) IN $s
+	`
 	DeleteRepositoryDependencyVersionsQuery = `
 		DELETE FROM repository_dependency_version
 		WHERE repository_id = $1
@@ -38,8 +43,14 @@ const (
 	`
 
 	// Dependency versions
-	GetExistingVersionsQuery = `
-		SELECT id, version, dependency_id FROM versions
+	GetExistingVersionsByDependencyAndEcosystemQuery = `
+		SELECT v.id, v.version, v.dependency_id, d.name as dependency_name, d.ecosystem as dependency_ecosystem
+		FROM versions AS V
+			INNER JOIN dependencies AS D on v.dependency_id = D.id
 		WHERE
 `
+	InsertVersionQuery = `
+		INSERT INTO versions (version, dependency_id)
+		VALUES %s
+	`
 )
