@@ -41,7 +41,6 @@ func (p Pep621PyProjectParser) Parse(fileContent []byte) ([]Dependency, error) {
 			continue
 		}
 
-		var dependencies []Dependency
 		name, version := parsePythonDependency(depstr, reBracket, rePrefix)
 
 		dependency := Dependency{
@@ -50,7 +49,6 @@ func (p Pep621PyProjectParser) Parse(fileContent []byte) ([]Dependency, error) {
 			Ecosystem: "pypi",
 		}
 		dependencies = append(dependencies, dependency)
-
 	}
 
 	return dependencies, nil
