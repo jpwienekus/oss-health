@@ -1,6 +1,7 @@
 package parser
 
 
+// TODO: rename to DependencyVersion
 type Dependency struct {
 	Name    string
 	Version string
