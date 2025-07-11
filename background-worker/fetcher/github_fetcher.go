@@ -11,7 +11,7 @@ type GithubFetcher struct{}
 var execCommand = exec.Command
 
 func (g GithubFetcher) CanHandle(repoUrl string) bool {
-	return strings.HasPrefix(repoUrl, "git@") || strings.Contains(repoUrl, ".git")
+	return strings.HasPrefix(repoUrl, "git@") || strings.Contains(repoUrl, ".git") || strings.Contains(repoUrl, "github.com/")
 
 }
 

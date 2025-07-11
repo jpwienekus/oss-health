@@ -37,7 +37,7 @@ func TestCanHandle(t *testing.T) {
 	}{
 		{"git@github.com:user/repo.git", true},
 		{"https://github.com/user/repo.git", true},
-		{"github.com/user/repo", false},
+		{"github.com/user/repo", true},
 		{"", false},
 	}
 

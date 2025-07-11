@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/oss-health/background-worker/parser"
+	"github.com/oss-health/background-worker/storage"
 )
 
 var osMkdirTemp = os.MkdirTemp
@@ -22,30 +23,46 @@ type ParserRegistry interface {
 type Pipeline struct {
 	FetcherChain   FetcherChain
 	ParserRegistry ParserRegistry
+	Store          storage.Store
 }
 
-func NewPipeline(fetcher FetcherChain, parserRegistry ParserRegistry) *Pipeline {
+func NewPipeline(fetcher FetcherChain, parserRegistry ParserRegistry, store storage.Store) *Pipeline {
 	return &Pipeline{
 		FetcherChain:   fetcher,
 		ParserRegistry: parserRegistry,
+		Store:          store,
 	}
 }
 
 func (p *Pipeline) Run(repoUrl string) error {
+	repositories, err := p.Store.GetRepositoriesBySchedule(0, 0)
+	if err != nil {
+		return fmt.Errorf("failed to get repositories by schedule: %w", err)
+	}
+
+	// TODO: worker pool
+	for _, repository := range repositories {
+		if err := p.RunRepositoryEnrichment(repository.URL); err != nil {
+			log.Printf("failed to run repository enrichment for %s: %v", repository.URL, err)
+		}
+	}
+
+	return nil
+}
+
+func (p *Pipeline) RunRepositoryEnrichment(repositoryUrl string) error {
 	dest, err := osMkdirTemp("", "repo-clone-*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
 
-	if err := p.cloneRepository(repoUrl, dest); err != nil {
+	if err := p.cloneRepository(repositoryUrl, dest); err != nil {
 		return fmt.Errorf("failed to clone repository: %w", err)
 	}
-
 
 	if err := p.extractDependencies(dest); err != nil {
 		return fmt.Errorf("failed to extract dependencies: %w", err)
 	}
-
 
 	if err := os.RemoveAll(dest); err != nil {
 		return fmt.Errorf("failed to remove temporary directory: %w", err)
