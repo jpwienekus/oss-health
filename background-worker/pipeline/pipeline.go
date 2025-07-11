@@ -37,12 +37,37 @@ func (p *Pipeline) Run(repoUrl string) error {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
 
-	log.Printf("Cloning repository: %s\n", repoUrl)
-	if err := p.FetcherChain.Fetch(repoUrl, dest); err != nil {
+	if err := p.cloneRepository(repoUrl, dest); err != nil {
+		return fmt.Errorf("failed to clone repository: %w", err)
+	}
+
+
+	if err := p.extractDependencies(dest); err != nil {
+		return fmt.Errorf("failed to extract dependencies: %w", err)
+	}
+
+
+	if err := os.RemoveAll(dest); err != nil {
+		return fmt.Errorf("failed to remove temporary directory: %w", err)
+	}
+
+	return nil
+}
+
+func (p *Pipeline) cloneRepository(repositoryUrl string, destination string) error {
+	log.Printf("Cloning repository: %s\n", repositoryUrl)
+	if err := p.FetcherChain.Fetch(repositoryUrl, destination); err != nil {
 		return fmt.Errorf("failed to fetch repository: %w", err)
 	}
 
-	err = filepath.WalkDir(dest, func(path string, d os.DirEntry, walkErr error) error {
+	// TODO: Save repository dependencies here
+
+	return nil
+}
+
+func (p *Pipeline) extractDependencies(directory string) error {
+	log.Printf("Extracting dependencies from directory: %s\n", directory)
+	err := filepath.WalkDir(directory, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return fmt.Errorf("error walking the path %q: %w", path, walkErr)
 		}
@@ -87,8 +112,8 @@ func (p *Pipeline) Run(repoUrl string) error {
 		return nil
 	})
 
-	if err := os.RemoveAll(dest); err != nil {
-		return fmt.Errorf("failed to remove temporary directory: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed to walk directory %s: %w", directory, err)
 	}
 
 	return nil
