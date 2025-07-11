@@ -13,7 +13,7 @@ import (
 
 // TODO: need pgxpool?
 type PostgresStore struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewPostgresStore(connectionString string) (*PostgresStore, error) {
@@ -23,11 +23,11 @@ func NewPostgresStore(connectionString string) (*PostgresStore, error) {
 		return nil, fmt.Errorf("failed to connect to postgres: %v", err)
 	}
 
-	return &PostgresStore{db: db}, nil
+	return &PostgresStore{DB: db}, nil
 }
 
 func (s *PostgresStore) GetRepositoriesBySchedule(day int, hour int) ([]models.Repository, error) {
-	rows, err := s.db.Query(GetRepositoriesBySchedule, day, hour)
+	rows, err := s.DB.Query(GetRepositoriesBySchedule, day, hour)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query repositories: %v", err)
 	}
@@ -48,7 +48,7 @@ func (s *PostgresStore) GetRepositoriesBySchedule(day int, hour int) ([]models.R
 }
 
 func (s *PostgresStore) MarkRepositoryAsScanned(id int) error {
-	_, err := s.db.Exec(UpdateRepositoriesAsScannedQuery, id)
+	_, err := s.DB.Exec(UpdateRepositoriesAsScannedQuery, id)
 	if err != nil {
 		return fmt.Errorf("failed to mark repository as scanned: %v", err)
 	}
@@ -57,7 +57,7 @@ func (s *PostgresStore) MarkRepositoryAsScanned(id int) error {
 }
 
 func (s *PostgresStore) MarkRepositoryAsFailed(id int, message string) error {
-	_, err := s.db.Exec(UpdateRepositoriesAsScannedFailedQuery, id, message)
+	_, err := s.DB.Exec(UpdateRepositoriesAsScannedFailedQuery, message, id)
 	if err != nil {
 		return fmt.Errorf("failed to mark repository as failed: %v", err)
 	}
@@ -66,7 +66,7 @@ func (s *PostgresStore) MarkRepositoryAsFailed(id int, message string) error {
 }
 
 func (s *PostgresStore) DeleteRepositoryDependencyVersion(repositoryId int) error {
-	_, err := s.db.Exec(DeleteRepositoryDependencyVersionsQuery, repositoryId)
+	_, err := s.DB.Exec(DeleteRepositoryDependencyVersionsQuery, repositoryId)
 	if err != nil {
 		return fmt.Errorf("failed to delete repository dependency versions: %v", err)
 	}
@@ -87,7 +87,7 @@ func (s *PostgresStore) GetExistingDependencies(dependencies []parser.Dependency
 	query := GetExistingDependenciesQuery
 	query += strings.Join(clauses, " OR ")
 
-	rows, err := s.db.Query(query, queryArguments...)
+	rows, err := s.DB.Query(query, queryArguments...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query existing dependencies: %v", err)
 	}
@@ -119,7 +119,7 @@ func (s *PostgresStore) InsertDependencies(dependencies []parser.Dependency) err
 	}
 
 	query := fmt.Sprintf(InsertDependencyQuery, strings.Join(clauses, ", "))
-	_, err := s.db.Exec(query, queryArguments...)
+	_, err := s.DB.Exec(query, queryArguments...)
 	if err != nil {
 		return fmt.Errorf("failed to insert dependencies: %v", err)
 	}
@@ -127,6 +127,7 @@ func (s *PostgresStore) InsertDependencies(dependencies []parser.Dependency) err
 	return nil
 }
 
+// TODO: Continue tests from here
 func (s *PostgresStore) GetExistingVersionsForDependencies(dependencies []parser.Dependency) ([]models.DependencyVersion, error) {
 	queryArguments := []any{}
 	clauses := []string{}
@@ -142,9 +143,8 @@ func (s *PostgresStore) GetExistingVersionsForDependencies(dependencies []parser
 
 	query := GetExistingVersionsByDependencyAndEcosystemQuery
 	query += strings.Join(clauses, " OR ")
-	// logQueryWithParams(query, queryArguments)
 
-	rows, err := s.db.Query(query, queryArguments...)
+	rows, err := s.DB.Query(query, queryArguments...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query existing dependencies: %v", err)
 	}
@@ -177,7 +177,7 @@ func (s *PostgresStore) InsertDependencyVersions(dependencies []models.Dependenc
 	}
 
 	query := fmt.Sprintf(InsertVersionQuery, strings.Join(clauses, ", "))
-	_, err := s.db.Exec(query, queryArguments...)
+	_, err := s.DB.Exec(query, queryArguments...)
 	if err != nil {
 		return fmt.Errorf("failed to insert dependency versions: %v", err)
 	}
