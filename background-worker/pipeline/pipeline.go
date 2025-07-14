@@ -35,7 +35,7 @@ func NewPipeline(fetcher FetcherChain, parserRegistry ParserRegistry, store stor
 	}
 }
 
-func (p *Pipeline) Run(repoUrl string) error {
+func (p *Pipeline) Run() error {
 	repositories, err := p.Store.GetRepositoriesBySchedule(0, 0)
 	if err != nil {
 		return fmt.Errorf("failed to get repositories by schedule: %w", err)
@@ -66,6 +66,10 @@ func (p *Pipeline) RunRepositoryEnrichment(repositoryId int, repositoryUrl strin
 		return fmt.Errorf("failed to extract dependencies: %w", err)
 	}
 
+	if err := os.RemoveAll(dest); err != nil {
+		return fmt.Errorf("failed to remove temporary directory: %w", err)
+	}
+
 	if err := p.insertDependenciesThatDoNotExist(dependencies); err != nil {
 		return fmt.Errorf("failed to insert dependencies: %w", err)
 	}
@@ -74,9 +78,6 @@ func (p *Pipeline) RunRepositoryEnrichment(repositoryId int, repositoryUrl strin
 		return fmt.Errorf("failed to insert versions: %w", err)
 	}
 
-	if err := os.RemoveAll(dest); err != nil {
-		return fmt.Errorf("failed to remove temporary directory: %w", err)
-	}
 
 	return nil
 }
