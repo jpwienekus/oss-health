@@ -127,7 +127,6 @@ func (s *PostgresStore) InsertDependencies(dependencies []parser.Dependency) err
 	return nil
 }
 
-// TODO: Continue tests from here
 func (s *PostgresStore) GetExistingVersionsForDependencies(dependencies []parser.Dependency) ([]models.DependencyVersion, error) {
 	queryArguments := []any{}
 	clauses := []string{}
@@ -164,7 +163,6 @@ func (s *PostgresStore) GetExistingVersionsForDependencies(dependencies []parser
 
 	return returnValue, nil
 }
-
 
 func (s *PostgresStore) InsertDependencyVersions(dependencies []models.DependencyVersion) error {
 	queryArguments := []any{}

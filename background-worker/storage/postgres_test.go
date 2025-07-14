@@ -2,11 +2,14 @@ package storage_test
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/oss-health/background-worker/internal/models"
 	"github.com/oss-health/background-worker/parser"
 	"github.com/oss-health/background-worker/storage"
 )
@@ -147,4 +150,70 @@ func TestInsertDependencies(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestGetExistingVersionsForDependencies(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
 
+	deps := []parser.Dependency{
+		{Name: "lodash", Version: "4.17.21", Ecosystem: "npm"},
+		{Name: "requests", Version: "2.31.0", Ecosystem: "pypi"},
+	}
+
+	// Match the query (with line breaks and spaces)
+	query := `(?s)\s*SELECT v\.id, v\.version, v\.dependency_id, d\.name as dependency_name, d\.ecosystem as dependency_ecosystem\s+FROM versions AS V\s+INNER JOIN dependencies AS D on v\.dependency_id = D\.id\s+WHERE\s+\(v\.version = \$1 AND d\.name = \$2 AND d\.ecosystem = \$3\)\s+OR\s+\(v\.version = \$4 AND d\.name = \$5 AND d\.ecosystem = \$6\)`
+
+	mock.ExpectQuery(query).
+		WithArgs("4.17.21", "lodash", "npm", "2.31.0", "requests", "pypi").
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "version", "dependency_id", "dependency_name", "dependency_ecosystem",
+		}).
+			AddRow(1, "4.17.21", 10, "lodash", "npm").
+			AddRow(2, "2.31.0", 20, "requests", "pypi"))
+
+	store := &storage.PostgresStore{DB: db}
+	result, err := store.GetExistingVersionsForDependencies(deps)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	assert.Equal(t, 1, result[0].ID)
+	assert.Equal(t, "4.17.21", result[0].Version)
+	assert.Equal(t, 10, result[0].DependencyId)
+	assert.Equal(t, "lodash", result[0].DependencyName)
+	assert.Equal(t, "npm", result[0].DependencyEcosystem)
+
+	assert.Equal(t, 2, result[1].ID)
+	assert.Equal(t, "2.31.0", result[1].Version)
+	assert.Equal(t, 20, result[1].DependencyId)
+	assert.Equal(t, "requests", result[1].DependencyName)
+	assert.Equal(t, "pypi", result[1].DependencyEcosystem)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+
+func TestInsertDependencyVersions(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	deps := []models.DependencyVersion{
+		{Version: "1.0.0", DependencyId: 100},
+		{Version: "2.3.4", DependencyId: 200},
+	}
+
+	// Build expected query using same logic as the function under test
+	clauses := []string{"($1, $2)", "($3, $4)"}
+	query := fmt.Sprintf(storage.InsertVersionQuery, strings.Join(clauses, ", "))
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).
+		WithArgs("1.0.0", 100, "2.3.4", 200).
+		WillReturnResult(sqlmock.NewResult(0, 2)) // Simulate success with 2 rows affected
+
+	store := &storage.PostgresStore{DB: db}
+	err = store.InsertDependencyVersions(deps)
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
