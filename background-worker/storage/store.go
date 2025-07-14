@@ -13,9 +13,14 @@ type Store interface {
 	InsertRepositoryDependencyVersion(repositoryId int, dependencyVersion []models.DependencyVersion) error
 
 	GetExistingDependencies(dependencies []parser.Dependency) ([]models.Dependency, error)
+	GetDependenciesPendingUrlResolution(repositoryId int) ([]models.Dependency, error)
 	InsertDependencies(dependencies []parser.Dependency) error
-	// GetDependenciesPendingUrlResolution(repositoryId int) ([]models.Dependency, error)
+	UpdateDependencyRepositoryIDs(dependencyDependencyRepository map[int]int) error
+	MarkDependenciesAsFailed(failureReasons map[int]string) error
 
 	GetExistingVersionsForDependencies(dependencies []parser.Dependency) ([]models.DependencyVersion, error)
 	InsertDependencyVersions(dependencies []models.DependencyVersion) error
+
+	GetDependencyRepositoryIds(dependencyUrlMap map[int]string) (map[string]int, error)
+	InsertDependencyRepository(dependencyUrlMap map[int]string) error
 }

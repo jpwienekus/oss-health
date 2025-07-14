@@ -1,13 +1,14 @@
 package resolver
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/oss-health/background-worker/internal/models"
 )
 
 type Chain interface {
-	Resolve(models.Dependency) (string, error)
+	Resolve(ctx context.Context, dependency models.Dependency) (string, error)
 }
 
 type ResolverChain struct {
@@ -20,10 +21,10 @@ func NewResolverChain(resolvers ...Resolver) *ResolverChain {
 	}
 }
 
-func (rc *ResolverChain) Resolve(dependency models.Dependency) (string, error) {
+func (rc *ResolverChain) Resolve(ctx context.Context, dependency models.Dependency) (string, error) {
 	for _, resolver := range rc.resolvers {
 		if resolver.CanResolve(dependency) {
-			return resolver.Resolve(dependency)
+			return resolver.Resolve(ctx, dependency)
 		}
 	}
 	return "", fmt.Errorf("no resolver found for ecosystem: %s", dependency.Ecosystem)

@@ -1,10 +1,12 @@
 package pipeline
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/oss-health/background-worker/internal/models"
 	"github.com/oss-health/background-worker/parser"
@@ -91,6 +93,10 @@ func (p *Pipeline) RunRepositoryEnrichment(repositoryId int, repositoryUrl strin
 		return fmt.Errorf("failed to save repository dependency versions: %w", err)
 	}
 
+	if err := p.resolveDependencyUrls(repositoryId); err != nil {
+		log.Printf("failed to resolve dependency URLs: %v", err)
+	}
+
 	// log.Print(len(existingDependencies))
 	// log.Print("============")
 	// log.Print(existingVersions)
@@ -155,11 +161,9 @@ func (p *Pipeline) extractDependencies(directory string) ([]parser.Dependency, e
 
 			parsedDependencies = append(parsedDependencies, parsedDeps...)
 		}
-		if err != nil {
-			return fmt.Errorf("failed to parse file %s: %w", path, err)
-		}
 
 		dependencies = append(dependencies, parsedDependencies...)
+
 		return nil
 	})
 
@@ -291,6 +295,72 @@ func (p *Pipeline) saveRepositoryDependencyVersions(repositoryId int, dependenci
 	return nil
 }
 
-func (p *Pipeline) resolveDependencyUrls() {
+func (p *Pipeline) resolveDependencyUrls(repositoryId int) error {
+	dependencies, err := p.Store.GetDependenciesPendingUrlResolution(repositoryId)
+	if err != nil {
+		return fmt.Errorf("failed to get dependencies pending URL resolution: %w", err)
+	}
 
+	var (
+		resolved = make(map[int]string)
+		failures = make(map[int]string)
+		mu       sync.Mutex
+		wg       sync.WaitGroup
+	)
+
+	ctx := context.Background()
+
+	for _, dep := range dependencies {
+		depCopy := dep
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			url, err := p.ResolverChain.Resolve(ctx, depCopy)
+			log.Print(url)
+
+			mu.Lock()
+			defer mu.Unlock()
+			switch {
+			case err != nil:
+				failures[depCopy.ID] = fmt.Sprintf("resolve: %v", err)
+			case url == "":
+				failures[depCopy.ID] = "empty URL"
+			default:
+				resolved[depCopy.ID] = url
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if len(resolved) > 0 {
+		if err := p.Store.InsertDependencyRepository(resolved); err != nil {
+			return fmt.Errorf("failed to update dependency repository URLs: %w", err)
+		}
+
+		ids, err := p.Store.GetDependencyRepositoryIds(resolved)
+		if err != nil {
+			return fmt.Errorf("failed to get dependency repository IDs: %w", err)
+		}
+
+		dependencyDependencyUrlIdMap := make(map[int]int, len(ids))
+
+		for depId, url := range resolved {
+			if repoId, ok := ids[url]; ok {
+				dependencyDependencyUrlIdMap[depId] = repoId
+			}
+		}
+
+		if err := p.Store.UpdateDependencyRepositoryIDs(dependencyDependencyUrlIdMap); err != nil {
+			return fmt.Errorf("failed to insert dependency dependency URLs: %w", err)
+		}
+	}
+
+	if len(failures) > 0 {
+		p.Store.MarkDependenciesAsFailed(failures)
+	}
+
+	return nil
 }

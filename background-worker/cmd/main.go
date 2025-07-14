@@ -27,14 +27,16 @@ func main() {
 
 	npmResolver := resolver.NewRateLimitedResolver(
 		&resolver.NPMResolver{},
-		rate.Every(1),
-		10,
+		rate.Limit(10),
+		5,
 	)
+	npmResolver.StartLogging("npm")
 	pypiResolver := resolver.NewRateLimitedResolver(
 		&resolver.PyPIResolver{},
-		rate.Every(1),
-		10,
+		rate.Limit(10),
+		5,
 	)
+	pypiResolver.StartLogging("pypi")
 
 	resolverChain := resolver.NewResolverChain(
 		npmResolver,
