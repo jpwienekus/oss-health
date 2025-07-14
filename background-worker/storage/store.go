@@ -10,9 +10,11 @@ type Store interface {
 	MarkRepositoryAsScanned(id int) error
 	MarkRepositoryAsFailed(id int, message string) error
 	DeleteRepositoryDependencyVersion(repositoryId int) error
+	InsertRepositoryDependencyVersion(repositoryId int, dependencyVersion []models.DependencyVersion) error
 
 	GetExistingDependencies(dependencies []parser.Dependency) ([]models.Dependency, error)
 	InsertDependencies(dependencies []parser.Dependency) error
+	// GetDependenciesPendingUrlResolution(repositoryId int) ([]models.Dependency, error)
 
 	GetExistingVersionsForDependencies(dependencies []parser.Dependency) ([]models.DependencyVersion, error)
 	InsertDependencyVersions(dependencies []models.DependencyVersion) error

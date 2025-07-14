@@ -7,7 +7,9 @@ import (
 	"github.com/oss-health/background-worker/fetcher"
 	"github.com/oss-health/background-worker/parser"
 	"github.com/oss-health/background-worker/pipeline"
+	"github.com/oss-health/background-worker/resolver"
 	"github.com/oss-health/background-worker/storage"
+	"golang.org/x/time/rate"
 
 	"github.com/joho/godotenv"
 )
@@ -23,10 +25,27 @@ func main() {
 		log.Fatalf("failed to create postgres store: %v", err)
 	}
 
+	npmResolver := resolver.NewRateLimitedResolver(
+		&resolver.NPMResolver{},
+		rate.Every(1),
+		10,
+	)
+	pypiResolver := resolver.NewRateLimitedResolver(
+		&resolver.PyPIResolver{},
+		rate.Every(1),
+		10,
+	)
+
+	resolverChain := resolver.NewResolverChain(
+		npmResolver,
+		pypiResolver,
+	)
+
 	p := pipeline.NewPipeline(
 		fetcher.NewFetcherChain(),
 		parser.NewParserRegistry(),
 		store,
+		resolverChain,
 	)
 
 	if err := p.Run(); err != nil {

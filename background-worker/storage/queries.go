@@ -9,6 +9,10 @@ const (
 			AND scan_hour = $2
 		ORDER BY id
 	`
+	InsertRepositoryDependencyVersionsQuery = `
+		INSERT INTO repository_dependency_version (repository_id, dependency_id, version_id)
+		VALUES %s
+	`
 	UpdateRepositoriesAsScannedQuery = `
 		UPDATE repositories 
 		SET 
@@ -32,6 +36,13 @@ const (
 		SELECT id, name, ecosystem
 		FROM dependencies
 		WHERE (name, ecosystem) IN $s
+	`
+	GetDependenciesPendingUrlResolutionQuery = `
+		SELECT D.id, D.name, D.ecosystem
+		FROM dependencies as D
+		INNER JOIN dependency_
+		WHERE D.scan_status = 'pending'
+		ORDER BY name ASC
 	`
 	DeleteRepositoryDependencyVersionsQuery = `
 		DELETE FROM repository_dependency_version

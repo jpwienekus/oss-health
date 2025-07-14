@@ -8,6 +8,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/time v0.12.0
 )
 
 require (

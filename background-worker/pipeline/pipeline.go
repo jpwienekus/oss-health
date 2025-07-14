@@ -8,6 +8,7 @@ import (
 
 	"github.com/oss-health/background-worker/internal/models"
 	"github.com/oss-health/background-worker/parser"
+	"github.com/oss-health/background-worker/resolver"
 	"github.com/oss-health/background-worker/storage"
 )
 
@@ -25,13 +26,15 @@ type Pipeline struct {
 	FetcherChain   FetcherChain
 	ParserRegistry ParserRegistry
 	Store          storage.Store
+	ResolverChain  resolver.Chain
 }
 
-func NewPipeline(fetcher FetcherChain, parserRegistry ParserRegistry, store storage.Store) *Pipeline {
+func NewPipeline(fetcher FetcherChain, parserRegistry ParserRegistry, store storage.Store, resolverChain resolver.Chain) *Pipeline {
 	return &Pipeline{
 		FetcherChain:   fetcher,
 		ParserRegistry: parserRegistry,
 		Store:          store,
+		ResolverChain:  resolverChain,
 	}
 }
 
@@ -78,6 +81,19 @@ func (p *Pipeline) RunRepositoryEnrichment(repositoryId int, repositoryUrl strin
 		return fmt.Errorf("failed to insert versions: %w", err)
 	}
 
+	// // This sh0uld now include all parsed dependency versions
+	// existingVersions, err := p.Store.GetExistingVersionsForDependencies(dependencies)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get existing versions: %w", err)
+	// }
+
+	if err := p.saveRepositoryDependencyVersions(repositoryId, dependencies); err != nil {
+		return fmt.Errorf("failed to save repository dependency versions: %w", err)
+	}
+
+	// log.Print(len(existingDependencies))
+	// log.Print("============")
+	// log.Print(existingVersions)
 
 	return nil
 }
@@ -252,4 +268,29 @@ func (p *Pipeline) insertVersionsThatDoNotExist(dependencies []parser.Dependency
 	}
 
 	return nil
+}
+
+func (p *Pipeline) saveRepositoryDependencyVersions(repositoryId int, dependencies []parser.Dependency) error {
+	if err := p.Store.DeleteRepositoryDependencyVersion(repositoryId); err != nil {
+		return fmt.Errorf("failed to delete repository dependency versions: %w", err)
+	}
+
+	existingVersions, err := p.Store.GetExistingVersionsForDependencies(dependencies)
+	if err != nil {
+		return fmt.Errorf("failed to get existing versions: %w", err)
+	}
+
+	if len(existingVersions) == 0 {
+		return nil
+	}
+
+	if err := p.Store.InsertRepositoryDependencyVersion(repositoryId, existingVersions); err != nil {
+		return fmt.Errorf("failed to insert repository dependency versions: %w", err)
+	}
+
+	return nil
+}
+
+func (p *Pipeline) resolveDependencyUrls() {
+
 }

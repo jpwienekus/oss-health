@@ -182,6 +182,30 @@ func (s *PostgresStore) InsertDependencyVersions(dependencies []models.Dependenc
 
 	return nil
 }
+
+func (s *PostgresStore) InsertRepositoryDependencyVersion(repositoryId int, dependencies []models.DependencyVersion) error {
+	queryArguments := []any{}
+	clauses := []string{}
+
+	for i, d := range dependencies {
+		n := i*3 + 1
+		clauses = append(clauses, fmt.Sprintf("($%d, $%d, $%d)", n, n+1, n+2))
+		queryArguments = append(queryArguments, repositoryId, d.DependencyId, d.ID)
+	}
+
+	query := fmt.Sprintf(InsertRepositoryDependencyVersionsQuery, strings.Join(clauses, ", "))
+	// logQueryWithParams(query, queryArguments)
+	_, err := s.DB.Exec(query, queryArguments...)
+	if err != nil {
+		return fmt.Errorf("failed to insert repository dependency versions: %v", err)
+	}
+
+	return nil
+}
+
+// func (s *PostgresStore) GetDependenciesPendingUrlResolution(repositoryId int) ([]models.Dependency, error) {
+//
+// }
 // func logQueryWithParams(query string, args []any) {
 // 	for i, arg := range args {
 // 		placeholder := fmt.Sprintf("$%d", i+1)

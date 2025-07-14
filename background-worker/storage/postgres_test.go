@@ -217,3 +217,32 @@ func TestInsertDependencyVersions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestInsertRepositoryDependencyVersion(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	repoID := 42
+	deps := []models.DependencyVersion{
+		{ID: 1, DependencyId: 100}, // version ID, dependency ID
+		{ID: 2, DependencyId: 200},
+	}
+
+	// Build the expected query
+	clauses := []string{"($1, $2, $3)", "($4, $5, $6)"}
+	query := fmt.Sprintf(storage.InsertRepositoryDependencyVersionsQuery, strings.Join(clauses, ", "))
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).
+		WithArgs(
+			repoID, 100, 1,
+			repoID, 200, 2,
+		).
+		WillReturnResult(sqlmock.NewResult(0, 2))
+
+	store := &storage.PostgresStore{DB: db}
+	err = store.InsertRepositoryDependencyVersion(repoID, deps)
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
