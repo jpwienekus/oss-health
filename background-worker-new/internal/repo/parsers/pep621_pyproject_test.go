@@ -1,4 +1,4 @@
-package parser_test
+package parsers_test
 
 import (
 	"strings"
@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/oss-health/background-worker/internal/repo/parser"
+	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
 
 func TestPep621PyProjectParser_CanParse(t *testing.T) {
-	p := parser.Pep621PyProjectParser{}
+	p := parsers.Pep621PyProjectParser{}
 
 	assert.True(t, p.CanParse("pyproject.toml"))
 	assert.False(t, p.CanParse("setup.py"))
@@ -18,7 +18,7 @@ func TestPep621PyProjectParser_CanParse(t *testing.T) {
 }
 
 func TestPep621PyProjectParser_Parse_WithDependencies(t *testing.T) {
-	p := parser.Pep621PyProjectParser{}
+	p := parsers.Pep621PyProjectParser{}
 
 	tomlData := `
 [project]
@@ -30,7 +30,7 @@ dependencies = [
 
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []parser.Dependency{
+	assert.ElementsMatch(t, []parsers.Dependency{
 		{Name: "requests", Version: "2.0", Ecosystem: "pypi"},
 		{Name: "flask", Version: "unknown", Ecosystem: "pypi"},
 		{Name: "numpy", Version: "1.25.0", Ecosystem: "pypi"},
@@ -38,7 +38,7 @@ dependencies = [
 }
 
 func TestPep621PyProjectParser_Parse_NoProjectSection(t *testing.T) {
-	p := parser.Pep621PyProjectParser{}
+	p := parsers.Pep621PyProjectParser{}
 
 	tomlData := `
 [tool.poetry]
@@ -52,7 +52,7 @@ version = "0.1.0"
 }
 
 func TestPep621PyProjectParser_Parse_NoDependenciesSection(t *testing.T) {
-	p := parser.Pep621PyProjectParser{}
+	p := parsers.Pep621PyProjectParser{}
 
 	tomlData := `
 [project]
@@ -66,7 +66,7 @@ version = "0.1.0"
 }
 
 func TestPep621PyProjectParser_Parse_InvalidDependencyType(t *testing.T) {
-	p := parser.Pep621PyProjectParser{}
+	p := parsers.Pep621PyProjectParser{}
 
 	tomlData := `
 [project]
@@ -75,13 +75,13 @@ dependencies = [123, true, "pandas (>=1.3.0)"]
 
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
-	assert.Equal(t, []parser.Dependency{
+	assert.Equal(t, []parsers.Dependency{
 		{Name: "pandas", Version: "1.3.0", Ecosystem: "pypi"},
 	}, deps)
 }
 
 func TestPep621PyProjectParser_Parse_ComplexVersions(t *testing.T) {
-	p := parser.Pep621PyProjectParser{}
+	p := parsers.Pep621PyProjectParser{}
 
 	tomlData := `
 [project]
@@ -94,14 +94,14 @@ dependencies = [
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
 
-	assert.ElementsMatch(t, []parser.Dependency{
+	assert.ElementsMatch(t, []parsers.Dependency{
 		{Name: "example", Version: "0.1.0", Ecosystem: "pypi"},
 		{Name: "toolkit", Version: "unknown", Ecosystem: "pypi"},
 	}, deps)
 }
 
 func TestPep621PyProjectParser_Parse_FieldsAreLowercased(t *testing.T) {
-	p := parser.Pep621PyProjectParser{}
+	p := parsers.Pep621PyProjectParser{}
 
 	tomlData := `
 [project]

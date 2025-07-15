@@ -1,4 +1,4 @@
-package parser_test
+package parsers_test
 
 import (
 	"strings"
@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/oss-health/background-worker/internal/repo/parser"
+	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
 
 func TestNpmParser_CanParse(t *testing.T) {
-	parser := parser.NpmParser{}
+	parser := parsers.NpmParser{}
 
 	assert.True(t, parser.CanParse("package.json"))
 	assert.True(t, parser.CanParse("PACKAGE.JSON")) // case-insensitive
@@ -19,7 +19,7 @@ func TestNpmParser_CanParse(t *testing.T) {
 }
 
 func TestNpmParser_Parse_WithDependencies(t *testing.T) {
-	p := parser.NpmParser{}
+	p := parsers.NpmParser{}
 
 	json := `{
 		"dependencies": {
@@ -30,14 +30,14 @@ func TestNpmParser_Parse_WithDependencies(t *testing.T) {
 
 	deps, err := p.Parse([]byte(json))
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []parser.Dependency{
+	assert.ElementsMatch(t, []parsers.Dependency{
 		{Name: "react", Version: "18.2.0", Ecosystem: "npm"},
 		{Name: "lodash", Version: "4.17.21", Ecosystem: "npm"},
 	}, deps)
 }
 
 func TestNpmParser_Parse_WithDevDependencies(t *testing.T) {
-	p := parser.NpmParser{}
+	p := parsers.NpmParser{}
 
 	json := `{
 		"devDependencies": {
@@ -47,13 +47,13 @@ func TestNpmParser_Parse_WithDevDependencies(t *testing.T) {
 
 	deps, err := p.Parse([]byte(json))
 	assert.NoError(t, err)
-	assert.Equal(t, []parser.Dependency{
+	assert.Equal(t, []parsers.Dependency{
 		{Name: "jest", Version: "29.0.0", Ecosystem: "npm"},
 	}, deps)
 }
 
 func TestNpmParser_Parse_WithBothDeps(t *testing.T) {
-	p := parser.NpmParser{}
+	p := parsers.NpmParser{}
 
 	json := `{
 		"dependencies": {
@@ -66,14 +66,14 @@ func TestNpmParser_Parse_WithBothDeps(t *testing.T) {
 
 	deps, err := p.Parse([]byte(json))
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []parser.Dependency{
+	assert.ElementsMatch(t, []parsers.Dependency{
 		{Name: "express", Version: "4.18.1", Ecosystem: "npm"},
 		{Name: "mocha", Version: "10.0.0", Ecosystem: "npm"},
 	}, deps)
 }
 
 func TestNpmParser_Parse_Empty(t *testing.T) {
-	p := parser.NpmParser{}
+	p := parsers.NpmParser{}
 
 	json := `{}`
 
@@ -83,7 +83,7 @@ func TestNpmParser_Parse_Empty(t *testing.T) {
 }
 
 func TestNpmParser_Parse_InvalidJSON(t *testing.T) {
-	p := parser.NpmParser{}
+	p := parsers.NpmParser{}
 
 	json := `{"dependencies": "not-a-map"}`
 
@@ -92,7 +92,7 @@ func TestNpmParser_Parse_InvalidJSON(t *testing.T) {
 }
 
 func TestNpmParser_Parse_FieldsAreLowercased(t *testing.T) {
-	p := parser.NpmParser{}
+	p := parsers.NpmParser{}
 
 	json := `{
 		"dependencies": {

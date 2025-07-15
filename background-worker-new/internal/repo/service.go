@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/oss-health/background-worker/internal/repo/parser"
+	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
 
 var execCommand = exec.Command
@@ -18,12 +18,12 @@ var osMkdirTemp = os.MkdirTemp
 type RepositoryService struct {
 	repository RepoRepository
 
-	ParserRegistry *parser.ParserRegistry
+	ParserRegistry *parsers.ParserRegistry
 }
 
 func NewRepositoryService(
 	repository RepoRepository,
-	ParserRegistry *parser.ParserRegistry,
+	ParserRegistry *parsers.ParserRegistry,
 ) *RepositoryService {
 	return &RepositoryService{
 		repository:     repository,
@@ -72,7 +72,7 @@ func (s *RepositoryService) CloneRepository(url string, destination string) erro
 	return nil
 }
 
-func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Repository) ([]parser.Dependency, error) {
+func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Repository) ([]parsers.Dependency, error) {
 	tempDir, err := osMkdirTemp("", "repo-clone-*")
 	if err := s.CloneRepository(repo.URL, tempDir); err != nil {
 		if err := s.repository.MarkFailed(ctx, repo.ID, fmt.Sprintf("failed to clone repository: %v", err)); err != nil {
@@ -81,7 +81,7 @@ func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Reposi
 		return nil, fmt.Errorf("failed to clone repository %s: %w", repo.URL, err)
 	}
 
-	dependencies := []parser.Dependency{}
+	dependencies := []parsers.Dependency{}
 
 	err = filepath.WalkDir(tempDir, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -98,7 +98,7 @@ func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Reposi
 		}
 
 		base := filepath.Base(path)
-		parsers, ok := s.ParserRegistry.GetParsers(base)
+		p, ok := s.ParserRegistry.GetParsers(base)
 
 		if !ok {
 			return nil
@@ -109,8 +109,8 @@ func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Reposi
 			return fmt.Errorf("failed to read file %s: %w", path, err)
 		}
 
-		parsedDependencies := []parser.Dependency{}
-		for _, parser := range parsers {
+		parsedDependencies := []parsers.Dependency{}
+		for _, parser := range p {
 			parsedDeps, err := parser.Parse(content)
 			if err != nil {
 				return fmt.Errorf("failed to parse file %s with parser %T: %w", path, parser, err)
@@ -142,3 +142,45 @@ func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Reposi
 
 	return dependencies, nil
 }
+
+// func (s *RepositoryService) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryID int, pairs []parsers.Dependency) error {
+//
+// }
+
+// privates
+// func (s *RepositoryService) insertDependenciesThatDoNotExist(ctx context.Context, dependencies []parsers.Dependency) error {
+// 	type key struct {
+// 		Name, Ecosystem string
+// 	}
+//
+// 	// These are not specific to a repository, checking what is already stored
+// 	// in the database so no duplicates are inserted
+// 	existingDependencies, err := p.Store.GetExistingDependencies(dependencies)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get existing dependencies: %w", err)
+// 	}
+//
+// 	existingDependenciesMap := make(map[key]bool, len(existingDependencies))
+//
+// 	for _, dep := range existingDependencies {
+// 		existingDependenciesMap[key{Name: dep.Name, Ecosystem: dep.Ecosystem}] = true
+// 	}
+//
+// 	dependenciesToInsert := make([]parsers.Dependency, 0, len(dependencies))
+//
+// 	for _, dep := range dependencies {
+// 		if !existingDependenciesMap[key{Name: dep.Name, Ecosystem: dep.Ecosystem}] {
+// 			dependenciesToInsert = append(dependenciesToInsert, dep)
+// 		}
+// 	}
+//
+// 	log.Printf("Existing dependencies: %d, Inserted dependencies: %d\n", len(existingDependencies), len(dependenciesToInsert))
+//
+// 	if len(dependenciesToInsert) > 0 {
+// 		if err := p.Store.InsertDependencies(dependenciesToInsert); err != nil {
+// 			return fmt.Errorf("failed to insert dependencies: %w", err)
+// 		}
+// 	}
+//
+// 	return nil
+// }

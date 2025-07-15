@@ -1,4 +1,4 @@
-package parser
+package parsers
 
 
 // TODO: rename to DependencyVersion

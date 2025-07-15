@@ -1,4 +1,4 @@
-package parser
+package parsers
 
 type ParserRegistry struct {
 	parsers []Parser

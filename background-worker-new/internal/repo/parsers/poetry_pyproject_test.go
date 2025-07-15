@@ -1,4 +1,4 @@
-package parser_test
+package parsers_test
 
 import (
 	"strings"
@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/oss-health/background-worker/internal/repo/parser"
+	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
 
 func TestPoetryPyProjectParser_CanParse(t *testing.T) {
-	p := parser.PoetryPyProjectParser{}
+	p := parsers.PoetryPyProjectParser{}
 
 	assert.True(t, p.CanParse("pyproject.toml"))
 	assert.False(t, p.CanParse("setup.cfg"))
@@ -18,7 +18,7 @@ func TestPoetryPyProjectParser_CanParse(t *testing.T) {
 }
 
 func TestPoetryPyProjectParser_Parse_MainDependenciesOnly(t *testing.T) {
-	p := parser.PoetryPyProjectParser{}
+	p := parsers.PoetryPyProjectParser{}
 
 	tomlData := `
 [tool.poetry]
@@ -32,14 +32,14 @@ requests = "^2.31.0"
 
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []parser.Dependency{
+	assert.ElementsMatch(t, []parsers.Dependency{
 		{Name: "python", Version: "3.10", Ecosystem: "pypi"},
 		{Name: "requests", Version: "2.31.0", Ecosystem: "pypi"},
 	}, deps)
 }
 
 func TestPoetryPyProjectParser_Parse_WithDevDependencies(t *testing.T) {
-	p := parser.PoetryPyProjectParser{}
+	p := parsers.PoetryPyProjectParser{}
 
 	tomlData := `
 [tool.poetry]
@@ -56,7 +56,7 @@ black = "^23.7.0"
 
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []parser.Dependency{
+	assert.ElementsMatch(t, []parsers.Dependency{
 		{Name: "flask", Version: "2.3.0", Ecosystem: "pypi"},
 		{Name: "pytest", Version: "7.4.0", Ecosystem: "pypi"},
 		{Name: "black", Version: "23.7.0", Ecosystem: "pypi"},
@@ -64,7 +64,7 @@ black = "^23.7.0"
 }
 
 func TestPoetryPyProjectParser_Parse_NoPoetrySection(t *testing.T) {
-	p := parser.PoetryPyProjectParser{}
+	p := parsers.PoetryPyProjectParser{}
 
 	tomlData := `
 [tool.setuptools]
@@ -78,7 +78,7 @@ version = "0.1.0"
 }
 
 func TestPoetryPyProjectParser_Parse_NoToolSection(t *testing.T) {
-	p := parser.PoetryPyProjectParser{}
+	p := parsers.PoetryPyProjectParser{}
 
 	tomlData := `
 [build-system]
@@ -91,7 +91,7 @@ requires = ["poetry-core"]
 }
 
 func TestPoetryPyProjectParser_Parse_InvalidTOML(t *testing.T) {
-	p := parser.PoetryPyProjectParser{}
+	p := parsers.PoetryPyProjectParser{}
 
 	invalid := `invalid = = = toml`
 
@@ -101,7 +101,7 @@ func TestPoetryPyProjectParser_Parse_InvalidTOML(t *testing.T) {
 }
 
 func TestPoetryPyProjectParser_Parse_FieldsAreLowercased(t *testing.T) {
-	p := parser.PoetryPyProjectParser{}
+	p := parsers.PoetryPyProjectParser{}
 
 	tomlData := `
 [tool.poetry]
