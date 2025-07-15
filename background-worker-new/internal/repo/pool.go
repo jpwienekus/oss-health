@@ -42,7 +42,7 @@ func (workerPool *WorkerPool) worker(id int, ctx context.Context) {
 
 		log.Printf("[worker %d] processing %s", id, r.URL)
 
-		dependencies, err := workerPool.s.ExtractDependencies(ctx, r.URL)
+		dependencies, err := workerPool.s.ExtractDependencies(ctx, r)
 		if err != nil {
 			log.Printf("[worker %d] failed to extract dependencies for %s: %v", id, r.URL, err)
 		}

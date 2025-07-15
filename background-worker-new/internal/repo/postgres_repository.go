@@ -40,3 +40,21 @@ func (r *PostgresRepository) GetReposForSchedule(ctx context.Context, day int, h
 
 	return repositories, nil
 }
+
+func (r *PostgresRepository) MarkScanned(ctx context.Context, id int) error {
+	_, err := r.db.Exec(ctx, UpdateRepositoriesAsScannedQuery, id)
+	if err != nil {
+		return fmt.Errorf("mark repository %d as scanned: %w", id, err)
+	}
+
+	return nil
+}
+
+func (r *PostgresRepository) MarkFailed(ctx context.Context, id int, message string) error {
+	_, err := r.db.Exec(ctx, UpdateRepositoriesAsScannedFailedQuery, message, id)
+	if err != nil {
+		return fmt.Errorf("mark repository %d as failed with message %q: %w", id, message, err)
+	}
+
+	return nil
+}

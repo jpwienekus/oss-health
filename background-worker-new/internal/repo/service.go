@@ -19,9 +19,6 @@ type RepositoryService struct {
 	repository RepoRepository
 
 	ParserRegistry *parser.ParserRegistry
-	// dependencyRepository dependency.DependencyRepository
-	// cloner               Cloner
-	// extractor            Extractor
 }
 
 func NewRepositoryService(
@@ -75,13 +72,15 @@ func (s *RepositoryService) CloneRepository(url string, destination string) erro
 	return nil
 }
 
-func (s *RepositoryService) ExtractDependencies(ctx context.Context, url string) ([]parser.Dependency, error) {
+func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Repository) ([]parser.Dependency, error) {
 	tempDir, err := osMkdirTemp("", "repo-clone-*")
-	if err := s.CloneRepository(url, tempDir); err != nil {
-		return nil, fmt.Errorf("failed to clone repository %s: %w", url, err)
+	if err := s.CloneRepository(repo.URL, tempDir); err != nil {
+		if err := s.repository.MarkFailed(ctx, repo.ID, fmt.Sprintf("failed to clone repository: %v", err)); err != nil {
+			log.Printf("Failed to mark repository %d as failed: %v", repo.ID, err)
+		}
+		return nil, fmt.Errorf("failed to clone repository %s: %w", repo.URL, err)
 	}
 
-	log.Printf("Extracting dependencies from directory: %s\n", tempDir)
 	dependencies := []parser.Dependency{}
 
 	err = filepath.WalkDir(tempDir, func(path string, d os.DirEntry, walkErr error) error {
@@ -105,7 +104,6 @@ func (s *RepositoryService) ExtractDependencies(ctx context.Context, url string)
 			return nil
 		}
 
-		log.Printf("Processing file: %s\n", path)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("failed to read file %s: %w", path, err)
@@ -127,11 +125,19 @@ func (s *RepositoryService) ExtractDependencies(ctx context.Context, url string)
 	})
 
 	if err != nil {
+		if err := s.repository.MarkFailed(ctx, repo.ID, fmt.Sprintf("failed to walk directory: %v", err)); err != nil {
+			return nil, fmt.Errorf("failed to mark repository %d as failed: %w", repo.ID, err)
+		}
+
 		return nil, fmt.Errorf("failed to walk directory %s: %w", tempDir, err)
 	}
 
 	if err := os.RemoveAll(tempDir); err != nil {
 		return nil, fmt.Errorf("failed to remove temporary directory %s: %w", tempDir, err)
+	}
+
+	if err := s.repository.MarkScanned(ctx, repo.ID); err != nil {
+		return nil, fmt.Errorf("failed to mark repository %d as scanned: %w", repo.ID, err)
 	}
 
 	return dependencies, nil
