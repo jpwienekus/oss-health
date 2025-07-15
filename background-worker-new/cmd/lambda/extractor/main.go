@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/repo"
+	"github.com/oss-health/background-worker/internal/repo/parser"
 )
 
 func main() {
@@ -23,6 +24,8 @@ func main() {
 
 	service := repo.NewRepositoryService(
 		repo.NewRepoRepository(db),
+		parser.NewParserRegistry(),
+
 		// Add other dependencies here if needed
 	)
 
