@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/oss-health/background-worker/internal/db"
+	"github.com/oss-health/background-worker/internal/dependencies"
 	"github.com/oss-health/background-worker/internal/repo"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -121,4 +122,48 @@ func TestMarkFailed(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "error", status)
 	assert.Equal(t, failMsg, dbFailMsg)
+}
+
+
+func TestInsertAndDeleteRepositoryDependencyVersions(t *testing.T) {
+	repo := repo.NewRepoRepository(TestDB)
+	ctx := context.Background()
+
+	ClearTables(TestDB)
+
+	// Setup required records
+	_, err := TestDB.Exec(ctx, `INSERT INTO "user" (id, github_id, github_username, access_token) VALUES (1, 999, 'depuser', 'token')`)
+	assert.NoError(t, err)
+
+	_, err = TestDB.Exec(ctx, `INSERT INTO repositories (id, url, github_id, user_id, scan_status) VALUES (1, 'https://example.com/repo', 999, 1, 'pending')`)
+	assert.NoError(t, err)
+
+	_, err = TestDB.Exec(ctx, `INSERT INTO dependencies (id, name, ecosystem) VALUES (1, 'dep1', 'npm'), (2, 'dep2', 'npm')`)
+	assert.NoError(t, err)
+
+	_, err = TestDB.Exec(ctx, `INSERT INTO versions (id, dependency_id, version) VALUES (10, 1, '1.0.0'), (20, 2, '2.0.0')`)
+	assert.NoError(t, err)
+
+	// Act: Insert
+	deps := []dependencies.DependencyVersion{
+		{ID: 10, DependencyId: 1},
+		{ID: 20, DependencyId: 2},
+	}
+	err = repo.InsertRepositoryDependencyVersion(ctx, 1, deps)
+	assert.NoError(t, err)
+
+	// Assert insert
+	var count int
+	err = TestDB.QueryRow(ctx, `SELECT COUNT(*) FROM repository_dependency_version WHERE repository_id = 1`).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, count)
+
+	// Act: Delete
+	err = repo.DeleteRepositoryDependencyVersion(ctx, 1)
+	assert.NoError(t, err)
+
+	// Assert delete
+	err = TestDB.QueryRow(ctx, `SELECT COUNT(*) FROM repository_dependency_version WHERE repository_id = 1`).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, count)
 }

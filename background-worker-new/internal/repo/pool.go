@@ -47,10 +47,9 @@ func (workerPool *WorkerPool) worker(id int, ctx context.Context) {
 			log.Printf("[worker %d] failed to extract dependencies for %s: %v", id, r.URL, err)
 		}
 
-		log.Print(dependencies)
-		// if err := workerPool.s.ReplaceRepositoryDependencyVersions(ctx, r.ID, pairs); err != nil {
-		// 	log.Printf("[worker %d] failed to replace dependency versions for repository ID %d: %v", id, r.ID, err)
-		// }
+		if err := workerPool.s.ReplaceRepositoryDependencyVersions(ctx, r.ID, dependencies, id); err != nil {
+			log.Printf("[worker %d] failed to replace dependency versions for repository ID %d: %v", id, r.ID, err)
+		}
 
 		workerPool.waitGroup.Done()
 

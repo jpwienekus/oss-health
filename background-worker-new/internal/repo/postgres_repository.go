@@ -3,8 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oss-health/background-worker/internal/dependencies"
 )
 
 type PostgresRepository struct {
@@ -58,3 +60,35 @@ func (r *PostgresRepository) MarkFailed(ctx context.Context, id int, message str
 
 	return nil
 }
+
+// TODO: continue tests from here
+func (r *PostgresRepository) DeleteRepositoryDependencyVersion(ctx context.Context, repositoryId int) error {
+	_, err := r.db.Exec(ctx, DeleteRepositoryDependencyVersionsQuery, repositoryId)
+	if err != nil {
+		return fmt.Errorf("failed to delete repository dependency versions: %v", err)
+	}
+
+	return nil
+}
+
+
+func (r *PostgresRepository) InsertRepositoryDependencyVersion(ctx context.Context, repositoryId int, dependencies []dependencies.DependencyVersion) error {
+	queryArguments := []any{}
+	clauses := []string{}
+
+	for i, d := range dependencies {
+		n := i*3 + 1
+		clauses = append(clauses, fmt.Sprintf("($%d, $%d, $%d)", n, n+1, n+2))
+		queryArguments = append(queryArguments, repositoryId, d.DependencyId, d.ID)
+	}
+
+	query := fmt.Sprintf(InsertRepositoryDependencyVersionsQuery, strings.Join(clauses, ", "))
+	_, err := r.db.Exec(ctx, query, queryArguments...)
+	if err != nil {
+		return fmt.Errorf("failed to insert repository dependency versions: %v", err)
+	}
+
+	return nil
+}
+
+

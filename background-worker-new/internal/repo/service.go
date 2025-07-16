@@ -9,25 +9,28 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/oss-health/background-worker/internal/dependencies"
 	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
 
-var execCommand = exec.Command
-var osMkdirTemp = os.MkdirTemp
+var ExecCommand = exec.Command
+var OsMkdirTemp = os.MkdirTemp
 
 type RepositoryService struct {
-	repository RepoRepository
-
-	ParserRegistry *parsers.ParserRegistry
+	repository        RepoRepository
+	dependencyService dependencies.DependencyServiceInterface
+	ParserRegistry    *parsers.ParserRegistry
 }
 
 func NewRepositoryService(
 	repository RepoRepository,
+	dependencyService dependencies.DependencyServiceInterface,
 	ParserRegistry *parsers.ParserRegistry,
 ) *RepositoryService {
 	return &RepositoryService{
-		repository:     repository,
-		ParserRegistry: ParserRegistry,
+		repository:        repository,
+		dependencyService: dependencyService,
+		ParserRegistry:    ParserRegistry,
 	}
 }
 
@@ -62,7 +65,7 @@ func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int)
 }
 
 func (s *RepositoryService) CloneRepository(url string, destination string) error {
-	cmd := execCommand("git", "clone", "--depth=1", url, destination)
+	cmd := ExecCommand("git", "clone", "--depth=1", url, destination)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -73,7 +76,7 @@ func (s *RepositoryService) CloneRepository(url string, destination string) erro
 }
 
 func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Repository) ([]parsers.Dependency, error) {
-	tempDir, err := osMkdirTemp("", "repo-clone-*")
+	tempDir, err := OsMkdirTemp("", "repo-clone-*")
 	if err := s.CloneRepository(repo.URL, tempDir); err != nil {
 		if err := s.repository.MarkFailed(ctx, repo.ID, fmt.Sprintf("failed to clone repository: %v", err)); err != nil {
 			log.Printf("Failed to mark repository %d as failed: %v", repo.ID, err)
@@ -143,44 +146,39 @@ func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Reposi
 	return dependencies, nil
 }
 
-// func (s *RepositoryService) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryID int, pairs []parsers.Dependency) error {
-//
-// }
+func (s *RepositoryService) ReplaceRepositoryDependencyVersions(ctx context.Context, repositoryID int, pairs []parsers.Dependency, workerId int) error {
+	if err := s.dependencyService.InsertDependenciesThatDoNotExist(ctx, pairs, workerId); err != nil {
+		return fmt.Errorf("failed to insert dependencies that do not exist: %w", err)
+	}
 
-// privates
-// func (s *RepositoryService) insertDependenciesThatDoNotExist(ctx context.Context, dependencies []parsers.Dependency) error {
-// 	type key struct {
-// 		Name, Ecosystem string
-// 	}
-//
-// 	// These are not specific to a repository, checking what is already stored
-// 	// in the database so no duplicates are inserted
-// 	existingDependencies, err := p.Store.GetExistingDependencies(dependencies)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to get existing dependencies: %w", err)
-// 	}
-//
-// 	existingDependenciesMap := make(map[key]bool, len(existingDependencies))
-//
-// 	for _, dep := range existingDependencies {
-// 		existingDependenciesMap[key{Name: dep.Name, Ecosystem: dep.Ecosystem}] = true
-// 	}
-//
-// 	dependenciesToInsert := make([]parsers.Dependency, 0, len(dependencies))
-//
-// 	for _, dep := range dependencies {
-// 		if !existingDependenciesMap[key{Name: dep.Name, Ecosystem: dep.Ecosystem}] {
-// 			dependenciesToInsert = append(dependenciesToInsert, dep)
-// 		}
-// 	}
-//
-// 	log.Printf("Existing dependencies: %d, Inserted dependencies: %d\n", len(existingDependencies), len(dependenciesToInsert))
-//
-// 	if len(dependenciesToInsert) > 0 {
-// 		if err := p.Store.InsertDependencies(dependenciesToInsert); err != nil {
-// 			return fmt.Errorf("failed to insert dependencies: %w", err)
-// 		}
-// 	}
-//
-// 	return nil
-// }
+	if err := s.dependencyService.InsertVersionsThatDoNotExist(ctx, pairs, workerId); err != nil {
+		return fmt.Errorf("failed to insert versions that do not exist: %w", err)
+	}
+
+	if err := s.saveRepositoryDependencyVersions(ctx, repositoryID, pairs); err != nil {
+		return fmt.Errorf("failed to save repository dependency versions: %w", err)
+	}
+
+	return nil
+}
+
+func (s *RepositoryService) saveRepositoryDependencyVersions(ctx context.Context, repositoryId int, dependencies []parsers.Dependency) error {
+	if err := s.repository.DeleteRepositoryDependencyVersion(ctx, repositoryId); err != nil {
+		return fmt.Errorf("failed to delete repository dependency versions: %w", err)
+	}
+
+	existingVersions, err := s.dependencyService.GetExistingVersionsForDependencies(ctx, dependencies)
+	if err != nil {
+		return fmt.Errorf("failed to get existing versions: %w", err)
+	}
+
+	if len(existingVersions) == 0 {
+		return nil
+	}
+
+	if err := s.repository.InsertRepositoryDependencyVersion(ctx, repositoryId, existingVersions); err != nil {
+		return fmt.Errorf("failed to insert repository dependency versions: %w", err)
+	}
+
+	return nil
+}
