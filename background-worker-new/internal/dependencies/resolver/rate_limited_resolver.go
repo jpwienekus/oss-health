@@ -17,12 +17,16 @@ type RateLimitedResolver struct {
 	mu          sync.Mutex
 	requests    int
 	windowStart time.Time
+
+	logOnce sync.Once
+	logName string
 }
 
-func NewRateLimitedResolver(resolver Resolver, r rate.Limit, b int) *RateLimitedResolver {
+func NewRateLimitedResolver(resolver Resolver, r rate.Limit, b int, logName string) *RateLimitedResolver {
 	return &RateLimitedResolver{
 		resolver: resolver,
 		limiter:  rate.NewLimiter(r, b),
+		logName:  logName,
 	}
 }
 
@@ -31,6 +35,14 @@ func (r *RateLimitedResolver) CanResolve(dependency db.Dependency) bool {
 }
 
 func (r *RateLimitedResolver) Resolve(ctx context.Context, dependency db.Dependency) (string, error) {
+	r.logOnce.Do(func() {
+		go func() {
+			for range time.Tick(time.Second) {
+				fmt.Printf("[%s] Requests this second: %d\n", r.logName, r.requestsThisSecond())
+			}
+		}()
+	})
+
 	if !r.limiter.Allow() {
 		fmt.Printf("Rate limit reached for dependency: %+v. Waiting...\n", dependency)
 	}
@@ -59,12 +71,4 @@ func (r *RateLimitedResolver) requestsThisSecond() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.requests
-}
-
-func (r *RateLimitedResolver) StartLogging(name string) {
-	go func() {
-		for range time.Tick(time.Second) {
-			fmt.Printf("[%s] Requests this second: %d\n", name, r.requestsThisSecond())
-		}
-	}()
 }

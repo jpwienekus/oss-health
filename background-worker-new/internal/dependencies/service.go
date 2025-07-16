@@ -156,7 +156,6 @@ func (s *DependencyService) ResolveDependencyUrls(ctx context.Context, repositor
 			defer wg.Done()
 
 			url, err := s.resolverChain.Resolve(ctx, depCopy)
-			log.Print(url)
 
 			mu.Lock()
 			defer mu.Unlock()

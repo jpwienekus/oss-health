@@ -30,14 +30,14 @@ func main() {
 		&resolver.NPMResolver{},
 		rate.Limit(10),
 		5,
+		"npm",
 	)
-	npmResolver.StartLogging("npm")
 	pypiResolver := resolver.NewRateLimitedResolver(
 		&resolver.PyPIResolver{},
 		rate.Limit(10),
 		5,
+		"pypi",
 	)
-	pypiResolver.StartLogging("pypi")
 
 	dependencyService := dependencies.NewDependencyService(
 		dependencies.NewDependencyRepository(db),

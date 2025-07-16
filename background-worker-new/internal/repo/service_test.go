@@ -57,6 +57,10 @@ func (m *MockDependencyService) GetExistingVersionsForDependencies(ctx context.C
 	return args.Get(0).([]db.DependencyVersion), args.Error(1)
 }
 
+func (m *MockDependencyService) ResolveDependencyUrls(ctx context.Context, repositoryId int) error {
+	return m.Called(ctx, repositoryId).Error(0)
+}
+
 // Tests
 func TestCloneRepository_Success(t *testing.T) {
 	mockRepo := new(MockRepoRepository)

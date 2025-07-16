@@ -52,7 +52,7 @@ func (s *RepositoryService) RunDailyScan(ctx context.Context, day int, hour int)
 
 	totalParallel := min(maxParallel, totalRepositories)
 
-	workerPool := NewWorkerPool(totalParallel, 2.0, s)
+	workerPool := NewWorkerPool(totalParallel, 2.0, s, s.dependencyService)
 	workerPool.Start(ctx)
 
 	for _, repository := range repositories {

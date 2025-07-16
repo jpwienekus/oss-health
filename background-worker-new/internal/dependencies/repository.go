@@ -220,7 +220,7 @@ func (r *DependencyRepository) UpdateDependencyRepositoryIDs(ctx context.Context
 	argIndex := 1
 
 	for depID, repoID := range depRepoMap {
-		caseClauses = append(caseClauses, fmt.Sprintf("WHEN id = $%d THEN $%d", argIndex, argIndex+1))
+		caseClauses = append(caseClauses, fmt.Sprintf("WHEN id = $%d THEN $%d::integer", argIndex, argIndex+1))
 		queryArguments = append(queryArguments, depID, repoID)
 		whereIDs = append(whereIDs, depID)
 		argIndex += 2
@@ -233,6 +233,7 @@ func (r *DependencyRepository) UpdateDependencyRepositoryIDs(ctx context.Context
 	}
 
 	query := fmt.Sprintf(UpdateDependencyRepositoryIDsQuery, strings.Join(caseClauses, " "), strings.Join(wherePlaceholders, ", "))
+	// logQueryWithParams(query, queryArguments)
 
 	_, err := r.db.Exec(ctx, query, queryArguments...)
 	if err != nil {
@@ -262,3 +263,18 @@ func (r *DependencyRepository) MarkDependenciesAsFailed(ctx context.Context, fai
 
 	return nil
 }
+
+// func logQueryWithParams(query string, args []any) {
+// 	for i, arg := range args {
+// 		placeholder := fmt.Sprintf("$%d", i+1)
+// 		var val string
+// 		switch v := arg.(type) {
+// 		case string:
+// 			val = fmt.Sprintf("'%s'", strings.ReplaceAll(v, "'", "''")) // escape single quotes
+// 		default:
+// 			val = fmt.Sprintf("%v", v)
+// 		}
+// 		query = strings.Replace(query, placeholder, val, 1)
+// 	}
+// 	fmt.Println("Executing Query:", query)
+// }

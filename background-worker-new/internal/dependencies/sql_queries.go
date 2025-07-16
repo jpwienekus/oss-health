@@ -4,11 +4,6 @@ const (
 	GetExistingDependenciesQuery = `
 		SELECT id, name, ecosystem FROM dependencies WHERE 
 	`
-	// GetInsertedDependenciesQuery = `
-	// 	SELECT id, name, ecosystem
-	// 	FROM dependencies
-	// 	WHERE (name, ecosystem) IN $s
-	// `
 	GetDependenciesPendingUrlResolutionQuery = `
 		SELECT D.id, D.name, D.ecosystem
 		FROM dependencies as D
@@ -17,22 +12,10 @@ const (
 			AND RDV.repository_id = $1
 		ORDER BY name ASC
 	`
-	// DeleteRepositoryDependencyVersionsQuery = `
-	// 	DELETE FROM repository_dependency_version
-	// 	WHERE repository_id = $1
-	// `
 	InsertDependencyQuery = `
 		INSERT INTO dependencies (name, ecosystem)
 		VALUES %s
 	`
-	// UpdateDependencyRepositoryIDsQuery = `
-	// 	UPDATE dependencies
-	// 	SET
-	// 		dependency_repository_id = CASE %s END::integer,
-	// 		scanned_at = NOW(),
-	//    	scan_status = 'completed'
-	// 	WHERE id IN (%s)
-	// `
 	UpdateDependencyScannedFailedQuery = `
 		UPDATE dependencies
 		SET
@@ -69,7 +52,7 @@ const (
 	UpdateDependencyRepositoryIDsQuery = `
 		UPDATE dependencies
 		SET 
-			dependency_repository_id = CASE %s END::integer,
+			dependency_repository_id = (CASE %s END),
 			scanned_at = NOW(),
     	scan_status = 'completed'
 		WHERE id IN (%s)
