@@ -233,7 +233,6 @@ func (r *DependencyRepository) UpdateDependencyRepositoryIDs(ctx context.Context
 	}
 
 	query := fmt.Sprintf(UpdateDependencyRepositoryIDsQuery, strings.Join(caseClauses, " "), strings.Join(wherePlaceholders, ", "))
-	// logQueryWithParams(query, queryArguments)
 
 	_, err := r.db.Exec(ctx, query, queryArguments...)
 	if err != nil {
