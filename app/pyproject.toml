@@ -10,7 +10,7 @@ use_parentheses = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.4.1"
-pytest-asyncio = "1.0.0"
+pytest-asyncio = "1.1.0"
 ruff = "0.12.3"
 pytest-env = "^1.1.5"
 black = "^25.1.0"
@@ -46,7 +46,7 @@ requires-python = ">=3.12,<4.0"
 dependencies = [
     "pydantic-settings (==2.10.1)",
     "fastapi[standard] (==0.116.1)",
-    "strawberry-graphql[fastapi] (==0.275.7)",
+    "strawberry-graphql[fastapi] (==0.276.0)",
     "alembic (==1.16.4)",
     "sqlalchemy (==2.0.41)",
     "asyncpg (==0.30.0)",
