@@ -1214,14 +1214,14 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests
 
 [[package]]
 name = "pytest-asyncio"
-version = "1.0.0"
+version = "1.1.0"
 description = "Pytest support for asyncio"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "pytest_asyncio-1.0.0-py3-none-any.whl", hash = "sha256:4f024da9f1ef945e680dc68610b52550e36590a67fd31bb3b4943979a1f90ef3"},
-    {file = "pytest_asyncio-1.0.0.tar.gz", hash = "sha256:d15463d13f4456e1ead2594520216b225a16f781e144f8fdf6c5bb4667c48b3f"},
+    {file = "pytest_asyncio-1.1.0-py3-none-any.whl", hash = "sha256:5fe2d69607b0bd75c656d1211f969cadba035030156745ee09e7d71740e58ecf"},
+    {file = "pytest_asyncio-1.1.0.tar.gz", hash = "sha256:796aa822981e01b68c12e4827b8697108f7205020f24b5793b3c41555dab68ea"},
 ]
 
 [package.dependencies]
@@ -1835,14 +1835,14 @@ full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart 
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.275.7"
+version = "0.276.0"
 description = "A library for creating GraphQL APIs"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "strawberry_graphql-0.275.7-py3-none-any.whl", hash = "sha256:3543a9afe7ce76f475303999660ce6eece2593014277ef97ba73fe201992a360"},
-    {file = "strawberry_graphql-0.275.7.tar.gz", hash = "sha256:431c19a084452e5dd015994e9a8cf82fee0dbcc46bcc662e5f74c56d23e73e81"},
+    {file = "strawberry_graphql-0.276.0-py3-none-any.whl", hash = "sha256:e4e6b242c983757200466178fd2024e0dbee7d97181ca95d337969569be3d8f2"},
+    {file = "strawberry_graphql-0.276.0.tar.gz", hash = "sha256:a4c546d30d136342497c0ae351ea38a2c5eded6b95f4d09eb8cd0d05bd6b3a14"},
 ]
 
 [package.dependencies]
@@ -2226,4 +2226,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "1ade5b413ab65767aadbbcd1d24045c609305adc70d0e628f89d1aa666934718"
+content-hash = "862fca53c12eb8d108a93faa16f6b180cdbcbe38d9cb5fa026947265bcd6c51e"
