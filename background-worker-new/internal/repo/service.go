@@ -17,13 +17,13 @@ var ExecCommand = exec.Command
 var OsMkdirTemp = os.MkdirTemp
 
 type RepositoryService struct {
-	repository        RepoRepository
+	repository        RepoRepositoryInterface
 	dependencyService dependencies.DependencyServiceInterface
 	ParserRegistry    *parsers.ParserRegistry
 }
 
 func NewRepositoryService(
-	repository RepoRepository,
+	repository RepoRepositoryInterface,
 	dependencyService dependencies.DependencyServiceInterface,
 	ParserRegistry *parsers.ParserRegistry,
 ) *RepositoryService {

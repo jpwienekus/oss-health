@@ -9,10 +9,10 @@ import (
 )
 
 type DependencyService struct {
-	repository DependencyRepository
+	repository DependencyRepositoryInterface
 }
 
-func NewDependencyService(repository DependencyRepository) *DependencyService {
+func NewDependencyService(repository DependencyRepositoryInterface) *DependencyService {
 	return &DependencyService{
 		repository: repository,
 	}
