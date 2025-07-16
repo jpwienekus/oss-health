@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/dependencies"
 	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
@@ -75,7 +76,7 @@ func (s *RepositoryService) CloneRepository(url string, destination string) erro
 	return nil
 }
 
-func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo Repository) ([]parsers.Dependency, error) {
+func (s *RepositoryService) ExtractDependencies(ctx context.Context, repo db.Repository) ([]parsers.Dependency, error) {
 	tempDir, err := OsMkdirTemp("", "repo-clone-*")
 	if err := s.CloneRepository(repo.URL, tempDir); err != nil {
 		if err := s.repository.MarkFailed(ctx, repo.ID, fmt.Sprintf("failed to clone repository: %v", err)); err != nil {

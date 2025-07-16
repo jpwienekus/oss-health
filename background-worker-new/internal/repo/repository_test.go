@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/oss-health/background-worker/internal/db"
-	"github.com/oss-health/background-worker/internal/dependencies"
 	"github.com/oss-health/background-worker/internal/repo"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -145,7 +144,7 @@ func TestInsertAndDeleteRepositoryDependencyVersions(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Act: Insert
-	deps := []dependencies.DependencyVersion{
+	deps := []db.DependencyVersion{
 		{ID: 10, DependencyId: 1},
 		{ID: 20, DependencyId: 2},
 	}

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/oss-health/background-worker/internal/dependencies"
+	"github.com/oss-health/background-worker/internal/db"
 )
 
 type RepoRepository struct {
@@ -17,7 +17,7 @@ func NewRepoRepository(db *pgxpool.Pool) *RepoRepository {
 	return &RepoRepository{db: db}
 }
 
-func (r *RepoRepository) GetReposForSchedule(ctx context.Context, day int, hour int) ([]Repository, error) {
+func (r *RepoRepository) GetReposForSchedule(ctx context.Context, day int, hour int) ([]db.Repository, error) {
 	rows, err := r.db.Query(ctx, GetReposForScheduleQuery, day, hour)
 	if err != nil {
 		return nil, fmt.Errorf("query repositories for schedule: %w", err)
@@ -25,10 +25,10 @@ func (r *RepoRepository) GetReposForSchedule(ctx context.Context, day int, hour 
 
 	defer rows.Close()
 
-	var repositories []Repository
+	var repositories []db.Repository
 
 	for rows.Next() {
-		var repository Repository
+		var repository db.Repository
 		if err := rows.Scan(&repository.ID, &repository.URL, &repository.LastScannedAt, &repository.ScanStatus); err != nil {
 			return nil, fmt.Errorf("scan repository row: %w", err)
 		}
@@ -71,8 +71,7 @@ func (r *RepoRepository) DeleteRepositoryDependencyVersion(ctx context.Context, 
 	return nil
 }
 
-
-func (r *RepoRepository) InsertRepositoryDependencyVersion(ctx context.Context, repositoryId int, dependencies []dependencies.DependencyVersion) error {
+func (r *RepoRepository) InsertRepositoryDependencyVersion(ctx context.Context, repositoryId int, dependencies []db.DependencyVersion) error {
 	queryArguments := []any{}
 	clauses := []string{}
 

@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/oss-health/background-worker/internal/db"
 	"golang.org/x/time/rate"
 )
 
@@ -12,7 +13,7 @@ type WorkerPool struct {
 	MaxParallel int
 	RateLimiter *rate.Limiter
 	waitGroup   sync.WaitGroup
-	jobs        chan Repository
+	jobs        chan db.Repository
 	s           *RepositoryService
 }
 
@@ -20,7 +21,7 @@ func NewWorkerPool(maxParallel int, requestsPerSecond float64, s *RepositoryServ
 	return &WorkerPool{
 		MaxParallel: maxParallel,
 		RateLimiter: rate.NewLimiter(rate.Limit(requestsPerSecond), 1),
-		jobs:        make(chan Repository),
+		jobs:        make(chan db.Repository),
 		s:           s,
 	}
 }
@@ -56,7 +57,7 @@ func (workerPool *WorkerPool) worker(id int, ctx context.Context) {
 	}
 }
 
-func (workerPool *WorkerPool) Submit(repository Repository) {
+func (workerPool *WorkerPool) Submit(repository db.Repository) {
 	workerPool.waitGroup.Add(1)
 	workerPool.jobs <- repository
 }

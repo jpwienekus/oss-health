@@ -4,20 +4,23 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
+	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
 
 type DependencyService struct {
-	repository DependencyRepositoryInterface
+	repository    DependencyRepositoryInterface
+	resolverChain ResolverChainInterface
 }
 
-func NewDependencyService(repository DependencyRepositoryInterface) *DependencyService {
+func NewDependencyService(repository DependencyRepositoryInterface, resolverChain ResolverChainInterface) *DependencyService {
 	return &DependencyService{
-		repository: repository,
+		repository:    repository,
+		resolverChain: resolverChain,
 	}
 }
-
 
 func (s *DependencyService) InsertDependenciesThatDoNotExist(ctx context.Context, dependencies []parsers.Dependency, workerId int) error {
 	type key struct {
@@ -56,7 +59,6 @@ func (s *DependencyService) InsertDependenciesThatDoNotExist(ctx context.Context
 	return nil
 }
 
-
 func (s *DependencyService) InsertVersionsThatDoNotExist(ctx context.Context, dependencies []parsers.Dependency, workerId int) error {
 	type key struct {
 		Name, Ecosystem string
@@ -90,7 +92,7 @@ func (s *DependencyService) InsertVersionsThatDoNotExist(ctx context.Context, de
 		}] = true
 	}
 
-	versionsToInsert := []DependencyVersion{}
+	versionsToInsert := []db.DependencyVersion{}
 
 	for _, dep := range dependencies {
 		vk := versionKey{Version: dep.Version, Name: dep.Name, Ecosystem: dep.Ecosystem}
@@ -102,7 +104,7 @@ func (s *DependencyService) InsertVersionsThatDoNotExist(ctx context.Context, de
 				return fmt.Errorf("missing dependency ID for %s (%s)", dep.Name, dep.Ecosystem)
 			}
 
-			versionsToInsert = append(versionsToInsert, DependencyVersion{
+			versionsToInsert = append(versionsToInsert, db.DependencyVersion{
 				Version:      dep.Version,
 				DependencyId: id,
 			})
@@ -120,7 +122,7 @@ func (s *DependencyService) InsertVersionsThatDoNotExist(ctx context.Context, de
 	return nil
 }
 
-func (s *DependencyService) GetExistingVersionsForDependencies(ctx context.Context, dependencies []parsers.Dependency) ([]DependencyVersion, error) {
+func (s *DependencyService) GetExistingVersionsForDependencies(ctx context.Context, dependencies []parsers.Dependency) ([]db.DependencyVersion, error) {
 	existingVersions, err := s.repository.GetExistingVersionsForDependencies(ctx, dependencies)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get existing versions: %w", err)
@@ -131,4 +133,72 @@ func (s *DependencyService) GetExistingVersionsForDependencies(ctx context.Conte
 	}
 
 	return existingVersions, nil
+}
+
+func (s *DependencyService) ResolveDependencyUrls(ctx context.Context, repositoryId int) error {
+	dependencies, err := s.repository.GetDependenciesPendingUrlResolution(ctx, repositoryId)
+	if err != nil {
+		return fmt.Errorf("failed to get dependencies pending URL resolution: %w", err)
+	}
+
+	var (
+		resolved = make(map[int]string)
+		failures = make(map[int]string)
+		mu       sync.Mutex
+		wg       sync.WaitGroup
+	)
+
+	for _, dep := range dependencies {
+		depCopy := dep
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			url, err := s.resolverChain.Resolve(ctx, depCopy)
+			log.Print(url)
+
+			mu.Lock()
+			defer mu.Unlock()
+			switch {
+			case err != nil:
+				failures[depCopy.ID] = fmt.Sprintf("resolve: %v", err)
+			case url == "":
+				failures[depCopy.ID] = "empty URL"
+			default:
+				resolved[depCopy.ID] = url
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if len(resolved) > 0 {
+		if err := s.repository.InsertDependencyRepository(ctx, resolved); err != nil {
+			return fmt.Errorf("failed to update dependency repository URLs: %w", err)
+		}
+
+		ids, err := s.repository.GetDependencyRepositoryIds(ctx, resolved)
+		if err != nil {
+			return fmt.Errorf("failed to get dependency repository IDs: %w", err)
+		}
+
+		dependencyDependencyUrlIdMap := make(map[int]int, len(ids))
+
+		for depId, url := range resolved {
+			if repoId, ok := ids[url]; ok {
+				dependencyDependencyUrlIdMap[depId] = repoId
+			}
+		}
+
+		if err := s.repository.UpdateDependencyRepositoryIDs(ctx, dependencyDependencyUrlIdMap); err != nil {
+			return fmt.Errorf("failed to insert dependency dependency URLs: %w", err)
+		}
+	}
+
+	if len(failures) > 0 {
+		s.repository.MarkDependenciesAsFailed(ctx, failures)
+	}
+
+	return nil
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/oss-health/background-worker/internal/dependencies"
+	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/repo"
 	"github.com/oss-health/background-worker/internal/repo/parsers"
 )
@@ -19,9 +19,9 @@ type MockRepoRepository struct {
 	mock.Mock
 }
 
-func (m *MockRepoRepository) GetReposForSchedule(ctx context.Context, day int, hour int) ([]repo.Repository, error) {
+func (m *MockRepoRepository) GetReposForSchedule(ctx context.Context, day int, hour int) ([]db.Repository, error) {
 	args := m.Called(ctx, day, hour)
-	return args.Get(0).([]repo.Repository), args.Error(1)
+	return args.Get(0).([]db.Repository), args.Error(1)
 }
 
 func (m *MockRepoRepository) MarkScanned(ctx context.Context, id int) error {
@@ -36,7 +36,7 @@ func (m *MockRepoRepository) DeleteRepositoryDependencyVersion(ctx context.Conte
 	return m.Called(ctx, id).Error(0)
 }
 
-func (m *MockRepoRepository) InsertRepositoryDependencyVersion(ctx context.Context, id int, versions []dependencies.DependencyVersion) error {
+func (m *MockRepoRepository) InsertRepositoryDependencyVersion(ctx context.Context, id int, versions []db.DependencyVersion) error {
 	return m.Called(ctx, id, versions).Error(0)
 }
 
@@ -52,9 +52,9 @@ func (m *MockDependencyService) InsertVersionsThatDoNotExist(ctx context.Context
 	return m.Called(ctx, deps, workerId).Error(0)
 }
 
-func (m *MockDependencyService) GetExistingVersionsForDependencies(ctx context.Context, deps []parsers.Dependency) ([]dependencies.DependencyVersion, error) {
+func (m *MockDependencyService) GetExistingVersionsForDependencies(ctx context.Context, deps []parsers.Dependency) ([]db.DependencyVersion, error) {
 	args := m.Called(ctx, deps)
-	return args.Get(0).([]dependencies.DependencyVersion), args.Error(1)
+	return args.Get(0).([]db.DependencyVersion), args.Error(1)
 }
 
 // Tests
@@ -89,7 +89,7 @@ func TestReplaceRepositoryDependencyVersions_Success(t *testing.T) {
 
 	mockRepo.On("DeleteRepositoryDependencyVersion", mock.Anything, repoID).Return(nil)
 	mockDep.On("GetExistingVersionsForDependencies", mock.Anything, deps).
-		Return([]dependencies.DependencyVersion{{ID: 1, Version: "1.0.0", DependencyId: 2}}, nil)
+		Return([]db.DependencyVersion{{ID: 1, Version: "1.0.0", DependencyId: 2}}, nil)
 	mockRepo.On("InsertRepositoryDependencyVersion", mock.Anything, repoID, mock.Anything).Return(nil)
 
 	svc := repo.NewRepositoryService(mockRepo, mockDep, nil)
@@ -108,7 +108,7 @@ func TestRunDailyScan_InvalidParallelEnv(t *testing.T) {
 	defer os.Unsetenv("MAX_PARALLEL")
 
 	svc := repo.NewRepositoryService(mockRepo, nil, nil)
-	mockRepo.On("GetReposForSchedule", mock.Anything, 1, 10).Return([]repo.Repository{}, nil)
+	mockRepo.On("GetReposForSchedule", mock.Anything, 1, 10).Return([]db.Repository{}, nil)
 
 	err := svc.RunDailyScan(context.Background(), 1, 10)
 	assert.Error(t, err)

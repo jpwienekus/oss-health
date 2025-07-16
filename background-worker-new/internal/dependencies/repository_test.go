@@ -89,7 +89,7 @@ func TestInsertAndGetDependencyVersions(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Insert versions
-	toInsert := []dependencies.DependencyVersion{
+	toInsert := []db.DependencyVersion{
 		{Version: "1.0.0", DependencyId: 1},
 		{Version: "4.17.1", DependencyId: 2},
 	}
