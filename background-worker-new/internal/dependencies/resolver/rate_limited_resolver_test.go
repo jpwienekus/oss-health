@@ -2,6 +2,8 @@ package resolver_test
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -99,15 +101,18 @@ func TestRateLimitedResolver_HandlesContextCancel(t *testing.T) {
 	}
 
 	r := resolver.NewRateLimitedResolver(mock, rate.Limit(0.1), 1, "test") // 1 every 10s
+
+	// Use up the initial burst token so the next call must wait
+	ctxImmediate := context.Background()
+	_, _ = r.Resolve(ctxImmediate, db.Dependency{Name: "initial", Ecosystem: "npm"})
+
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
 	_, err := r.Resolve(ctx, db.Dependency{Name: "lodash", Ecosystem: "npm"})
 	if err == nil {
 		t.Errorf("expected error due to context timeout, got nil")
-	}
-
-	if err.Error() != "rate limit exceeded: rate: Wait(n=1) would exceed context deadline" {
+	} else if !errors.Is(err, context.DeadlineExceeded) && !strings.Contains(err.Error(), "context deadline") {
 		t.Errorf("expected rate limit context deadline error, got %v", err)
 	}
 }

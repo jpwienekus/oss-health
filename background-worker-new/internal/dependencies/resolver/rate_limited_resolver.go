@@ -3,7 +3,6 @@ package resolver
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -44,15 +43,8 @@ func (r *RateLimitedResolver) Resolve(ctx context.Context, dependency db.Depende
 		}()
 	})
 
-	if !r.limiter.Allow() {
-		fmt.Printf("Rate limit reached for dependency: %+v. Waiting...\n", dependency)
-	}
-
 	if err := r.limiter.Wait(ctx); err != nil {
-		log.Print("============")
-		log.Print(ctx.Err())
 		return "", fmt.Errorf("rate limit exceeded: %w", err)
-		// return "", err
 	}
 
 	r.trackRequest()
