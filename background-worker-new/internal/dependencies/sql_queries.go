@@ -12,6 +12,12 @@ const (
 			AND RDV.repository_id = $1
 		ORDER BY name ASC
 	`
+	GetDependenciesPendingOSVScanQuery = `
+		SELECT V.id, V.version, V.dependency_id, D.name as dependency_name, D.ecosystem as dependency_ecosystem
+		FROM dependencies as D
+			INNER JOIN versions as V ON D.id = V.dependency_id
+		WHERE now() - COALESCE(osv_scanned_at, '1970-01-01') > interval '1 day'
+	`
 	InsertDependencyQuery = `
 		INSERT INTO dependencies (name, ecosystem)
 		VALUES %s

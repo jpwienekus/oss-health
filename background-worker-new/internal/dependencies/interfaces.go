@@ -12,6 +12,7 @@ type DependencyServiceInterface interface {
 	InsertVersionsThatDoNotExist(ctx context.Context, dependencies []parsers.Dependency, workerId int) error
 	GetExistingVersionsForDependencies(ctx context.Context, dependencies []parsers.Dependency) ([]db.DependencyVersion, error)
 	ResolveDependencyUrls(ctx context.Context, repositoryId int) error
+	RunOSVScan(ctx context.Context) error
 }
 
 type DependencyRepositoryInterface interface {
@@ -24,6 +25,7 @@ type DependencyRepositoryInterface interface {
 	GetDependencyRepositoryIds(ctx context.Context, dependencyUrlMap map[int]string) (map[string]int, error)
 	UpdateDependencyRepositoryIDs(ctx context.Context, depRepoMap map[int]int) error
 	MarkDependenciesAsFailed(ctx context.Context, failureReasons map[int]string) error
+	GetDependenciesPendingOSVScan(ctx context.Context) ([]db.DependencyVersion, error)
 }
 
 type ResolverChainInterface interface {

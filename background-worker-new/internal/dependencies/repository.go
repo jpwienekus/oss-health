@@ -128,7 +128,6 @@ func (r *DependencyRepository) InsertDependencyVersions(ctx context.Context, dep
 	return nil
 }
 
-// TODO: continue tests from here
 func (r *DependencyRepository) GetDependenciesPendingUrlResolution(ctx context.Context, repositoryId int) ([]db.Dependency, error) {
 	rows, err := r.db.Query(ctx, GetDependenciesPendingUrlResolutionQuery, repositoryId)
 	if err != nil {
@@ -261,6 +260,28 @@ func (r *DependencyRepository) MarkDependenciesAsFailed(ctx context.Context, fai
 	}
 
 	return nil
+}
+
+// TODO: continue tests from here:
+func (r *DependencyRepository) GetDependenciesPendingOSVScan(ctx context.Context) ([]db.DependencyVersion, error) {
+	rows, err := r.db.Query(ctx, GetDependenciesPendingOSVScanQuery)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query dependencies pending OSV scan: %v", err)
+	}
+
+	defer rows.Close()
+
+	var dependencyVersions []db.DependencyVersion
+	for rows.Next() {
+		var dependencyVersion db.DependencyVersion
+		if err := rows.Scan(&dependencyVersion.ID, &dependencyVersion.Version, &dependencyVersion.DependencyId, &dependencyVersion.DependencyName, &dependencyVersion.DependencyEcosystem); err != nil {
+			return nil, fmt.Errorf("failed to scan dependency: %v", err)
+		}
+		dependencyVersions = append(dependencyVersions, dependencyVersion)
+	}
+
+
+	return dependencyVersions, nil
 }
 
 // func logQueryWithParams(query string, args []any) {
