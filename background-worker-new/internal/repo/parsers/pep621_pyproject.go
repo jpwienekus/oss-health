@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -42,6 +43,13 @@ func (p Pep621PyProjectParser) Parse(fileContent []byte) ([]Dependency, error) {
 		}
 
 		name, version := parsePythonDependency(depstr, reBracket, rePrefix)
+
+		parsedVersion, err := semver.NewVersion(version)
+		if err != nil {
+			version = "unknown"
+		} else {
+			version = parsedVersion.String()
+		}
 
 		dependency := Dependency{
 			Name:      strings.ToLower(name),

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -44,6 +45,13 @@ func (p PoetryPyProjectParser) Parse(fileContent []byte) ([]Dependency, error) {
 				continue // skip tables or invalid types
 			}
 			cleanedVersion := strings.TrimLeft(verStr, "^~><= ")
+			parsedVersion, err := semver.NewVersion(cleanedVersion)
+			if err != nil {
+				cleanedVersion = "unknown"
+			} else {
+				cleanedVersion = parsedVersion.String()
+			}
+
 			dependencies = append(dependencies, Dependency{
 				Name:      strings.ToLower(name),
 				Version:   cleanedVersion,

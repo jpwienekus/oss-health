@@ -87,6 +87,7 @@ func (r *DependencyRepository) GetExistingVersionsForDependencies(ctx context.Co
 
 	query := GetExistingVersionsByDependencyAndEcosystemQuery
 	query += strings.Join(clauses, " OR ")
+	logQueryWithParams(query, queryArguments)
 
 	rows, err := r.db.Query(ctx, query, queryArguments...)
 	if err != nil {
@@ -120,6 +121,7 @@ func (r *DependencyRepository) InsertDependencyVersions(ctx context.Context, dep
 	}
 
 	query := fmt.Sprintf(InsertVersionQuery, strings.Join(clauses, ", "))
+	logQueryWithParams(query, queryArguments)
 	_, err := r.db.Exec(ctx, query, queryArguments...)
 	if err != nil {
 		return fmt.Errorf("failed to insert dependency versions: %v", err)
@@ -284,17 +286,17 @@ func (r *DependencyRepository) GetDependenciesPendingOSVScan(ctx context.Context
 	return dependencyVersions, nil
 }
 
-// func logQueryWithParams(query string, args []any) {
-// 	for i, arg := range args {
-// 		placeholder := fmt.Sprintf("$%d", i+1)
-// 		var val string
-// 		switch v := arg.(type) {
-// 		case string:
-// 			val = fmt.Sprintf("'%s'", strings.ReplaceAll(v, "'", "''")) // escape single quotes
-// 		default:
-// 			val = fmt.Sprintf("%v", v)
-// 		}
-// 		query = strings.Replace(query, placeholder, val, 1)
-// 	}
-// 	fmt.Println("Executing Query:", query)
-// }
+func logQueryWithParams(query string, args []any) {
+	for i, arg := range args {
+		placeholder := fmt.Sprintf("$%d", i+1)
+		var val string
+		switch v := arg.(type) {
+		case string:
+			val = fmt.Sprintf("'%s'", strings.ReplaceAll(v, "'", "''")) // escape single quotes
+		default:
+			val = fmt.Sprintf("%v", v)
+		}
+		query = strings.Replace(query, placeholder, val, 1)
+	}
+	fmt.Println("Executing Query:", query)
+}

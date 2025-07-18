@@ -33,7 +33,7 @@ requests = "^2.31.0"
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []parsers.Dependency{
-		{Name: "python", Version: "3.10", Ecosystem: "pypi"},
+		{Name: "python", Version: "3.10.0", Ecosystem: "pypi"},
 		{Name: "requests", Version: "2.31.0", Ecosystem: "pypi"},
 	}, deps)
 }

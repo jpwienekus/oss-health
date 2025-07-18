@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/Masterminds/semver/v3"
 )
 
 type NpmParser struct{}
@@ -25,6 +27,13 @@ func (n NpmParser) Parse(fileContent []byte) ([]Dependency, error) {
 		dependencies := make([]Dependency, 0, len(m))
 		for name, version := range m {
 			cleanedVersion := strings.TrimLeft(version, "^~><= ")
+			parsedVersion, err := semver.NewVersion(cleanedVersion)
+			if err != nil {
+				cleanedVersion = "unknown"
+			} else {
+				cleanedVersion = parsedVersion.String()
+			}
+
 			dependencies = append(dependencies, Dependency{
 				Name:      strings.ToLower(name),
 				Version:   cleanedVersion,

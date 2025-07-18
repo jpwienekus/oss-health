@@ -21,6 +21,7 @@ const (
 	InsertDependencyQuery = `
 		INSERT INTO dependencies (name, ecosystem)
 		VALUES %s
+		ON CONFLICT (name, ecosystem) DO NOTHING
 	`
 	UpdateDependencyScannedFailedQuery = `
 		UPDATE dependencies
@@ -43,6 +44,7 @@ const (
 	InsertVersionQuery = `
 		INSERT INTO versions (version, dependency_id)
 		VALUES %s
+		ON CONFLICT (version, dependency_id) DO NOTHING
 	`
 
 	// Dependency Repository

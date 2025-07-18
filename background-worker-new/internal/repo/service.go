@@ -168,6 +168,7 @@ func (s *RepositoryService) saveRepositoryDependencyVersions(ctx context.Context
 		return fmt.Errorf("failed to delete repository dependency versions: %w", err)
 	}
 
+	// All should exist by this point
 	existingVersions, err := s.dependencyService.GetExistingVersionsForDependencies(ctx, dependencies)
 	if err != nil {
 		return fmt.Errorf("failed to get existing versions: %w", err)

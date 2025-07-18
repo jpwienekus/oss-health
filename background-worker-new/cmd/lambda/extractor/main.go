@@ -53,5 +53,6 @@ func main() {
 		parsers.NewParserRegistry(),
 	)
 
+	// service.RunDailyScan(ctx, 2, 6)
 	service.RunDailyScan(ctx, 0, 0)
 }

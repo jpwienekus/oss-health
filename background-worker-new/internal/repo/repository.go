@@ -61,7 +61,6 @@ func (r *RepoRepository) MarkFailed(ctx context.Context, id int, message string)
 	return nil
 }
 
-// TODO: continue tests from here
 func (r *RepoRepository) DeleteRepositoryDependencyVersion(ctx context.Context, repositoryId int) error {
 	_, err := r.db.Exec(ctx, DeleteRepositoryDependencyVersionsQuery, repositoryId)
 	if err != nil {
@@ -89,5 +88,4 @@ func (r *RepoRepository) InsertRepositoryDependencyVersion(ctx context.Context, 
 
 	return nil
 }
-
 

@@ -1,8 +1,12 @@
 package parsers
 
-import "strings"
+import (
+	"strings"
 
-type RequirementsParser struct {}
+	"github.com/Masterminds/semver/v3"
+)
+
+type RequirementsParser struct{}
 
 func (r RequirementsParser) CanParse(filename string) bool {
 	return strings.EqualFold(filename, "requirements.txt")
@@ -21,6 +25,13 @@ func (r RequirementsParser) Parse(fileContent []byte) ([]Dependency, error) {
 		parts := strings.Split(line, "==")
 		if len(parts) != 2 {
 			continue
+		}
+		version := strings.TrimSpace(parts[1])
+		parsedVersion, err := semver.NewVersion(version)
+		if err != nil {
+			version = "unknown"
+		} else {
+			version = parsedVersion.String()
 		}
 
 		dependency := Dependency{

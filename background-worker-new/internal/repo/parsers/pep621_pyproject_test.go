@@ -31,7 +31,7 @@ dependencies = [
 	deps, err := p.Parse([]byte(tomlData))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []parsers.Dependency{
-		{Name: "requests", Version: "2.0", Ecosystem: "pypi"},
+		{Name: "requests", Version: "2.0.0", Ecosystem: "pypi"},
 		{Name: "flask", Version: "unknown", Ecosystem: "pypi"},
 		{Name: "numpy", Version: "1.25.0", Ecosystem: "pypi"},
 	}, deps)
