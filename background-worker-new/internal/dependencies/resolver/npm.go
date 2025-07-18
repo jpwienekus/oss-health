@@ -13,12 +13,14 @@ import (
 
 type NPMResolver struct{}
 
+var NPMRegistryURL = "https://registry.npmjs.org"
+
 func (r *NPMResolver) CanResolve(dependency db.Dependency) bool {
 	return dependency.Ecosystem == "npm"
 }
 
 func (r *NPMResolver) Resolve(ctx context.Context, dependency db.Dependency) (string, error) {
-	url := fmt.Sprintf("%s/%s", "https://registry.npmjs.org", dependency.Name)
+	url := fmt.Sprintf("%s/%s", NPMRegistryURL, dependency.Name)
 
 	request, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
 
