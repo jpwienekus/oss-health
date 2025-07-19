@@ -23,3 +23,8 @@ type DependencyVersion struct {
 	DependencyName      string
 	DependencyEcosystem string
 }
+
+type Vulnerability struct {
+	ID    int
+	OSVID string
+}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/oss-health/background-worker/internal/db"
 	"github.com/oss-health/background-worker/internal/dependencies"
+	"github.com/oss-health/background-worker/internal/vulnerabilities"
 )
 
 func main() {
@@ -21,9 +22,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
-	dependencyService := dependencies.NewDependencyService(
+	dependencyService := vulnerabilities.NewVulnerabilityService(
+		vulnerabilities.NewVulnerabilityRepository(db),
 		dependencies.NewDependencyRepository(db),
-		nil,
 	)
 
 	if err := dependencyService.RunOSVScan(ctx); err != nil {

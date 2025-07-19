@@ -14,9 +14,13 @@ const (
 	`
 	GetDependenciesPendingOSVScanQuery = `
 		SELECT V.id, V.version, V.dependency_id, D.name as dependency_name, D.ecosystem as dependency_ecosystem
-		FROM dependencies as D
-			INNER JOIN versions as V ON D.id = V.dependency_id
+		FROM repositories AS R
+			INNER JOIN repository_dependency_version as RDV ON R.id = RDV.repository_id
+			INNER JOIN dependencies as D on RDV.dependency_id = D.id
+			INNER JOIN versions as V on RDV.version_id = V.id
 		WHERE now() - COALESCE(osv_scanned_at, '1970-01-01') > interval '1 day'
+			AND V.version != 'unknown'
+			AND D.ecosystem = 'npm'
 	`
 	InsertDependencyQuery = `
 		INSERT INTO dependencies (name, ecosystem)

@@ -202,26 +202,26 @@ func (s *DependencyService) ResolveDependencyUrls(ctx context.Context, repositor
 	return nil
 }
 
-// TODO: continue tests from here:
-func (S *DependencyService) RunOSVScan(ctx context.Context) error {
-	dependencyVersions, err := S.repository.GetDependenciesPendingOSVScan(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get dependencies pending OSV scanning: %w", err)
-	}
-
-	if len(dependencyVersions) == 0 {
-		return fmt.Errorf("no dependencies pending OSV scanning found")
-	}
-
-	log.Printf("Found %d dependencies pending OSV scanning\n", len(dependencyVersions))
-
-	osvClient := NewOSVClient()
-	vulnerabilities, err := osvClient.QueryBatch(ctx, dependencyVersions)
-	if err != nil {
-		return fmt.Errorf("failed to query OSV for vulnerabilities: %w", err)
-	}
-
-	log.Print(vulnerabilities)
-
-	return nil
-}
+// // TODO: continue tests from here:
+// func (S *DependencyService) RunOSVScan(ctx context.Context) error {
+// 	dependencyVersions, err := S.repository.GetDependenciesPendingOSVScan(ctx)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get dependencies pending OSV scanning: %w", err)
+// 	}
+//
+// 	if len(dependencyVersions) == 0 {
+// 		return fmt.Errorf("no dependencies pending OSV scanning found")
+// 	}
+//
+// 	log.Printf("Found %d dependencies pending OSV scanning\n", len(dependencyVersions))
+//
+// 	osvClient := NewOSVClient()
+// 	vulnerabilities, err := osvClient.QueryBatch(ctx, dependencyVersions)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to query OSV for vulnerabilities: %w", err)
+// 	}
+//
+// 	log.Print(vulnerabilities)
+//
+// 	return nil
+// }
