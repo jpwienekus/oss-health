@@ -6,10 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"maps"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/oss-health/background-worker/internal/db"
+	"golang.org/x/time/rate"
 )
 
 type Client struct {
@@ -81,20 +85,137 @@ type Vulnerability struct {
 	Severity string
 }
 
-func (c *Client) GetVulnerabilityData(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]Vulnerability, error) {
-	queryResults, err := c.queryBatch(ctx, dependencyVersions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query OSV batch: %w", err)
+func (c *Client) QueryBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error) {
+	batchSize := 100
+	maxRPS := 10
+	batches := c.splitIntoBatches(dependencyVersions, batchSize)
+	rateLimiter := rate.NewLimiter(rate.Limit(maxRPS), 1)
+
+	var (
+		mu      sync.Mutex
+		results = make(map[int][]string)
+		wg      sync.WaitGroup
+		errCh   = make(chan error, len(batches))
+	)
+
+	for _, b := range batches {
+		// Rate limit before launching
+		if err := rateLimiter.Wait(ctx); err != nil {
+			return nil, fmt.Errorf("rate limiter wait failed: %w", err)
+		}
+
+		wg.Add(1)
+		go func(depBatch []db.DependencyVersion) {
+			log.Printf("Processing batch of %d dependencies\n", len(b))
+			defer wg.Done()
+
+			partialResults, err := c.querySingleBatch(ctx, depBatch)
+			if err != nil {
+				errCh <- err
+				return
+			}
+
+			mu.Lock()
+			maps.Copy(results, partialResults)
+			// for k, v := range partialResults {
+			// 	results[k] = v
+			// }
+			mu.Unlock()
+		}(b)
 	}
 
-	detailsResults, err := c.getVulnerabilityDetails(ctx, queryResults)
+	wg.Wait()
+	close(errCh)
 
-	return detailsResults, nil
+	if len(errCh) > 0 {
+		return nil, <-errCh // return first error
+	}
+
+	return results, nil
 }
 
-func (c *Client) queryBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error) {
-	queries := make([]osvQuery, len(dependencyVersions))
+func (c *Client) GetVulnerabilityDetails(ctx context.Context, vulnerabilities map[int][]string) (map[int][]Vulnerability, error) {
+	const maxRPS = 10
+	rateLimiter := rate.NewLimiter(rate.Limit(maxRPS), 1)
 
+	type job struct {
+		DepVersionID int
+		VulnID       string
+	}
+
+	var jobs []job
+	for depID, vulnIDs := range vulnerabilities {
+		for _, vulnID := range vulnIDs {
+			jobs = append(jobs, job{DepVersionID: depID, VulnID: vulnID})
+		}
+	}
+
+	var (
+		mu      sync.Mutex
+		wg      sync.WaitGroup
+		results = make(map[int][]Vulnerability)
+		errCh   = make(chan error, len(jobs))
+	)
+
+	for _, j := range jobs {
+		if err := rateLimiter.Wait(ctx); err != nil {
+			return nil, fmt.Errorf("rate limiter wait failed: %w", err)
+		}
+
+		wg.Add(1)
+		go func(j job) {
+			defer wg.Done()
+
+			url := fmt.Sprintf("%s/vulns/%s", c.baseURL, j.VulnID)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+			if err != nil {
+				errCh <- fmt.Errorf("failed to create request for %s: %w", j.VulnID, err)
+				return
+			}
+
+			resp, err := c.httpClient.Do(req)
+			if err != nil {
+				errCh <- fmt.Errorf("failed to fetch %s: %w", j.VulnID, err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				body, _ := io.ReadAll(resp.Body)
+				errCh <- fmt.Errorf("OSV response for %s failed: %s - %s", j.VulnID, resp.Status, string(body))
+				return
+			}
+
+			var osvResp osvVulnerability
+			if err := json.NewDecoder(resp.Body).Decode(&osvResp); err != nil {
+				errCh <- fmt.Errorf("failed to decode %s: %w", j.VulnID, err)
+				return
+			}
+
+			if osvResp.DatabaseSpecific.Severity != "" {
+				mu.Lock()
+				results[j.DepVersionID] = append(results[j.DepVersionID], Vulnerability{
+					ID:       j.VulnID,
+					Summary:  osvResp.Summary,
+					Severity: osvResp.DatabaseSpecific.Severity,
+				})
+				mu.Unlock()
+			}
+		}(j)
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	if len(errCh) > 0 {
+		return nil, <-errCh // return first error
+	}
+
+	return results, nil
+}
+
+func (c *Client) querySingleBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error) {
+	queries := make([]osvQuery, len(dependencyVersions))
 	for i, dv := range dependencyVersions {
 		queries[i] = osvQuery{
 			Package: struct {
@@ -113,81 +234,44 @@ func (c *Client) queryBatch(ctx context.Context, dependencyVersions []db.Depende
 		return nil, fmt.Errorf("failed to marshal OSV batch request: %w", err)
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/querybatch", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/querybatch", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OSV batch request: %w", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
 
-	request.Header.Set("Content-Type", "application/json")
-
-	response, err := c.httpClient.Do(request)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute OSV batch request: %w", err)
 	}
+	defer resp.Body.Close()
 
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(response.Body)
-		return nil, fmt.Errorf("OSV batch request failed with status: %s, body: %s", response.Status, string(body))
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("OSV batch request failed with status: %s, body: %s", resp.Status, string(body))
 	}
 
 	var osvResponse osvBatchResponse
-	err = json.NewDecoder(response.Body).Decode(&osvResponse)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&osvResponse); err != nil {
 		return nil, fmt.Errorf("failed to decode OSV batch response: %w", err)
 	}
 
 	results := make(map[int][]string)
 	for i, result := range osvResponse.Results {
-		key := dependencyVersions[i].ID
+		id := dependencyVersions[i].ID
 		for _, vuln := range result.Vulnerabilities {
-			results[key] = append(results[key], vuln.ID)
+			results[id] = append(results[id], vuln.ID)
 		}
 	}
 
 	return results, nil
 }
 
-func (c *Client) getVulnerabilityDetails(ctx context.Context, vulnerabilities map[int][]string) (map[int][]Vulnerability, error) {
-	severityResults := make(map[int][]Vulnerability)
-
-	for key, result := range vulnerabilities {
-		for _, vulnID := range result {
-			severityURL := fmt.Sprintf("%s/vulns/%s", c.baseURL, vulnID)
-			severityRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, severityURL, nil)
-
-			if err != nil {
-				return nil, fmt.Errorf("failed to create OSV severity request for %s: %w", vulnID, err)
-			}
-
-			severityResponse, err := c.httpClient.Do(severityRequest)
-			if err != nil {
-				return nil, fmt.Errorf("failed to execute OSV severity request for %s: %w", vulnID, err)
-			}
-
-			defer severityResponse.Body.Close()
-
-			if severityResponse.StatusCode != http.StatusOK {
-				body, _ := io.ReadAll(severityResponse.Body)
-				return nil, fmt.Errorf("OSV severity request for %s failed with status: %s, body: %s", vulnID, severityResponse.Status, string(body))
-			}
-
-			vulnerabilityResponse := osvVulnerability{}
-			err = json.NewDecoder(severityResponse.Body).Decode(&vulnerabilityResponse)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode OSV severity response for %s: %w", vulnID, err)
-			}
-
-			if vulnerabilityResponse.DatabaseSpecific.Severity != "" {
-				severityResults[key] = append(severityResults[key], Vulnerability{
-					ID:       vulnID,
-					Summary:  vulnerabilityResponse.Summary,
-					Severity: vulnerabilityResponse.DatabaseSpecific.Severity,
-				})
-			}
-		}
+func (c *Client) splitIntoBatches(deps []db.DependencyVersion, size int) [][]db.DependencyVersion {
+	var batches [][]db.DependencyVersion
+	for size < len(deps) {
+		deps, batches = deps[size:], append(batches, deps[0:size:size])
 	}
-
-	return severityResults, nil
+	batches = append(batches, deps)
+	return batches
 }

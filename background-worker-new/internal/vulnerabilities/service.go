@@ -31,14 +31,17 @@ func (s *VulnerabilityService) RunOSVScan(ctx context.Context) error {
 		return fmt.Errorf("no dependencies pending OSV scanning found")
 	}
 
-	log.Printf("Found %d dependencies pending OSV scanning\n", len(dependencyVersions))
-
 	osvClient := NewOSVClient()
-	dependencyVersionVulnerabilities, err := osvClient.GetVulnerabilityData(ctx, dependencyVersions)
+
+	osvVulnerabilities, err := osvClient.QueryBatch(ctx, dependencyVersions)
 	if err != nil {
-		return fmt.Errorf("failed to query OSV for vulnerabilities: %w", err)
+		return fmt.Errorf("failed to get OSV vulnerabilities: %w", err)
 	}
 
+	dependencyVersionVulnerabilities, err := osvClient.GetVulnerabilityDetails(ctx, osvVulnerabilities)
+	if err != nil {
+		return fmt.Errorf("failed to get vulnerability details from OSV: %w", err)
+	}
 
 	insertedVulnerabilities, err := s.repository.InsertVulnerabilities(ctx, dependencyVersionVulnerabilities)
 	if err != nil {
@@ -68,3 +71,4 @@ func (s *VulnerabilityService) RunOSVScan(ctx context.Context) error {
 
 	return nil
 }
+
