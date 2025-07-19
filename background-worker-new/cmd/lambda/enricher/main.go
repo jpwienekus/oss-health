@@ -22,9 +22,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
+
 	dependencyService := vulnerabilities.NewVulnerabilityService(
 		vulnerabilities.NewVulnerabilityRepository(db),
 		dependencies.NewDependencyRepository(db),
+		vulnerabilities.NewOSVClient(),
 	)
 
 	if err := dependencyService.RunOSVScan(ctx); err != nil {

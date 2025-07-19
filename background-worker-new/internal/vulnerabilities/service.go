@@ -11,12 +11,18 @@ import (
 type VulnerabilityService struct {
 	repository           VulnerabilityRepositoryInterface
 	dependencyRepository dependencies.DependencyRepositoryInterface
+	osvClient            OSVClientInterface
 }
 
-func NewVulnerabilityService(repository VulnerabilityRepositoryInterface, dependencyRepository dependencies.DependencyRepositoryInterface) *VulnerabilityService {
+func NewVulnerabilityService(
+	repository VulnerabilityRepositoryInterface,
+	dependencyRepository dependencies.DependencyRepositoryInterface,
+	osvClient OSVClientInterface,
+) *VulnerabilityService {
 	return &VulnerabilityService{
 		repository:           repository,
 		dependencyRepository: dependencyRepository,
+		osvClient:            osvClient,
 	}
 }
 
@@ -31,14 +37,12 @@ func (s *VulnerabilityService) RunOSVScan(ctx context.Context) error {
 		return fmt.Errorf("no dependencies pending OSV scanning found")
 	}
 
-	osvClient := NewOSVClient()
-
-	osvVulnerabilities, err := osvClient.QueryBatch(ctx, dependencyVersions)
+	osvVulnerabilities, err := s.osvClient.QueryBatch(ctx, dependencyVersions)
 	if err != nil {
 		return fmt.Errorf("failed to get OSV vulnerabilities: %w", err)
 	}
 
-	dependencyVersionVulnerabilities, err := osvClient.GetVulnerabilityDetails(ctx, osvVulnerabilities)
+	dependencyVersionVulnerabilities, err := s.osvClient.GetVulnerabilityDetails(ctx, osvVulnerabilities)
 	if err != nil {
 		return fmt.Errorf("failed to get vulnerability details from OSV: %w", err)
 	}
@@ -71,4 +75,3 @@ func (s *VulnerabilityService) RunOSVScan(ctx context.Context) error {
 
 	return nil
 }
-

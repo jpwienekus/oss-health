@@ -10,3 +10,8 @@ type VulnerabilityRepositoryInterface interface {
 	InsertVulnerabilities(ctx context.Context, dependencyVersionVulnerabilities map[int][]Vulnerability) ([]db.Vulnerability, error)
 	InsertVersionVulnerability(ctx context.Context, versionVulnerabilities map[int]int) error
 }
+
+type OSVClientInterface interface {
+	QueryBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error)
+	GetVulnerabilityDetails(ctx context.Context, vulnerabilities map[int][]string) (map[int][]Vulnerability, error)
+}

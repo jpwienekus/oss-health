@@ -11,6 +11,4 @@ const (
 		INSERT INTO version_vulnerability (vulnerability_id, version_id)
 		VALUES %s
 	`
-
-
 )

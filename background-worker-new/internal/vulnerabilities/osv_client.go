@@ -16,13 +16,20 @@ import (
 	"golang.org/x/time/rate"
 )
 
-type Client struct {
+type OSVClient struct {
 	httpClient *http.Client
 	baseURL    string
 }
 
-func NewOSVClient() *Client {
-	return &Client{
+func NewTestClient(mockClient *http.Client, baseURL string) *OSVClient {
+	return &OSVClient{
+		httpClient: mockClient,
+		baseURL:    baseURL,
+	}
+}
+
+func NewOSVClient() *OSVClient {
+	return &OSVClient{
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 		baseURL:    "https://api.osv.dev/v1",
 	}
@@ -85,7 +92,7 @@ type Vulnerability struct {
 	Severity string
 }
 
-func (c *Client) QueryBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error) {
+func (c *OSVClient) QueryBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error) {
 	batchSize := 100
 	maxRPS := 10
 	batches := c.splitIntoBatches(dependencyVersions, batchSize)
@@ -134,7 +141,7 @@ func (c *Client) QueryBatch(ctx context.Context, dependencyVersions []db.Depende
 	return results, nil
 }
 
-func (c *Client) GetVulnerabilityDetails(ctx context.Context, vulnerabilities map[int][]string) (map[int][]Vulnerability, error) {
+func (c *OSVClient) GetVulnerabilityDetails(ctx context.Context, vulnerabilities map[int][]string) (map[int][]Vulnerability, error) {
 	const maxRPS = 10
 	rateLimiter := rate.NewLimiter(rate.Limit(maxRPS), 1)
 
@@ -214,7 +221,7 @@ func (c *Client) GetVulnerabilityDetails(ctx context.Context, vulnerabilities ma
 	return results, nil
 }
 
-func (c *Client) querySingleBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error) {
+func (c *OSVClient) querySingleBatch(ctx context.Context, dependencyVersions []db.DependencyVersion) (map[int][]string, error) {
 	queries := make([]osvQuery, len(dependencyVersions))
 	for i, dv := range dependencyVersions {
 		queries[i] = osvQuery{
@@ -267,7 +274,7 @@ func (c *Client) querySingleBatch(ctx context.Context, dependencyVersions []db.D
 	return results, nil
 }
 
-func (c *Client) splitIntoBatches(deps []db.DependencyVersion, size int) [][]db.DependencyVersion {
+func (c *OSVClient) splitIntoBatches(deps []db.DependencyVersion, size int) [][]db.DependencyVersion {
 	var batches [][]db.DependencyVersion
 	for size < len(deps) {
 		deps, batches = deps[size:], append(batches, deps[0:size:size])
