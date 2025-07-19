@@ -62,6 +62,11 @@ func (m *MockDependencyRepository) MarkDependenciesAsFailed(ctx context.Context,
 	return args.Error(0)
 }
 
+func (m *MockDependencyRepository) GetDependenciesPendingOSVScan(ctx context.Context) ([]db.DependencyVersion, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]db.DependencyVersion), args.Error(1)
+}
+
 type MockResolverChain struct {
 	mock.Mock
 }

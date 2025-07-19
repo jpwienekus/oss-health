@@ -12,7 +12,6 @@ type DependencyServiceInterface interface {
 	InsertVersionsThatDoNotExist(ctx context.Context, dependencies []parsers.Dependency, workerId int) error
 	GetExistingVersionsForDependencies(ctx context.Context, dependencies []parsers.Dependency) ([]db.DependencyVersion, error)
 	ResolveDependencyUrls(ctx context.Context, repositoryId int) error
-	RunOSVScan(ctx context.Context) error
 }
 
 type DependencyRepositoryInterface interface {

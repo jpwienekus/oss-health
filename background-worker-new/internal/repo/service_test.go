@@ -61,6 +61,10 @@ func (m *MockDependencyService) ResolveDependencyUrls(ctx context.Context, repos
 	return m.Called(ctx, repositoryId).Error(0)
 }
 
+func (m *MockDependencyService) RunOSVScan(ctx context.Context) error {
+	return m.Called(ctx).Error(0)
+}
+
 // Tests
 func TestCloneRepository_Success(t *testing.T) {
 	mockRepo := new(MockRepoRepository)
