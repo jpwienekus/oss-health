@@ -3,6 +3,8 @@ package githubactivity
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/shurcooL/githubv4"
@@ -19,9 +21,18 @@ func NewGithubClient(token string, ctx context.Context) *GithubClient {
 	return &GithubClient{client: githubv4.NewClient(httpClient)}
 }
 
+type CommitUser struct {
+	Login string
+}
+
+type CommitAuthor struct {
+	User CommitUser
+}
+
 type CommitEdge struct {
 	Node struct {
-		CommittedDate time.Time
+		CommittedDate time.Time    `graphql:"committedDate"`
+		Author        CommitAuthor `graphql:"author"`
 	}
 }
 
@@ -38,27 +49,22 @@ type PRNode struct {
 }
 
 type RepositoryMetrics struct {
-	Name         string
-	Stars        int
-	Contributers int
-	Commits      []time.Time
-	OpenIssues   int
-	ClosedIssues int
-	PullRequests []PRNode
-	ReleaseDates []time.Time
+	Name               string
+	Stars              int
+	Contributers       int
+	ActiveContributors int
+	Commits            []time.Time
+	OpenIssues         int
+	ClosedIssues       int
+	PullRequests       []PRNode
+	ReleaseDates       []time.Time
+	IssueActivityRatio float64
 }
 
 type repositoryQuery struct {
 	Repository struct {
 		StargazerCount int
-		// Issues         struct {
-		// 	TotalCount int
-		// } `graphql:"issues(states: OPEN)"`
-		// ClosedIssues struct {
-		// 	TotalCount int
-		// } `graphql:"closedIssues: issues(states: CLOSED)"`
-		Issues struct {
-			// TotalCount int
+		Issues         struct {
 			Edges []IssueEdge
 		} `graphql:"issues(first: 100, orderBy: {field: UPDATED_AT, direction: DESC})"`
 		PullRequests struct {
@@ -101,16 +107,48 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 	}
 
 	since := time.Now().AddDate(0, -monthsBack, 0)
+	commits, activeContributors := commits(q, since)
+	prs := pullRequests(q, since)
+	// TODO: i need to paginate the commits, very active repos always have 100
+	open, closed, ratio := openClosedIssues(q, since)
+	releases := releases(q, since)
+	log.Print(activeContributors, ratio)
 
-	// Flatten commits
+	return &RepositoryMetrics{
+		Stars:              q.Repository.StargazerCount,
+		OpenIssues:         open,
+		ClosedIssues:       closed,
+		PullRequests:       prs,
+		Commits:            commits,
+		ReleaseDates:       releases,
+		Contributers:       q.Repository.MentionableUsers.TotalCount,
+		ActiveContributors: activeContributors,
+		IssueActivityRatio: ratio,
+	}, nil
+}
+
+func commits(q repositoryQuery, since time.Time) ([]time.Time, int) {
+	seen := make(map[string]struct{})
 	var commits []time.Time
+
 	for _, edge := range q.Repository.DefaultBranchRef.Target.Commit.History.Edges {
 		if edge.Node.CommittedDate.After(since) {
 			commits = append(commits, edge.Node.CommittedDate)
+
+			if edge.Node.Author.User.Login != "" {
+				if strings.Contains(edge.Node.Author.User.Login, "bot") || strings.HasSuffix(edge.Node.Author.User.Login, "[bot]") {
+					continue
+				}
+
+				seen[edge.Node.Author.User.Login] = struct{}{}
+			}
 		}
 	}
 
-	// Flatten PRs
+	return commits, len(seen)
+}
+
+func pullRequests(q repositoryQuery, since time.Time) []PRNode {
 	var prs []PRNode
 	for _, edge := range q.Repository.PullRequests.Edges {
 		if edge.Node.MergedAt.After(since) {
@@ -118,11 +156,18 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 		}
 	}
 
+	return prs
+}
+
+func openClosedIssues(q repositoryQuery, since time.Time) (int, int, float64) {
 	open := 0
 	closed := 0
+	active := 0
 
 	for _, edge := range q.Repository.Issues.Edges {
 		if edge.Node.UpdatedAt.After(since) {
+			active++
+
 			if edge.Node.State == "OPEN" {
 				open++
 			} else if edge.Node.State == "CLOSED" {
@@ -131,7 +176,12 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 		}
 	}
 
-	// Flatten releases
+	log.Printf("Test: %d, %d", active, len(q.Repository.Issues.Edges))
+
+	return open, closed, (float64(active) / float64(len(q.Repository.Issues.Edges)))
+}
+
+func releases(q repositoryQuery, since time.Time) []time.Time {
 	var releases []time.Time
 	for _, r := range q.Repository.Releases.Nodes {
 		if r.CreatedAt.After(since) {
@@ -139,14 +189,5 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 		}
 	}
 
-	return &RepositoryMetrics{
-		Stars:        q.Repository.StargazerCount,
-		OpenIssues:   open,
-		ClosedIssues: closed,
-		PullRequests: prs,
-		Commits:      commits,
-		ReleaseDates: releases,
-		Contributers: q.Repository.MentionableUsers.TotalCount,
-	}, nil
-
+	return releases
 }

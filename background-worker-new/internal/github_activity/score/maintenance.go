@@ -27,14 +27,14 @@ func ScoreMaintenance(metrics *githubactivity.RepositoryMetrics, since int) int 
 		avgPRMergeTimeInDays = totalPRMergeDays / float64(len(metrics.PullRequests))
 	}
 
-	score := calculateScore(lastCommitAgeInDays, commitsPerMonth, issueClosureRate, avgPRMergeTimeInDays)
+	score := calculateMaintenanceScore(lastCommitAgeInDays, commitsPerMonth, issueClosureRate, avgPRMergeTimeInDays)
 	log.Printf("Last Commit Age (days): %.2f, Commits Per Month: %.2f, Issue Closure Rate: %.2f, Average PR Merge Time (days): %.2f", lastCommitAgeInDays, commitsPerMonth, issueClosureRate, avgPRMergeTimeInDays)
-	log.Printf("Maintenance Score: %d", calculateScore(lastCommitAgeInDays, commitsPerMonth, issueClosureRate, avgPRMergeTimeInDays))
+	log.Printf("Maintenance Score: %d", score)
 
 	return score
 }
 
-func calculateScore(lastCommitAgeInDays float64, commitsPerMonth float64, issueClosureRate float64, avgPRMergeDays float64) int {
+func calculateMaintenanceScore(lastCommitAgeInDays float64, commitsPerMonth float64, issueClosureRate float64, avgPRMergeDays float64) int {
 	score := 0
 
 	if lastCommitAgeInDays > -1 && lastCommitAgeInDays < 30 {
