@@ -3,7 +3,6 @@ package githubactivity
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -48,6 +47,10 @@ type PRNode struct {
 	MergedAt  time.Time
 }
 
+type BlobObject struct {
+	Text string `graphql:"text"`
+}
+
 type RepositoryMetrics struct {
 	Name               string
 	Stars              int
@@ -59,6 +62,7 @@ type RepositoryMetrics struct {
 	PullRequests       []PRNode
 	ReleaseDates       []time.Time
 	IssueActivityRatio float64
+	HasForum           bool
 }
 
 type repositoryQuery struct {
@@ -89,6 +93,9 @@ type repositoryQuery struct {
 		MentionableUsers struct {
 			TotalCount int
 		} `graphql:"mentionableUsers(first:100)"`
+		Object struct {
+			BlobObject `graphql:"... on Blob"`
+		} `graphql:"object(expression: \"HEAD:README.md\")"`
 	} `graphql:"repository(owner: $owner, name: $name)"`
 }
 
@@ -112,7 +119,6 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 	// TODO: i need to paginate the commits, very active repos always have 100
 	open, closed, ratio := openClosedIssues(q, since)
 	releases := releases(q, since)
-	log.Print(activeContributors, ratio)
 
 	return &RepositoryMetrics{
 		Stars:              q.Repository.StargazerCount,
@@ -124,6 +130,7 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 		Contributers:       q.Repository.MentionableUsers.TotalCount,
 		ActiveContributors: activeContributors,
 		IssueActivityRatio: ratio,
+		HasForum:           communityForum(q),
 	}, nil
 }
 
@@ -168,15 +175,14 @@ func openClosedIssues(q repositoryQuery, since time.Time) (int, int, float64) {
 		if edge.Node.UpdatedAt.After(since) {
 			active++
 
-			if edge.Node.State == "OPEN" {
+			switch edge.Node.State {
+			case "OPEN":
 				open++
-			} else if edge.Node.State == "CLOSED" {
+			case "CLOSED":
 				closed++
 			}
 		}
 	}
-
-	log.Printf("Test: %d, %d", active, len(q.Repository.Issues.Edges))
 
 	return open, closed, (float64(active) / float64(len(q.Repository.Issues.Edges)))
 }
@@ -190,4 +196,16 @@ func releases(q repositoryQuery, since time.Time) []time.Time {
 	}
 
 	return releases
+}
+
+func communityForum(q repositoryQuery) bool {
+	forumPatterns := []string{"discord", "slack"}
+
+	for _, pattern := range forumPatterns {
+		if strings.Contains(strings.ToLower(q.Repository.Object.Text), pattern) {
+			return true
+		}
+	}
+
+	return false
 }

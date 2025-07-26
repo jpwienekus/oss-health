@@ -7,8 +7,8 @@ import (
 )
 
 func ScoreCommunity(metrics *githubactivity.RepositoryMetrics, since int) int {
-	score := calculateCommunityScore(metrics.Stars, metrics.ActiveContributors, metrics.IssueActivityRatio, false)
-	log.Printf("Stars: %d, Active Contributors: %d, Issue Activity Ratio: %.2f, Has Forum: %t", metrics.Stars, metrics.ActiveContributors, metrics.IssueActivityRatio, false)
+	score := calculateCommunityScore(metrics.Stars, metrics.ActiveContributors, metrics.IssueActivityRatio, metrics.HasForum)
+	log.Printf("Stars: %d, Active Contributors: %d, Issue Activity Ratio: %.2f, Has Forum: %t", metrics.Stars, metrics.ActiveContributors, metrics.IssueActivityRatio, metrics.HasForum)
 	log.Printf("Community Score: %d", score)
 	return score
 }
