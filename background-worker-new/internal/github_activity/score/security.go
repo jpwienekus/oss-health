@@ -24,11 +24,6 @@ func ScoreSecurity(vulnerabilities []vulnerabilities.Vulnerability, since int) i
 		case "LOW":
 			low++
 		}
-
-		// if v.Published.After(mostRecent) {
-		// 	mostRecent = v.Published
-		// }
-
 	}
 	now := time.Now()
 	var mostRecent time.Time

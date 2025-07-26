@@ -43,6 +43,7 @@ func main() {
 		log.Print(repo.name)
 		score.ScoreMaintenance(data, monthsBack)
 		score.ScoreCommunity(data, monthsBack)
+		score.ScoreCadence(data, monthsBack)
 		log.Print("===============")
 	}
 

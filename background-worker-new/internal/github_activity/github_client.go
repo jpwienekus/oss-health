@@ -51,6 +51,19 @@ type BlobObject struct {
 	Text string `graphql:"text"`
 }
 
+type Tagger struct {
+	Date time.Time `graphql:"date"`
+}
+
+type TagRef struct {
+	Name   string
+	Target struct {
+		Tag struct {
+			Tagger Tagger `graphql:"tagger"`
+		} `graphql:"... on Tag"`
+	}
+}
+
 type RepositoryMetrics struct {
 	Name               string
 	Stars              int
@@ -61,8 +74,10 @@ type RepositoryMetrics struct {
 	ClosedIssues       int
 	PullRequests       []PRNode
 	ReleaseDates       []time.Time
+	Tags               []TagRef
 	IssueActivityRatio float64
-	HasForum           bool
+	ReleasesPastYear   int
+	Readme             string
 }
 
 type repositoryQuery struct {
@@ -89,13 +104,16 @@ type repositoryQuery struct {
 			Nodes []struct {
 				CreatedAt time.Time
 			}
-		} `graphql:"releases(last: 100)"`
+		} `graphql:"releases(first: 100, orderBy: {field: CREATED_AT, direction: DESC})"`
 		MentionableUsers struct {
 			TotalCount int
 		} `graphql:"mentionableUsers(first:100)"`
 		Object struct {
 			BlobObject `graphql:"... on Blob"`
 		} `graphql:"object(expression: \"HEAD:README.md\")"`
+		Refs struct {
+			Nodes []TagRef
+		} `graphql:"refs(refPrefix: \"refs/tags/\", first: 50, orderBy: {field: TAG_COMMIT_DATE, direction: DESC})"`
 	} `graphql:"repository(owner: $owner, name: $name)"`
 }
 
@@ -116,9 +134,8 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 	since := time.Now().AddDate(0, -monthsBack, 0)
 	commits, activeContributors := commits(q, since)
 	prs := pullRequests(q, since)
-	// TODO: i need to paginate the commits, very active repos always have 100
 	open, closed, ratio := openClosedIssues(q, since)
-	releases := releases(q, since)
+	releases, releasesPastYear := releases(q, since)
 
 	return &RepositoryMetrics{
 		Stars:              q.Repository.StargazerCount,
@@ -130,7 +147,9 @@ func (c *GithubClient) FetchRepositoryData(ctx context.Context, owner string, na
 		Contributers:       q.Repository.MentionableUsers.TotalCount,
 		ActiveContributors: activeContributors,
 		IssueActivityRatio: ratio,
-		HasForum:           communityForum(q),
+		ReleasesPastYear:   releasesPastYear,
+		Tags:               q.Repository.Refs.Nodes,
+		Readme:             q.Repository.Object.Text,
 	}, nil
 }
 
@@ -187,25 +206,20 @@ func openClosedIssues(q repositoryQuery, since time.Time) (int, int, float64) {
 	return open, closed, (float64(active) / float64(len(q.Repository.Issues.Edges)))
 }
 
-func releases(q repositoryQuery, since time.Time) []time.Time {
+func releases(q repositoryQuery, since time.Time) ([]time.Time, int) {
 	var releases []time.Time
+	cutoff := time.Now().AddDate(-1, 0, 0)
+	releasesPastYear := 0
+
 	for _, r := range q.Repository.Releases.Nodes {
 		if r.CreatedAt.After(since) {
 			releases = append(releases, r.CreatedAt)
 		}
-	}
 
-	return releases
-}
-
-func communityForum(q repositoryQuery) bool {
-	forumPatterns := []string{"discord", "slack"}
-
-	for _, pattern := range forumPatterns {
-		if strings.Contains(strings.ToLower(q.Repository.Object.Text), pattern) {
-			return true
+		if r.CreatedAt.After(cutoff) {
+			releasesPastYear++
 		}
 	}
 
-	return false
+	return releases, releasesPastYear
 }
