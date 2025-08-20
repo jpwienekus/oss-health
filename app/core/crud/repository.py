@@ -37,7 +37,7 @@ async def add_repository_ids(
                 github_id=repository.get("id"),
                 user_id=user_id,
                 score=0,
-                url=repository.get("url"),
+                url=repository.get("html_url"),
                 scan_day=random.randint(0, 6),
                 scan_hour=random.randint(0, 23),
                 scan_status="pending",

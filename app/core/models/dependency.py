@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy import DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from . import Base
@@ -15,6 +15,8 @@ class Dependency(Base):
     ecosystem: Mapped[str] = mapped_column(nullable=True)
     scan_status: Mapped[str] = mapped_column(nullable=False)
     scanned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    osv_scanned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    repository_scanned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[str] = mapped_column(nullable=True)
     dependency_repository_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("dependency_repository.id"), nullable=True
@@ -22,3 +24,7 @@ class Dependency(Base):
 
     versions: Mapped[List["Version"]] = relationship(back_populates="dependency")  # type: ignore # noqa: F821
     dependency_repository: Mapped[Optional["DependencyRepository"]] = relationship(back_populates="dependencies")  # type: ignore # noqa: F821, E501
+
+    __table_args__ = (
+        UniqueConstraint('name', 'ecosystem', name='unique_name_ecosystem'),
+    )
